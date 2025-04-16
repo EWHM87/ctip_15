@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Park Guide Registration</title>
+  <link href="framework/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <h2 class="mt-5">Park Guide Registration</h2>
+    <form id="register-form">
+      <div class="mb-3">
+        <label for="guide-name" class="form-label">Full Name</label>
+        <input type="text" class="form-control" id="guide-name" required>
+      </div>
+      <div class="mb-3">
+        <label for="guide-email" class="form-label">Email address</label>
+        <input type="email" class="form-control" id="guide-email" required>
+      </div>
+      <div class="mb-3">
+        <label for="guide-username" class="form-label">Username</label>
+        <input type="text" class="form-control" id="guide-username" required>
+      </div>
+      <div class="mb-3">
+        <label for="guide-password" class="form-label">Password</label>
+        <input type="password" class="form-control" id="guide-password" required>
+      </div>
+      <div class="mb-3">
+        <label for="guide-confirm-password" class="form-label">Confirm Password</label>
+        <input type="password" class="form-control" id="guide-confirm-password" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Register</button>
+      <p>Already registered? <a href="login-park-guide.html">Login here</a></p>
+    </form>
+  </div>
+
+  <script src="js/register.js"></script>
+</body>
+</html>

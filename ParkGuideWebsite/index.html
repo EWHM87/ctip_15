@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Park Guide Management System</title>
+  <link href="framework/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm py-3">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="#">Parks & Wild Life</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+  
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link active" href="login-admin.html">Admin</a></li>
+        <li class="nav-item"><a class="nav-link" href="login-visitor.html">Visitor</a></li>
+        <li class="nav-item"><a class="nav-link" href="login-user.html">Park Guide</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<header class="hero text-center">
+  <h1 class="display-3 fw-bold">Welcome to the Park Guide</h1>
+  <p class="lead mb-4">Explore, manage, and enjoy your adventure.</p>
+  <a href="visitor.html" class="btn btn-light btn-lg">Get Started</a>
+</header>
+
+<!-- Features Section -->
+<section class="container my-5">
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="feature-card" style="background-image: url('images/map.jpg');">
+        <div class="feature-content">
+          <h3>Interactive Map</h3>
+          <a href="map.html" class="btn btn-outline-light">View Map</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-card" style="background-image: url('images/updates.jpg');">
+        <div class="feature-content">
+          <h3>Real-Time Updates</h3>
+          <a href="updates.html" class="btn btn-outline-light">See Updates</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-card" style="background-image: url('images/gallery.jpg');">
+        <div class="feature-content">
+          <h3>Gallery</h3>
+          <a href="gallery.html" class="btn btn-outline-light">Explore Gallery</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-primary text-white text-center py-3 mt-5">
+  <div class="container">
+    &copy; 2025 Park Guide Management System. All rights reserved.
+  </div>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="framework/js/bootstrap.bundle.min.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
