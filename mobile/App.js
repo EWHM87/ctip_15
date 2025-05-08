@@ -10,6 +10,24 @@ import VisitorLogin from './screens/VisitorLogin';
 import VisitorDashboard from './screens/VisitorDashboard';
 import ParkRouteScreen from './screens/ParkRouteScreen';
 import ParkHistoryScreen from './screens/ParkHistoryScreen';
+import MustSeeSpotScreen from './screens/MustSeeSpotScreen';
+import Wildlife from './screens/Wildlife';
+import Accommodations from './screens/Accommodations';
+import Activities from './screens/Activities'; 
+import VisitorRegister from './screens/VisitorRegister';
+import UserRegister from './screens/UserRegister';
+import Tranning from './screens/Tranning';
+import Certification from './screens/Certification';
+import Notifications from './screens/Notifications';
+import AIBiodiversityScanner from './screens/AIBiodiversityScanner';
+import UserProfile from './screens/UserProfile';
+import AddGuide from './screens/AddGuide';
+import UpdateGuide from './screens/UpdateGuide';
+import DeleteGuide from './screens/DeleteGuide';
+import CreateTraining from './screens/CreateTraining';
+import SendReminders from './screens/SendReminders';
+import GuidePerformance from './screens/GuidePerformance';
+import AdminProfile from './screens/AdminProfile';
 
 const Stack = createStackNavigator();
 
@@ -27,6 +45,24 @@ function App() {
         <Stack.Screen name="VisitorDashboard" component={VisitorDashboard} />
         <Stack.Screen name="ParkRoutes" component={ParkRouteScreen} />
         <Stack.Screen name="ParkHistory" component={ParkHistoryScreen} />
+        <Stack.Screen name="MustSeeSpot" component={MustSeeSpotScreen} />
+        <Stack.Screen name="Wildlife" component={Wildlife} />
+        <Stack.Screen name="Accommodations" component={Accommodations} />
+        <Stack.Screen name="Activities" component={Activities} />
+        <Stack.Screen name="VisitorRegister" component={VisitorRegister} />
+        <Stack.Screen name="UserRegister" component={UserRegister} />
+        <Stack.Screen name="Tranning" component={Tranning} />
+        <Stack.Screen name="Certification" component={Certification} />
+        <Stack.Screen name="Notifications" component={Notifications} />
+        <Stack.Screen name="AIBiodiversityScanner" component={AIBiodiversityScanner} />
+        <Stack.Screen name="UserProfile" component={UserProfile} />
+        <Stack.Screen name="AddGuide" component={AddGuide}  />
+        <Stack.Screen name="UpdateGuide" component={UpdateGuide}  />
+        <Stack.Screen name="DeleteGuide" component={DeleteGuide} />
+        <Stack.Screen name="CreateTraining" component={CreateTraining} />
+        <Stack.Screen name="SendReminders" component={SendReminders} />
+        <Stack.Screen name="GuidePerformance" component={GuidePerformance}  />
+        <Stack.Screen name="AdminProfile" component={AdminProfile} />
       </Stack.Navigator>
     </NavigationContainer>
   );

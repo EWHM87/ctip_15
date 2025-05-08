@@ -34,6 +34,10 @@ const VisitorLogin = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.navigate('HomePage')}>
           <Text style={styles.footerText}>Back to Home</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => navigation.navigate('VisitorRegister')}>
+          <Text style={styles.footerText}>Don’t have an account? Register</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
