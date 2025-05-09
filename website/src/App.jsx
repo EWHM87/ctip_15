@@ -29,6 +29,13 @@ import IoTSpeciesMonitor from './IoTSpeciesMonitor';
 import MyTrainingHistory from './MyTrainingHistory';
 import BiodiversityUpload from './BiodiversityUpload';
 
+import FeedbackReview from './FeedbackReview';
+import AITrainingRecommendations from './AITrainingRecommendations';
+import TrainingQuizBuilder from './TrainingQuizBuilder';
+import BiodiversityCamera from './BiodiversityCamera';
+import SpeciesDatabase from './SpeciesDatabase';
+
+
 function MainLayout({ user, onLogout, children }) {
   return (
     <div className="app-container">
@@ -182,6 +189,47 @@ function App() {
           </MainLayout>
         </ProtectedRoute>
       } />
+
+      <Route path="/feedback-review" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <FeedbackReview />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/ai-training-recommendations" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <AITrainingRecommendations />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/training-quiz-builder" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <TrainingQuizBuilder />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/biodiversity-camera" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <BiodiversityCamera />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/species-database" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <SpeciesDatabase />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
 
       {/* Forbidden and Fallback */}
       <Route path="/forbidden" element={<Forbidden />} />
