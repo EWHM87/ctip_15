@@ -27,6 +27,22 @@ function Dashboard() {
               <Link to="/notifications" className="btn btn-outline-success">🔔 Notifications</Link>
               <Link to="/my-training-history" className="btn btn-outline-success">📋 Training History</Link>
               <Link to="/biodiversity-upload" className="btn btn-outline-success">📷 Upload Species</Link>
+              <Link to="/guide-assessment" className="btn btn-outline-secondary">✅ Self-Assessment</Link>
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* Visitor View */}
+      {role === 'visitor' && (
+        <>
+          <section className="mt-4">
+            <h5>🌳 Visitor Portal</h5>
+            <div className="d-flex flex-wrap gap-3">
+              <Link to="/parks" className="btn btn-outline-success">🏞️ Explore Parks</Link>
+              <Link to="/wildlife" className="btn btn-outline-success">🐾 View Wildlife</Link>
+              <Link to="/activities" className="btn btn-outline-success">🎯 Activities</Link>
+              <Link to="/feedback" className="btn btn-outline-secondary">📝 Submit Feedback</Link>
             </div>
           </section>
         </>
@@ -50,11 +66,24 @@ function Dashboard() {
             </div>
 
             <h5>📊 Analytics & Tools</h5>
-            <div className="d-flex flex-wrap gap-2">
+            <div className="d-flex flex-wrap gap-2 mb-3">
               <Link to="/guide-performance" className="btn btn-outline-primary">📊 Guide Performance</Link>
               <Link to="/admin-notify" className="btn btn-outline-primary">📨 Send Notifications</Link>
               <Link to="/guide-activity-log" className="btn btn-outline-primary">🧾 Activity Log</Link>
               <Link to="/iot-species-monitor" className="btn btn-outline-primary">🌿 IoT Monitor</Link>
+            </div>
+
+            <h5>🤖 AI & Data Science Features</h5>
+            <div className="d-flex flex-wrap gap-2 mb-3">
+              <Link to="/feedback-review" className="btn btn-outline-info">📝 Visitor Feedback Review</Link>
+              <Link to="/ai-training-recommendations" className="btn btn-outline-info">🎯 Personalized Training Suggestions</Link>
+              <Link to="/training-quiz-builder" className="btn btn-outline-info">🧠 Build Training Quizzes</Link>
+            </div>
+
+            <h5>🌿 Biodiversity AI Tools</h5>
+            <div className="d-flex flex-wrap gap-2">
+              <Link to="/biodiversity-camera" className="btn btn-outline-success">📷 Species Identification Camera</Link>
+              <Link to="/species-database" className="btn btn-outline-success">📚 View Species Records</Link>
             </div>
           </section>
         </>

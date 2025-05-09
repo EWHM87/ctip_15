@@ -298,3 +298,129 @@ ul li {
 .card p {
   margin-bottom: 0.6rem;
 }
+
+/*FeedbackForm*/
+.feedback-form-container {
+  max-width: 700px;
+  margin: auto;
+  padding: 2rem;
+  background: #f9f9f9;
+  border-radius: 1rem;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+.feedback-form h2 {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.feedback-form label {
+  display: block;
+  margin-top: 1rem;
+  font-weight: 500;
+}
+
+.feedback-form input,
+.feedback-form select,
+.feedback-form textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 4px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.feedback-form textarea {
+  min-height: 80px;
+}
+
+.feedback-form button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: #28a745;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.feedback-form button:hover {
+  background: #218838;
+}
+
+.thank-you {
+  text-align: center;
+  font-size: 1.4rem;
+  margin-top: 2rem;
+  color: #28a745;
+}
+
+/*GuideSelfAssessment.jsx*/
+.guide-form-container {
+  max-width: 750px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #f0fdf4;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 128, 0, 0.1);
+}
+
+.guide-form-container h2 {
+  text-align: center;
+  margin-bottom: 1rem;
+  color: #14532d;
+}
+
+.guide-form-container p {
+  text-align: center;
+  font-size: 1rem;
+  color: #333;
+}
+
+.guide-feedback-form label {
+  display: block;
+  margin-top: 1rem;
+  font-weight: 600;
+  color: #064e3b;
+}
+
+.guide-feedback-form input,
+.guide-feedback-form select,
+.guide-feedback-form textarea {
+  width: 100%;
+  margin-top: 5px;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+}
+
+.guide-feedback-form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.guide-feedback-form button {
+  margin-top: 1.5rem;
+  background-color: #16a34a;
+  color: white;
+  font-weight: bold;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.guide-feedback-form button:hover {
+  background-color: #15803d;
+}
+
+.thank-you {
+  text-align: center;
+  color: #15803d;
+  font-size: 1.3rem;
+  margin-top: 3rem;
+}

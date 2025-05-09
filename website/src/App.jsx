@@ -29,6 +29,16 @@ import IoTSpeciesMonitor from './IoTSpeciesMonitor';
 import MyTrainingHistory from './MyTrainingHistory';
 import BiodiversityUpload from './BiodiversityUpload';
 
+import FeedbackReview from './FeedbackReview';
+import AITrainingRecommendations from './AITrainingRecommendations';
+import TrainingQuizBuilder from './TrainingQuizBuilder';
+import BiodiversityCamera from './BiodiversityCamera';
+import SpeciesDatabase from './SpeciesDatabase';
+
+import FeedbackForm from './FeedbackForm';
+import GuideSelfAssessment from './GuideSelfAssessment';
+
+
 function MainLayout({ user, onLogout, children }) {
   return (
     <div className="app-container">
@@ -179,6 +189,62 @@ function App() {
         <ProtectedRoute allowedRoles={['guide']}>
           <MainLayout user={user} onLogout={handleLogout}>
             <BiodiversityUpload />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/feedback-review" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <FeedbackReview />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/ai-training-recommendations" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <AITrainingRecommendations />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/training-quiz-builder" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <TrainingQuizBuilder />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/biodiversity-camera" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <BiodiversityCamera />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/species-database" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <SpeciesDatabase />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/feedback" element={
+        <ProtectedRoute allowedRoles={['visitor', 'guide']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <FeedbackForm />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/guide-assessment" element={
+        <ProtectedRoute allowedRoles={['guide']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <GuideSelfAssessment />
           </MainLayout>
         </ProtectedRoute>
       } />
