@@ -13,16 +13,32 @@ function Login({ onLogin }) {
     setCredentials(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const user = AuthService.login(credentials.username, credentials.password);
-    if (user) {
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    const response = await fetch('http://localhost:5000/api/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.message || 'Login failed');
+    } else {
+      AuthService.login(data.user.username, data.user.role); // update AuthService if needed
       onLogin();
       navigate('/dashboard');
-    } else {
-      setError('❌ Invalid username or password');
     }
-  };
+  } catch (err) {
+    setError('❌ Server error. Try again later.');
+  }
+};
+
 
   return (
     <>

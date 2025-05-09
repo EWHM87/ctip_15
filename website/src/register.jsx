@@ -17,18 +17,37 @@ function Register() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const { username, email, password } = formData;
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  const { username, email, password, role } = formData;
 
-    if (!username || !email || !password) {
-      setError('⚠️ All fields are required');
-      return;
+  if (!username || !email || !password) {
+    setError('⚠️ All fields are required');
+    return;
+  }
+
+  try {
+    const response = await fetch('http://localhost:5000/api/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.message || 'Registration failed');
+    } else {
+      alert('✅ Registered successfully!');
+      navigate('/login');
     }
+  } catch (err) {
+    setError('❌ Server error. Try again later.');
+  }
+};
 
-    console.log('Registering user:', formData);
-    navigate('/login');
-  };
 
   return (
     <>
