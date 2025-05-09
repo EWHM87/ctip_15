@@ -5,7 +5,8 @@ import {
   TextInput, 
   TouchableOpacity, 
   StyleSheet, 
-  SafeAreaView 
+  SafeAreaView, 
+  Alert 
 } from 'react-native';
 
 const VisitorRegister = ({ navigation }) => {
@@ -13,11 +14,29 @@ const VisitorRegister = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleRegister = () => {
-    // Add registration logic here
-    // Example: Save user data or connect to API
-    alert('Registration successful!');
-    navigation.navigate('VisitorLogin');
+  const handleRegister = async () => {
+    if (!name || !email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://10.0.2.2:3000/visitor/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        Alert.alert('Success', 'Registration successful!');
+        navigation.navigate('VisitorLogin');
+      } else {
+        Alert.alert('Error', data.message || 'Registration failed');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Server connection failed');
+    }
   };
 
   return (
