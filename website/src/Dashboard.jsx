@@ -27,7 +27,7 @@ function Dashboard() {
               <Link to="/notifications" className="btn btn-outline-success">🔔 Notifications</Link>
               <Link to="/my-training-history" className="btn btn-outline-success">📋 Training History</Link>
               <Link to="/biodiversity-upload" className="btn btn-outline-success">📷 Upload Species</Link>
-              <Link to="/feedback" className="btn btn-outline-secondary">📝 Submit Feedback</Link>
+              <Link to="/guide-assessment" className="btn btn-outline-secondary">✅ Self-Assessment</Link>
             </div>
           </section>
         </>

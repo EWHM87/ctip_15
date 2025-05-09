@@ -36,6 +36,7 @@ import BiodiversityCamera from './BiodiversityCamera';
 import SpeciesDatabase from './SpeciesDatabase';
 
 import FeedbackForm from './FeedbackForm';
+import GuideSelfAssessment from './GuideSelfAssessment';
 
 
 function MainLayout({ user, onLogout, children }) {
@@ -240,6 +241,13 @@ function App() {
         </ProtectedRoute>
       } />
 
+      <Route path="/guide-assessment" element={
+        <ProtectedRoute allowedRoles={['guide']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <GuideSelfAssessment />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
 
       {/* Forbidden and Fallback */}
       <Route path="/forbidden" element={<Forbidden />} />

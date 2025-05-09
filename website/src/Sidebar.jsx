@@ -33,7 +33,8 @@ function Sidebar({ role, onLogout }) {
               <li><NavLink to="/notifications" className={navClass}>🔔 Notifications</NavLink></li>
               <li><NavLink to="/my-training-history" className={navClass}>📋 Training History</NavLink></li>
               <li><NavLink to="/biodiversity-upload" className={navClass}>📷 Biodiversity Upload</NavLink></li>
-              <li><NavLink to="/feedback" className={navClass}>📝 Submit Feedback</NavLink></li>
+              <li><NavLink to="/guide-assessment" className={navClass}>✅ Self-Assessment</NavLink></li>
+
             </>
           )}
 
