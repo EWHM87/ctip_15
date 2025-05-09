@@ -5,18 +5,28 @@ const UserLogin = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
-    // Basic validation
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in both email and password');
       return;
     }
 
-    // Simulate successful login (replace with actual logic)
-    if (email === 'bryansong@gmail.com' && password === '123') {
-      navigation.navigate('UserDashboard');
-    } else {
-      Alert.alert('Error', 'Invalid email or password');
+    try {
+      const response = await fetch('http://10.0.2.2:3000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        Alert.alert('Success', 'Login successful');
+        navigation.navigate('UserDashboard'); // You can pass user data here too
+      } else {
+        Alert.alert('Error', data.message || 'Login failed');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Server connection failed');
     }
   };
 
@@ -24,7 +34,7 @@ const UserLogin = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>User Login</Text>
-        
+
         <TextInput
           style={styles.input}
           placeholder="Enter Email"
@@ -32,7 +42,7 @@ const UserLogin = ({ navigation }) => {
           onChangeText={setEmail}
           keyboardType="email-address"
         />
-        
+
         <TextInput
           style={styles.input}
           placeholder="Enter Password"
@@ -40,7 +50,7 @@ const UserLogin = ({ navigation }) => {
           onChangeText={setPassword}
           secureTextEntry
         />
-        
+
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
@@ -48,7 +58,7 @@ const UserLogin = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.navigate('HomePage')}>
           <Text style={styles.footerText}>Back to Home</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity onPress={() => navigation.navigate('UserRegister')}>
           <Text style={styles.footerText}>Don’t have an account? Register</Text>
         </TouchableOpacity>
