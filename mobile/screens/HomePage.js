@@ -1,65 +1,78 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-
 const HomePage = ({ navigation }) => {
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
+
   return (
     <View style={styles.container}>
-      {/* Main Content */}
-      <ScrollView style={styles.contentContainer}>
-        
-        {/* Logo Section */}
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('../images/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
+      {/* Sidebar Overlay (from left) */}
+      {isSidebarVisible && (
+        <View style={styles.sidebarOverlay}>
+          <View style={styles.verticalNavbar}>
+            <TouchableOpacity onPress={() => setIsSidebarVisible(false)} style={styles.verticalNavButton}>
+              <Ionicons name="close-outline" size={26} color="#fff" />
+              <Text style={styles.verticalLabel}>Close</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('HomePage')} style={styles.verticalNavButton}>
+              <Ionicons name="home-outline" size={24} color="#fff" />
+              <Text style={styles.verticalLabel}>Home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('VisitorLogin')} style={styles.verticalNavButton}>
+              <Ionicons name="person-outline" size={24} color="#fff" />
+              <Text style={styles.verticalLabel}>Visitor</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('UserLogin')} style={styles.verticalNavButton}>
+              <Ionicons name="person-circle-outline" size={24} color="#fff" />
+              <Text style={styles.verticalLabel}>User</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('AdminLogin')} style={styles.verticalNavButton}>
+              <Ionicons name="shield-checkmark-outline" size={24} color="#fff" />
+              <Text style={styles.verticalLabel}>Admin</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            onPress={() => setIsSidebarVisible(false)}
+            style={styles.overlayBackground}
           />
         </View>
+      )}
 
-        {/* Welcome Text */}
-        <Text style={styles.title}>Welcome to the Park!</Text>
+      {/* Main Content */}
+      <ScrollView style={styles.contentContainer}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            onPress={() => setIsSidebarVisible(!isSidebarVisible)}
+            style={styles.hamburgerInline}
+          >
+            <Ionicons name="menu-outline" size={30} color="#065f46" />
+          </TouchableOpacity>
+          <Text style={styles.title}>Welcome to the App!</Text>
+        </View>
 
-        {/* Interactive Map Section */}
+        {/* Interactive Map */}
         <View style={styles.card}>
           <Text style={styles.cardHeader}>🗺️ Interactive Map</Text>
-          <Image
-            source={require('../images/home.jpeg')}
-            style={styles.mapImage}
-            resizeMode="contain"
-          />
-
-          {/* Buttons */}
+          <Image source={require('../images/home.jpeg')} style={styles.mapImage} resizeMode="contain" />
           <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => navigation.navigate('ParkRoutes')}
-            >
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('ParkRoutes')}>
               <Ionicons name="navigate-outline" size={18} color="#fff" />
               <Text style={styles.buttonText}>Park Routes</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity style={styles.button}>
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('MustSeeSpot')}>
               <Ionicons name="star-outline" size={18} color="#fff" />
               <Text style={styles.buttonText}>Must-see Spots</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Park History Section */}
+        {/* Park History */}
         <View style={styles.card}>
           <Text style={styles.cardHeader}>📖 Park History</Text>
-          <Image
-            source={require('../images/parkhistory.jpeg')}
-            style={styles.historyImage}
-            resizeMode="contain"
-          />
+          <Image source={require('../images/parkhistory.jpeg')} style={styles.historyImage} resizeMode="contain" />
           <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => navigation.navigate('ParkHistory')}
-            >
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('ParkHistory')}>
               <Ionicons name="book-outline" size={18} color="#fff" />
               <Text style={styles.buttonText}>Park History</Text>
             </TouchableOpacity>
@@ -70,31 +83,24 @@ const HomePage = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Visitor Feedback Section */}
+        {/* Feedback
         <View style={styles.card}>
           <Text style={styles.cardHeader}>💬 Visitor Feedback</Text>
-          <Image
-            source={require('../images/feedbackphoto.jpeg')}
-            style={styles.feedbackImage}
-            resizeMode="contain"
-          />
+          <Image source={require('../images/feedbackphoto.jpeg')} style={styles.feedbackImage} resizeMode="contain" />
           <View style={styles.buttonRow}>
             <TouchableOpacity style={styles.button}>
               <Ionicons name="star-outline" size={18} color="#fff" />
               <Text style={styles.buttonText}>Rate Guides</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => navigation.navigate('WriteReview')}
-            >
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('WriteReview')}>
               <Ionicons name="chatbox-ellipses-outline" size={18} color="#fff" />
               <Text style={styles.buttonText}>Write Review</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </View> */}
       </ScrollView>
 
-      {/* Navbar */}
+      {/* Bottom Navbar */}
       <View style={styles.navbar}>
         <TouchableOpacity onPress={() => navigation.navigate('HomePage')} style={styles.navButton}>
           <Ionicons name="home-outline" size={26} color="#fff" />
@@ -118,30 +124,61 @@ const HomePage = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1, backgroundColor: '#ecfdf5' },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+    marginTop: 20,
+  },
+  hamburgerInline: {
+    padding: 6,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    elevation: 4,
+  },
+  sidebarOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row', // Sidebar on the left
+    zIndex: 5,
+  },
+  overlayBackground: {
     flex: 1,
-    backgroundColor: '#ecfdf5',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  verticalNavbar: {
+    width: 200,
+    backgroundColor: '#065f46',
+    paddingTop: 60,
+    paddingHorizontal: 10,
+  },
+  verticalNavButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
+  verticalLabel: {
+    color: '#fff',
+    fontSize: 14,
+    marginLeft: 10,
   },
   contentContainer: {
     flex: 1,
-    marginBottom: 70,
     paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  logo: {
-    width: '100%',
-    height: 80,
-    maxWidth: 400,
+    paddingTop: 10,
+    marginBottom: 70,
   },
   title: {
+    marginLeft: 13,
     fontSize: 28,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
     color: '#065f46',
   },
   card: {

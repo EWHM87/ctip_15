@@ -1,25 +1,38 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
 
 const UserLogin = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    // Add login logic here
-    navigation.navigate('UserDashboard');
+    // Basic validation
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in both email and password');
+      return;
+    }
+
+    // Simulate successful login (replace with actual logic)
+    if (email === 'bryansong@gmail.com' && password === '123') {
+      navigation.navigate('UserDashboard');
+    } else {
+      Alert.alert('Error', 'Invalid email or password');
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>User Login</Text>
+        
         <TextInput
           style={styles.input}
           placeholder="Enter Email"
           value={email}
           onChangeText={setEmail}
+          keyboardType="email-address"
         />
+        
         <TextInput
           style={styles.input}
           placeholder="Enter Password"
@@ -27,12 +40,17 @@ const UserLogin = ({ navigation }) => {
           onChangeText={setPassword}
           secureTextEntry
         />
+        
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate('HomePage')}>
           <Text style={styles.footerText}>Back to Home</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity onPress={() => navigation.navigate('UserRegister')}>
+          <Text style={styles.footerText}>Don’t have an account? Register</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
