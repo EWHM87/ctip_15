@@ -33,6 +33,18 @@ function Sidebar({ role, onLogout }) {
               <li><NavLink to="/notifications" className={navClass}>🔔 Notifications</NavLink></li>
               <li><NavLink to="/my-training-history" className={navClass}>📋 Training History</NavLink></li>
               <li><NavLink to="/biodiversity-upload" className={navClass}>📷 Biodiversity Upload</NavLink></li>
+              <li><NavLink to="/feedback" className={navClass}>📝 Submit Feedback</NavLink></li>
+            </>
+          )}
+
+          {/* 📁 VISITOR TOOLS */}
+          {role === 'visitor' && (
+            <>
+              <li className="mt-3 text-uppercase text-white-50 small px-2">Visitor Tools</li>
+              <li><NavLink to="/parks" className={navClass}>🏞️ Explore Parks</NavLink></li>
+              <li><NavLink to="/wildlife" className={navClass}>🐾 View Wildlife</NavLink></li>
+              <li><NavLink to="/activities" className={navClass}>🎯 Activities</NavLink></li>
+              <li><NavLink to="/feedback" className={navClass}>📝 Submit Feedback</NavLink></li>
             </>
           )}
 

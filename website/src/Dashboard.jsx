@@ -27,6 +27,22 @@ function Dashboard() {
               <Link to="/notifications" className="btn btn-outline-success">🔔 Notifications</Link>
               <Link to="/my-training-history" className="btn btn-outline-success">📋 Training History</Link>
               <Link to="/biodiversity-upload" className="btn btn-outline-success">📷 Upload Species</Link>
+              <Link to="/feedback" className="btn btn-outline-secondary">📝 Submit Feedback</Link>
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* Visitor View */}
+      {role === 'visitor' && (
+        <>
+          <section className="mt-4">
+            <h5>🌳 Visitor Portal</h5>
+            <div className="d-flex flex-wrap gap-3">
+              <Link to="/parks" className="btn btn-outline-success">🏞️ Explore Parks</Link>
+              <Link to="/wildlife" className="btn btn-outline-success">🐾 View Wildlife</Link>
+              <Link to="/activities" className="btn btn-outline-success">🎯 Activities</Link>
+              <Link to="/feedback" className="btn btn-outline-secondary">📝 Submit Feedback</Link>
             </div>
           </section>
         </>

@@ -35,6 +35,8 @@ import TrainingQuizBuilder from './TrainingQuizBuilder';
 import BiodiversityCamera from './BiodiversityCamera';
 import SpeciesDatabase from './SpeciesDatabase';
 
+import FeedbackForm from './FeedbackForm';
+
 
 function MainLayout({ user, onLogout, children }) {
   return (
@@ -226,6 +228,14 @@ function App() {
         <ProtectedRoute allowedRoles={['admin']}>
           <MainLayout user={user} onLogout={handleLogout}>
             <SpeciesDatabase />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/feedback" element={
+        <ProtectedRoute allowedRoles={['visitor', 'guide']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <FeedbackForm />
           </MainLayout>
         </ProtectedRoute>
       } />
