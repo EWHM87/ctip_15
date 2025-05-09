@@ -1,35 +1,25 @@
-const fakeUsers = {
-  'admin':   { password: 'adminpass',  role: 'admin' },
-  'guide':   { password: 'guidepass',  role: 'guide' },
-  'visitor': { password: 'visitorpass',role: 'visitor' }
-};
-
 const AuthService = {
-  login(username, password) {
-    const user = fakeUsers[username];
-    if (user && user.password === password) {
-      localStorage.setItem('token', 'fake-jwt-token');
-      localStorage.setItem('role', user.role);
-      localStorage.setItem('username', username);
-      return true;
-    }
-    return false;
+  login(username, role) {
+    const user = { username, role };
+    localStorage.setItem('user', JSON.stringify(user));
+    return user;
   },
+
   logout() {
-    localStorage.clear();
+    localStorage.removeItem('user');
   },
+
   isLoggedIn() {
-    return localStorage.getItem('token') !== null;
+    return localStorage.getItem('user') !== null;
   },
-  getRole() {
-    return localStorage.getItem('role');
-  },
+
   getCurrentUser() {
-    if (!this.isLoggedIn()) return null;
-    return {
-      username: localStorage.getItem('username'),
-      role: localStorage.getItem('role')
-    };
+    return JSON.parse(localStorage.getItem('user'));
+  },
+
+  getRole() {
+    const user = JSON.parse(localStorage.getItem('user'));
+    return user?.role || null;
   }
 };
 
