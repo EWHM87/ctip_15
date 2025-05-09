@@ -12,26 +12,35 @@ function RegisterGuide() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage('');
 
-    // Simulate delay (API call)
-    setTimeout(() => {
-      console.log('✅ Guide registered:', formData);
+    try {
+      const response = await fetch('http://localhost:5000/api/register-guide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
 
-      // Optionally store in localStorage (demo)
-      const prevGuides = JSON.parse(localStorage.getItem('registeredGuides')) || [];
-      localStorage.setItem('registeredGuides', JSON.stringify([...prevGuides, formData]));
+      const data = await response.json();
 
-      setIsSubmitting(false);
-      setMessage('✅ Guide registered successfully!');
-      setFormData({ name: '', email: '', role: 'guide' });
-    }, 1000);
+      if (response.ok) {
+        setMessage(data.message || '✅ Guide registered successfully!');
+        setFormData({ name: '', email: '', role: 'guide' });
+      } else {
+        setMessage(data.message || '❌ Registration failed');
+      }
+    } catch (error) {
+      console.error('❌ Network error:', error);
+      setMessage('❌ Network error. Please try again.');
+    }
+
+    setIsSubmitting(false);
   };
 
   return (

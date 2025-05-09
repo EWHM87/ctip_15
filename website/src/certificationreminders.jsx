@@ -1,11 +1,16 @@
-import React from 'react';
-
-const reminders = [
-  { name: 'Alice Tan', cert: 'Eco-tourism Ethics', due: '2024-05-01' },
-  { name: 'Mark Lee', cert: 'Wildlife Handling', due: '2024-06-10' },
-];
+import React, { useEffect, useState } from 'react';
 
 function CertificationReminders() {
+  const [reminders, setReminders] = useState([]);
+  const BASE_URL = 'http://localhost:5000';
+
+  useEffect(() => {
+    fetch(`${BASE_URL}/api/certifications/reminders`)
+      .then(res => res.json())
+      .then(setReminders)
+      .catch(err => console.error('❌ Error loading reminders:', err));
+  }, []);
+
   return (
     <div className="container mt-4">
       <h2>Certification Renewal Reminders</h2>
@@ -21,8 +26,8 @@ function CertificationReminders() {
           {reminders.map((item, index) => (
             <tr key={index}>
               <td>{item.name}</td>
-              <td>{item.cert}</td>
-              <td>{item.due}</td>
+              <td>{item.certification_name}</td>
+              <td>{item.expiry_date}</td>
             </tr>
           ))}
         </tbody>

@@ -1,25 +1,44 @@
 import React, { useEffect, useState } from 'react';
 
-// Dummy data for demonstration — replace with real API later
-const dummyGuides = [
-  { id: 1, name: 'John Doe', email: 'john@example.com', certifications: ['Eco-tourism', 'Wildlife'] },
-  { id: 2, name: 'Jane Smith', email: 'jane@example.com', certifications: [] },
-  { id: 3, name: 'Adam Lee', email: 'adam@example.com', certifications: ['Biodiversity'] },
-];
-
 function ManageGuides() {
   const [guides, setGuides] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
+  // Replace with your actual backend IP
+  const BASE_URL = 'http://localhost:5000';
+
+  // Fetch guides from backend
   useEffect(() => {
-    // Simulate fetching data
-    setGuides(dummyGuides);
+    fetch(`${BASE_URL}/api/manage-guides`)
+      .then((res) => res.json())
+      .then((data) => {
+        setGuides(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('❌ Error fetching guides:', err);
+        setError('Failed to fetch guides');
+        setLoading(false);
+      });
   }, []);
 
+  // Handle guide deletion
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to remove this guide?')) {
-      setGuides(prev => prev.filter(g => g.id !== id));
-      alert('Guide removed successfully!');
-    }
+    if (!window.confirm('Are you sure you want to remove this guide?')) return;
+
+    fetch(`${BASE_URL}/api/manage-guides/${id}`, {
+      method: 'DELETE',
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        alert(data.message || 'Guide removed successfully!');
+        setGuides((prev) => prev.filter((guide) => guide.guide_id !== id));
+      })
+      .catch((err) => {
+        console.error('❌ Error deleting guide:', err);
+        alert('Failed to delete guide');
+      });
   };
 
   return (
@@ -27,7 +46,11 @@ function ManageGuides() {
       <h2>👥 Manage Guides</h2>
       <p className="text-muted">This section is accessible to admins only.</p>
 
-      {guides.length === 0 ? (
+      {loading ? (
+        <div className="alert alert-info mt-4">Loading guides...</div>
+      ) : error ? (
+        <div className="alert alert-danger mt-4">{error}</div>
+      ) : guides.length === 0 ? (
         <div className="alert alert-info mt-4">No guides registered yet.</div>
       ) : (
         <table className="table table-striped mt-3">
@@ -41,12 +64,15 @@ function ManageGuides() {
           </thead>
           <tbody>
             {guides.map((guide) => (
-              <tr key={guide.id}>
+              <tr key={guide.guide_id}>
                 <td>{guide.name}</td>
                 <td>{guide.email}</td>
-                <td>{guide.certifications.length}</td>
+                <td>{guide.certifications ? guide.certifications : '—'}</td>
                 <td>
-                  <button className="btn btn-sm btn-danger" onClick={() => handleDelete(guide.id)}>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => handleDelete(guide.guide_id)}
+                  >
                     🗑️ Delete
                   </button>
                 </td>

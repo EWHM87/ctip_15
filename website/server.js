@@ -83,7 +83,6 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-
 // ==============================
 // POST /api/login
 // ==============================
@@ -107,6 +106,368 @@ app.post('/api/login', (req, res) => {
     }
 
     res.json({ message: 'Login successful', user: { username: user.username, role: user.role } });
+  });
+});
+
+// ==============================
+// Create Parks info table (dummy*)
+// ==============================
+
+const createParkInfoTable = `
+CREATE TABLE IF NOT EXISTS park_info (
+  park_id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  location VARCHAR(100) NOT NULL,
+  description TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+`;
+
+db.query(createParkInfoTable, (err) => {
+  if (err) {
+    console.error('❌ Error creating park_info table:', err);
+  } else {
+    console.log('✅ park_info table ready');
+  }
+});
+
+// ==============================
+// PARK INFO ROUTES
+// ==============================
+
+// GET all parks
+app.get('/api/parks', (req, res) => {
+  db.query('SELECT * FROM park_info', (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching parks:', err);
+      return res.status(500).json({ message: 'Error fetching park data' });
+    }
+    res.json(results);
+  });
+});
+
+// POST a new park (optional: for admin use)
+app.post('/api/parks', (req, res) => {
+  const { name, location, description } = req.body;
+  if (!name || !location || !description) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+
+  const sql = `INSERT INTO park_info (name, location, description) VALUES (?, ?, ?)`;
+  db.query(sql, [name, location, description], (err, result) => {
+    if (err) {
+      console.error('❌ Error inserting park:', err);
+      return res.status(500).json({ message: 'Error adding park' });
+    }
+    res.status(201).json({ message: 'Park added successfully', parkId: result.insertId });
+  });
+});
+
+// ==============================
+// Create training_available table
+// ==============================
+
+const createTrainingTable = `
+CREATE TABLE IF NOT EXISTS training_available (
+  training_id INT AUTO_INCREMENT PRIMARY KEY,
+  topic VARCHAR(255) NOT NULL,
+  date DATE NOT NULL
+) ENGINE=InnoDB;
+`;
+
+db.query(createTrainingTable, (err) => {
+  if (err) console.error('❌ Error creating training_available table:', err);
+  else console.log('✅ training_available table ready');
+});
+
+// POST /api/training - Insert a new training session
+app.post('/api/training-available', (req, res) => {
+  const { topic, date } = req.body;
+
+  const sql = `INSERT INTO training_available (topic, date) VALUES (?, ?)`;
+  db.query(sql, [topic, date], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Insert error', error: err });
+    res.status(201).json({ message: 'Training available created', training_id: result.insertId });
+  });
+});
+
+// GET /api/training - Fetch all training sessions
+app.get('/api/training-available', (req, res) => {
+  db.query(`SELECT * FROM training_available`, (err, results) => {
+    if (err) return res.status(500).json({ message: 'Fetch error', error: err });
+    res.json(results);
+  });
+});
+
+// ==============================
+// Create training_schedule table
+// ==============================
+
+const createTrainingScheduleTable = `
+CREATE TABLE IF NOT EXISTS schedule_training (
+  schedule_id INT AUTO_INCREMENT PRIMARY KEY,
+  topic VARCHAR(255) NOT NULL,
+  date DATE NOT NULL
+);`;
+
+db.query(createTrainingScheduleTable, (err) => {
+  if (err) console.error('❌ Error creating training_schedule table:', err);
+  else console.log('✅ training_schedule table ready');
+});
+
+// POST /api/training-schedule - Insert a new training schedule
+app.post('/api/scheduletraining', (req, res) => {
+  const { topic, date } = req.body;
+
+  if (!topic || !date) {
+    return res.status(400).json({ message: 'Topic and Date are required' });
+  }
+
+  const sql = 'INSERT INTO schedule_training (topic, date) VALUES (?, ?)';
+  db.query(sql, [topic, date], (err, result) => {
+    if (err) {
+      console.error('❌ Error inserting training:', err);
+      return res.status(500).json({ message: 'Error inserting training', error: err });
+    }
+
+    res.status(201).json({
+      message: 'Training scheduled successfully',
+      schedule_id: result.insertId,
+      topic,
+      date,
+    });
+  });
+});
+
+// GET /api/scheduletraining - Fetch scheduled trainings
+app.get('/api/scheduletraining', (req, res) => {
+  const sql = 'SELECT * FROM schedule_training ORDER BY date';
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error('❌ Error fetching trainings:', err);
+      return res.status(500).json({ message: 'Error fetching trainings', error: err });
+    }
+    res.status(200).json(result);
+  });
+});
+
+// ==============================
+// Create training_history table
+// ==============================
+
+const createGuideTrainingTable = `
+CREATE TABLE IF NOT EXISTS training_history (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  guide_id INT NOT NULL,
+  schedule_id INT NOT NULL,
+  status ENUM('Upcoming', 'Completed') DEFAULT 'Upcoming',
+  FOREIGN KEY (schedule_id) REFERENCES schedule_training(schedule_id)
+);
+`;
+
+db.query(createGuideTrainingTable, (err) => {
+  if (err) {
+    console.error('❌ Error creating guide_training table:', err);
+  } else {
+    console.log('✅ guide_training table ready');
+  }
+});
+
+// GET /api/my-training/:guideId - Get training history for a guide
+app.get('/api/my-training/:guideId', (req, res) => {
+  const guideId = req.params.guideId;
+
+  const sql = `
+    SELECT st.topic, st.date, gt.status
+    FROM training_history gt
+    JOIN schedule_training st ON gt.schedule_id = st.schedule_id
+    WHERE gt.guide_id = ?
+    ORDER BY st.date DESC
+  `;
+
+  db.query(sql, [guideId], (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching training history:', err);
+      return res.status(500).json({ message: 'Fetch error', error: err });
+    }
+    res.json(results);
+  });
+});
+
+// POST /api/guide-training - Sign up a guide for a training session
+app.post('/api/guide-training', (req, res) => {
+  const { guide_id, schedule_id } = req.body;
+
+  const sql = `
+    INSERT INTO training_history (guide_id, schedule_id, status)
+    VALUES (?, ?, 'Upcoming')
+  `;
+
+  db.query(sql, [guide_id, schedule_id], (err, result) => {
+    if (err) {
+      console.error('❌ MySQL Error during INSERT:', err);
+      return res.status(500).json({ message: 'Signup error', error: err });
+    }
+    res.status(201).json({ message: 'Guide signed up for training', id: result.insertId });
+  });
+});
+
+// ==============================
+// Create manage_guides table
+// ==============================
+
+const createManageGuidesTable = `
+CREATE TABLE IF NOT EXISTS manage_guides (
+    guide_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    certifications TEXT DEFAULT ''
+)ENGINE=InnoDB;
+`;
+
+db.query(createManageGuidesTable, (err) => {
+    if (err) console.error('❌ Error creating manage_guides table:', err);
+    else console.log('✅ manage_guides table ready');
+});
+
+// GET /api/manage-guides - Fetch all guides
+app.post('/api/register-guide', (req, res) => {
+  const { name, email, role = 'guide' } = req.body;
+
+  if (!name || !email) {
+    return res.status(400).json({ message: 'Name and Email are required' });
+  }
+
+  const sql = `INSERT INTO manage_guides (name, email) VALUES (?, ?)`;
+  db.query(sql, [name, email], (err, result) => {
+    if (err) {
+      console.error('❌ Error adding guide:', err);
+      return res.status(500).json({ message: 'Failed to add guide', error: err });
+    }
+    res.status(201).json({ message: 'Guide registered successfully', guide_id: result.insertId });
+  });
+});
+
+// GET /api/manage-guides - Fetch all guides
+app.get('/api/manage-guides', (req, res) => {
+  db.query('SELECT * FROM manage_guides', (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching guides:', err);
+      return res.status(500).json({ message: 'Failed to fetch guides' });
+    }
+    res.json(results);
+  });
+});
+
+// DELETE /api/manage-guides/:guideId - Delete a guide
+app.delete('/api/manage-guides/:id', (req, res) => {
+  const guideId = req.params.id;
+
+  db.query('DELETE FROM manage_guides WHERE guide_id = ?', [guideId], (err, result) => {
+    if (err) {
+      console.error('❌ Error deleting guide:', err);
+      return res.status(500).json({ message: 'Delete failed', error: err });
+    }
+    res.json({ message: 'Guide deleted successfully' });
+  });
+});
+
+// ==============================
+// Create guide_certifications table
+// ==============================
+const createCertificationsTable = `
+CREATE TABLE IF NOT EXISTS guide_certifications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  guide_id INT NOT NULL,
+  certification_name VARCHAR(255) NOT NULL,
+  expiry_date DATE NOT NULL,
+  status ENUM('Valid', 'Expiring Soon', 'Expired') DEFAULT 'Valid',
+  FOREIGN KEY (guide_id) REFERENCES manage_guides(guide_id)
+) ENGINE=InnoDB;
+`;
+
+db.query(createCertificationsTable, (err) => {
+  if (err) console.error('❌ Error creating guide_certifications table:', err);
+  else console.log('✅ guide_certifications table ready');
+});
+
+// POST /api/guide-certifications - Add a certification for a guide
+app.post('/api/certifications', (req, res) => {
+  const { guide_id, certification_name, expiry_date, status = 'Valid' } = req.body;
+
+  if (!guide_id || !certification_name || !expiry_date) {
+    return res.status(400).json({ message: 'Missing required fields' });
+  }
+
+  const sql = `
+    INSERT INTO guide_certifications (guide_id, certification_name, expiry_date, status)
+    VALUES (?, ?, ?, ?)
+  `;
+
+  db.query(sql, [guide_id, certification_name, expiry_date, status], (err, result) => {
+    if (err) {
+      console.error('❌ Insert error:', err);
+      return res.status(500).json({ message: 'Failed to assign certification', error: err });
+    }
+    res.status(201).json({ message: 'Certification assigned', id: result.insertId });
+  });
+});
+
+// GET /api/guide-certifications/:guideId - Get certifications for a guide
+app.get('/api/certifications/:guide_id', (req, res) => {
+  const guideId = req.params.guide_id;
+
+  const sql = `
+    SELECT certification_name, expiry_date, status
+    FROM guide_certifications
+    WHERE guide_id = ?
+  `;
+
+  db.query(sql, [guideId], (err, results) => {
+    if (err) {
+      console.error('❌ Fetch error:', err);
+      return res.status(500).json({ message: 'Failed to fetch certifications', error: err });
+    }
+    res.json(results);
+  });
+});
+
+//PUT /api/guide-certifications/:id - Update a certification
+app.put('/api/certifications/:id', (req, res) => {
+  const id = req.params.id;
+  const { certification_name, expiry_date, status } = req.body;
+
+  const sql = `
+    UPDATE guide_certifications
+    SET certification_name = ?, expiry_date = ?, status = ?
+    WHERE id = ?
+  `;
+
+  db.query(sql, [certification_name, expiry_date, status, id], (err) => {
+    if (err) {
+      console.error('❌ Update error:', err);
+      return res.status(500).json({ message: 'Failed to update certification', error: err });
+    }
+    res.json({ message: 'Certification updated' });
+  });
+});
+
+// GET /api/certifications/reminders - reminders for certifications due soon
+app.get('/api/certifications/reminders', (req, res) => {
+  const sql = `
+    SELECT g.name, c.certification_name, c.expiry_date
+    FROM guide_certifications c
+    JOIN manage_guides g ON c.guide_id = g.guide_id
+    WHERE c.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+    ORDER BY c.expiry_date ASC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('❌ Reminder fetch error:', err);
+      return res.status(500).json({ message: 'Failed to fetch reminders', error: err });
+    }
+    res.json(results);
   });
 });
 

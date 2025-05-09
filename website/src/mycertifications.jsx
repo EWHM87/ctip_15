@@ -1,11 +1,18 @@
-import React from 'react';
-
-const myCerts = [
-  { title: 'Sustainable Tourism', status: 'Valid', expires: '2025-01-15' },
-  { title: 'First Aid Training', status: 'Expiring Soon', expires: '2024-06-01' },
-];
+import React, { useEffect, useState } from 'react';
+import AuthService from './auth';
 
 function MyCertifications() {
+  const [certs, setCerts] = useState([]);
+  const guideId = AuthService.getUserId();
+  const BASE_URL = 'http://localhost:5000';
+
+  useEffect(() => {
+    fetch(`${BASE_URL}/api/certifications/${guideId}`)
+      .then(res => res.json())
+      .then(setCerts)
+      .catch(err => console.error('❌ Error fetching certs:', err));
+  }, [guideId]);
+
   return (
     <div className="container mt-4">
       <h2>My Certifications</h2>
@@ -18,11 +25,11 @@ function MyCertifications() {
           </tr>
         </thead>
         <tbody>
-          {myCerts.map((c, i) => (
+          {certs.map((c, i) => (
             <tr key={i}>
-              <td>{c.title}</td>
+              <td>{c.certification_name}</td>
               <td>{c.status}</td>
-              <td>{c.expires}</td>
+              <td>{c.expiry_date}</td>
             </tr>
           ))}
         </tbody>
