@@ -1,11 +1,29 @@
+require('dotenv').config();
+
 const express = require('express');
 const mysql = require('mysql2');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 
+const express = require('express');
+const helmet = require('helmet');
+const mysql = require('mysql2');
+const bcrypt = require('bcryptjs');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+
+// 1️⃣ Apply Helmet before any other middleware
+app.use(helmet());
+
+// 2️⃣ Configure remaining middleware
+app.use(cors());
+app.use(bodyParser.json());
+
+// ...rest of your routes below...
 
 // Middleware
 app.use(cors());
