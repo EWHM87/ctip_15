@@ -2,6 +2,7 @@
 require('dotenv').config();
 
 // 2️⃣ Pull in your single set of dependencies
+const { body, validationResult } = require('express-validator');
 const express    = require('express');
 const helmet     = require('helmet');
 const mysql      = require('mysql2');
@@ -12,10 +13,33 @@ const bodyParser = require('body-parser');
 const app  = express();
 const PORT = process.env.PORT || 5000;
 
+// —— LOCKED-DOWN CORS ——
 // 2️⃣ Security + parsing middleware (ONLY once each)
 app.use(helmet());
-app.use(cors());
+
+// —— LOCKED-DOWN CORS —— 
+const allowedOrigins = [
+  'http://localhost:19006',
+  'http://localhost:3000',
+  'https://your-frontend-domain.com'
+];
+
+app.use(cors({
+  origin: (incomingOrigin, callback) => {
+    // allow server-to-server tools (no origin)
+    if (!incomingOrigin) return callback(null, true);
+
+    if (allowedOrigins.includes(incomingOrigin)) {
+      return callback(null, true);
+    }
+    callback(new Error(`⚠️ CORS blocked for ${incomingOrigin}`), false);
+  },
+  credentials: true
+}));
+
+// now JSON parser
 app.use(bodyParser.json());
+
 
 // 4️⃣ MySQL Connection
 const db = mysql.createConnection({
@@ -57,90 +81,81 @@ db.query(createUsersTable, (err, result) => {
 // POST /api/register
 // ==============================
 
-app.post('/api/register', async (req, res) => {
-  const { username, email, password, role } = req.body;
+app.post(
+  '/api/register',
+  [
+    body('username')
+      .trim()
+      .isLength({ min: 3 }).withMessage('Username must be at least 3 characters')
+      .isAlphanumeric().withMessage('Username must be letters and numbers only'),
+    body('email')
+      .isEmail().withMessage('Must be a valid email')
+      .normalizeEmail(),
+    body('password')
+      .isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+    body('role')
+      .optional()
+      .isIn(['admin','guide','visitor']).withMessage('Invalid role')
+  ],
+  async (req, res) => {
+    // 1️⃣ Validation check
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
 
-  if (!username || !email || !password) {
-    return res.status(400).json({ message: 'Missing fields' });
-  }
-
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const sql = `INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`;
-    db.query(sql, [username, email, hashedPassword, role], (err, result) => {
-      if (err) {
-        if (err.code === 'ER_DUP_ENTRY') {
-          return res.status(400).json({ message: 'Username or email already exists' });
-        }
-        return res.status(500).json({ message: 'DB insert failed', error: err });
-      }
-
-      const newUserId = result.insertId;
-
-      // ✅ Also insert into manage_guides if role is guide
-      if (role === 'guide') {
-        const insertGuideSQL = `INSERT INTO manage_guides (guide_id, name, email) VALUES (?, ?, ?)`;
-        db.query(insertGuideSQL, [newUserId, username, email], (guideErr) => {
-          if (guideErr) {
-            console.error('❌ Error inserting into manage_guides:', guideErr);
-            return res.status(500).json({ message: 'User created, but guide insert failed' });
+    // 2️⃣ Your existing registration logic goes here:
+    const { username, email, password, role } = req.body;
+    try {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const sql = `INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`;
+      db.query(sql, [username, email, hashedPassword, role], (err, result) => {
+        if (err) {
+          if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ message: 'Username or email already exists' });
           }
-
-          return res.status(201).json({ message: 'Guide registered successfully' });
-        });
-      } else {
-        return res.status(201).json({ message: 'User registered successfully' });
-      }
-    });
-  } catch (error) {
-    console.error('❌ Server error:', error);
-    res.status(500).json({ message: 'Server error during registration' });
+          return res.status(500).json({ message: 'DB insert failed', error: err });
+        }
+        const newUserId = result.insertId;
+        if (role === 'guide') {
+          const insertGuideSQL = `INSERT INTO manage_guides (guide_id, name, email) VALUES (?, ?, ?)`;
+          db.query(insertGuideSQL, [newUserId, username, email], (guideErr) => {
+            if (guideErr) {
+              console.error('❌ Error inserting into manage_guides:', guideErr);
+              return res.status(500).json({ message: 'User created, but guide insert failed' });
+            }
+            return res.status(201).json({ message: 'Guide registered successfully' });
+          });
+        } else {
+          return res.status(201).json({ message: 'User registered successfully' });
+        }
+      });
+    } catch (error) {
+      console.error('❌ Server error:', error);
+      res.status(500).json({ message: 'Server error during registration' });
+    }
   }
-});
+);
 
 // ==============================
 // POST /api/login
 // ==============================
 
-app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
+app.post(
+  '/api/login',
+  [
+    body('username').trim().notEmpty().withMessage('Username is required'),
+    body('password').notEmpty().withMessage('Password is required')
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
 
-  if (!username || !password) {
-    return res.status(400).json({ message: 'Username and password are required' });
+    // ...your existing login logic
   }
-
-  // Step 1: Find user by username
-  const sql = `SELECT * FROM users WHERE username = ?`;
-  db.query(sql, [username], async (err, results) => {
-    if (err) {
-      console.error('❌ Database error during login:', err);
-      return res.status(500).json({ message: 'Server error' });
-    }
-
-    if (results.length === 0) {
-      return res.status(401).json({ message: 'User not found' });
-    }
-
-    const user = results[0];
-
-    // Step 2: Compare passwords
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Incorrect password' });
-    }
-
-    // Step 3: Respond with user info (including ID)
-    return res.status(200).json({
-      message: 'Login successful',
-      user: {
-        id: user.id,               // ✅ Needed by AuthService
-        username: user.username,
-        role: user.role
-      }
-    });
-  });
-});
+);
 
 
 // ==============================
@@ -540,6 +555,16 @@ app.get('/api/certifications/reminders', (req, res) => {
     res.json(results);
   });
 });
+
+// 5️⃣ Centralized error-handler
+app.use((err, req, res, next) => {
+  if (err.message?.startsWith('⚠️ CORS blocked')) {
+    return res.status(403).json({ error: err.message });
+  }
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
 
 // Start server
 app.listen(PORT, () => {
