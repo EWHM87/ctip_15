@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { CommonActions } from '@react-navigation/native';
 
 const AdminLogin = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -31,9 +32,19 @@ const AdminLogin = ({ navigation }) => {
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('HomePage')}>
-          <Text style={styles.footerText}>Back to Home</Text>
-        </TouchableOpacity>
+        <TouchableOpacity
+                onPress={() => {
+                  navigation.dispatch(
+                    CommonActions.reset({
+                      index: 0,
+                      routes: [{ name: 'HomePage' }],
+                    })
+                  );
+                }}
+                style={styles.footerButton} // Use your preferred styling
+                >
+                  <Text style={styles.footerText}>Back to Home</Text>
+          </TouchableOpacity>
       </View>
     </SafeAreaView>
   );

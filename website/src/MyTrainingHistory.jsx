@@ -1,15 +1,25 @@
-import React, { useState } from 'react';
-
-const dummyHistory = [
-  { topic: 'Eco-tourism Basics', date: '2024-04-10', status: 'Completed' },
-  { topic: 'Wildlife Ethics', date: '2024-06-10', status: 'Upcoming' },
-  { topic: 'Flora Protection', date: '2024-07-15', status: 'Upcoming' }
-];
+import React, { useState, useEffect } from 'react';
+import AuthService from './auth';
 
 function MyTrainingHistory() {
   const [filter, setFilter] = useState('All');
+  const [history, setHistory] = useState([]);
+  const guideId = AuthService.getUserId();
 
-  const filtered = dummyHistory.filter(t => filter === 'All' || t.status === filter);
+  useEffect(() => {
+    fetch(`/api/my-training/${guideId}`)
+      .then(res => res.json())
+      .then(data => setHistory(data))
+      .catch(err => console.error('❌ Error fetching training history:', err));
+  }, [guideId]);
+
+  const filtered = history.filter(t => filter === 'All' || t.status === filter);
+
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString(undefined, {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
+  };
 
   return (
     <div className="container mt-4">
@@ -35,7 +45,7 @@ function MyTrainingHistory() {
           {filtered.map((t, i) => (
             <tr key={i}>
               <td>{t.topic}</td>
-              <td>{t.date}</td>
+              <td>{formatDate(t.date)}</td>
               <td>{t.status === 'Completed' ? '✅ Completed' : '📅 Upcoming'}</td>
             </tr>
           ))}

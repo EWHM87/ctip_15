@@ -9,6 +9,9 @@ import {
   Alert 
 } from 'react-native';
 
+import { CommonActions } from '@react-navigation/native';
+
+
 const VisitorLogin = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -62,7 +65,17 @@ const VisitorLogin = ({ navigation }) => {
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('HomePage')}>
+        <TouchableOpacity
+        onPress={() => {
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [{ name: 'HomePage' }],
+            })
+          );
+        }}
+        style={styles.footerButton} // Use your preferred styling
+        >
           <Text style={styles.footerText}>Back to Home</Text>
         </TouchableOpacity>
 

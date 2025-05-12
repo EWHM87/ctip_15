@@ -1,21 +1,41 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AuthService from './auth';
-
-const dummyTrainings = [
-  { id: 1, topic: 'Eco-tourism Basics', date: '2024-05-15' },
-  { id: 2, topic: 'Wildlife Handling', date: '2024-06-10' },
-  { id: 3, topic: 'Flora Protection', date: '2024-07-01' },
-];
 
 function Training() {
   const role = AuthService.getRole();
+  const guideId = AuthService.getUserId();
+  const [trainings, setTrainings] = useState([]);
   const [signedUp, setSignedUp] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleSignup = (id) => {
-    if (!signedUp.includes(id)) {
-      setSignedUp(prev => [...prev, id]);
-      alert('✅ Signed up successfully!');
-    }
+  useEffect(() => {
+    fetch('http://localhost:5000/api/scheduletraining') 
+      .then(res => res.json())
+      .then(data => setTrainings(data))
+      .catch(err => console.error('❌ Error fetching trainings:', err));
+  }, []);
+
+  const handleSignup = (schedule_id) => {
+    console.log('➡️  handleSignup called');
+    console.log('   Signing up for schedule_id:', schedule_id);
+    console.log('   Guide ID:', guideId);  // Add this
+    console.log('   Schedule ID:', schedule_id); // Add this
+    console.log('   Request body:', JSON.stringify({ guide_id: guideId, schedule_id }));
+
+    fetch('http://localhost:5000/api/guide-training', {  
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guide_id: guideId, schedule_id })
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Signup failed');
+        setSignedUp(prev => [...prev, schedule_id]);
+        alert('✅ Signed up successfully!');
+      })
+      .catch(err => {
+        console.error('❌ Signup error:', err);
+        alert('Failed to sign up. Please try again.');
+      });
   };
 
   const formatDate = (isoDate) => {
@@ -37,17 +57,17 @@ function Training() {
           </tr>
         </thead>
         <tbody>
-          {dummyTrainings.map(training => (
-            <tr key={training.id}>
+          {trainings.map(training => (
+            <tr key={training.schedule_id}>
               <td>{training.topic}</td>
               <td>{formatDate(training.date)}</td>
               <td>
                 <button
-                  className={`btn btn-sm ${signedUp.includes(training.id) ? 'btn-success' : 'btn-primary'}`}
-                  onClick={() => handleSignup(training.id)}
-                  disabled={signedUp.includes(training.id)}
+                  className={`btn btn-sm ${signedUp.includes(training.schedule_id) ? 'btn-success' : 'btn-primary'}`}
+                  onClick={() => handleSignup(training.schedule_id)}
+                  disabled={signedUp.includes(training.schedule_id)}
                 >
-                  {signedUp.includes(training.id) ? '✔️ Signed Up' : 'Sign Up'}
+                  {signedUp.includes(training.schedule_id) ? '✔️ Signed Up' : 'Sign Up'}
                 </button>
               </td>
             </tr>
@@ -55,20 +75,18 @@ function Training() {
         </tbody>
       </table>
 
-      {/* Signed up summary */}
       {role === 'guide' && signedUp.length > 0 && (
         <div className="alert alert-success mt-4">
           <strong>You're registered for:</strong>
           <ul className="mt-2">
             {signedUp.map(id => {
-              const session = dummyTrainings.find(t => t.id === id);
-              return <li key={id}>{session.topic} on {formatDate(session.date)}</li>;
+              const session = trainings.find(t => t.schedule_id === id);
+              return <li key={id}>{session?.topic} on {formatDate(session?.date)}</li>;
             })}
           </ul>
         </div>
       )}
 
-      {/* Admin view */}
       {role === 'admin' && (
         <div className="alert alert-info mt-4">
           📊 <strong>Admin:</strong> Training sign-up tracking will be available in the final system dashboard.

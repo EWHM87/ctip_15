@@ -1,6 +1,7 @@
 const AuthService = {
-  login(username, role) {
-    const user = { username, role };
+  // Store full user info on login, including ID
+  login(id, username, role) {
+    const user = { id, username, role };
     localStorage.setItem('user', JSON.stringify(user));
     return user;
   },
@@ -20,7 +21,12 @@ const AuthService = {
   getRole() {
     const user = JSON.parse(localStorage.getItem('user'));
     return user?.role || null;
-  }
+  },
+
+  getUserId() {
+    const user = JSON.parse(localStorage.getItem('user'));
+    return user?.id || null;
+  },
 };
 
 export default AuthService;
