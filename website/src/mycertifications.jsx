@@ -3,15 +3,28 @@ import AuthService from './auth';
 
 function MyCertifications() {
   const [certs, setCerts] = useState([]);
-  const guideId = AuthService.getUserId();
+  const username = AuthService.getUser()?.username;
   const BASE_URL = 'http://localhost:5000';
 
-  useEffect(() => {
-    fetch(`${BASE_URL}/api/certifications/${guideId}`)
-      .then(res => res.json())
-      .then(setCerts)
-      .catch(err => console.error('❌ Error fetching certs:', err));
-  }, [guideId]);
+useEffect(() => {
+  if (!username) return;
+
+  const fetchCerts = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/my-certifications-by-username?username=${encodeURIComponent(username)}`);
+      if (!res.ok) {
+        throw new Error(`Server responded with ${res.status}`);
+      }
+      const data = await res.json();
+      console.log('✅ Fetched certs:', data);
+      setCerts(data);
+    } catch (err) {
+      console.error('❌ Error fetching certs:', err);
+    }
+  };
+
+  fetchCerts();
+}, [username]);
 
   return (
     <div className="container mt-4">
@@ -25,13 +38,19 @@ function MyCertifications() {
           </tr>
         </thead>
         <tbody>
-          {certs.map((c, i) => (
-            <tr key={i}>
-              <td>{c.certification_name}</td>
-              <td>{c.status}</td>
-              <td>{c.expiry_date}</td>
+          {certs.length > 0 ? (
+            certs.map((c, i) => (
+              <tr key={i}>
+                <td>{c.certification_name}</td>
+                <td>{c.status}</td>
+                <td>{c.expiry_date}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="3" className="text-center">No certifications found.</td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>

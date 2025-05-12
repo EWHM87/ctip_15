@@ -94,6 +94,7 @@ function ManageGuides() {
             <tr>
               <th>Name</th>
               <th>Email</th>
+              <th>Role</th>
               <th>Certification</th>
               <th>Expiry Date</th>
               <th>Status</th>
@@ -130,6 +131,7 @@ function ManageGuides() {
                       guide.email
                     )}
                   </td>
+                  <td>{guide.role || '—'}</td>
                   <td>{guide.certification_name || '—'}</td>
                   <td>{guide.expiry_date || '—'}</td>
                   <td>{guide.status || '—'}</td>

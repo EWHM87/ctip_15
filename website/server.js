@@ -97,11 +97,11 @@ app.post(
       .isIn(['admin', 'guide', 'visitor']).withMessage('Invalid role')
   ],
   async (req, res) => {
-    console.log('📥 Received registration:', req.body);  // ✅ Log input
+    console.log('📥 Received registration:', req.body);
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('❌ Validation failed:', errors.array());  // ✅ Log validation issues
+      console.log('❌ Validation failed:', errors.array());
       return res.status(422).json({ message: 'Validation error', errors: errors.array() });
     }
 
@@ -109,27 +109,115 @@ app.post(
 
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
-      console.log('🔐 Hashed Password:', hashedPassword);  // ✅ Log password
 
       const sql = `INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`;
       db.query(sql, [username, email, hashedPassword, role], (err, result) => {
         if (err) {
-          console.error('❌ MySQL Error:', err);  // ✅ Log MySQL error
+          console.error('❌ MySQL Error:', err);
           if (err.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({ message: 'Username or email already exists' });
           }
           return res.status(500).json({ message: 'DB insert failed', error: err });
         }
 
+        // If registering as guide, also insert into manage_guides
+        if (role === 'guide') {
+          const sql2 = `INSERT INTO manage_guides (name, email) VALUES (?, ?)`;
+          db.query(sql2, [username, email], (err2) => {
+            if (err2 && err2.code !== 'ER_DUP_ENTRY') {
+              console.error('❌ Error inserting into manage_guides:', err2);
+              return res.status(500).json({ message: 'Guide registration failed', error: err2 });
+            }
+            console.log('✅ Guide also added to manage_guides');
+          });
+        }
+
         console.log('✅ Registered new user:', result);
         return res.status(201).json({ message: 'User registered successfully' });
       });
     } catch (err) {
-      console.error('❌ Server error:', err);  // ✅ Catch any other issues
+      console.error('❌ Server error:', err);
       return res.status(500).json({ message: 'Server error' });
     }
   }
 );
+
+// PUT /api/update-role/:email
+app.put('/api/update-role/:email', (req, res) => {
+  const { email } = req.params;
+  const { role } = req.body;
+
+  const sql = `UPDATE users SET role = ? WHERE email = ?`;
+  db.query(sql, [role, email], (err) => {
+    if (err) {
+      console.error('❌ Role update failed:', err);
+      return res.status(500).json({ message: 'Failed to update role', error: err });
+    }
+    res.json({ message: 'Role updated successfully' });
+  });
+});
+
+//  POST /api/register-guide
+app.post('/api/register-guide', async (req, res) => {
+  const { name, email } = req.body;
+
+  if (!name || !email) {
+    return res.status(400).json({ message: 'Name and Email are required' });
+  }
+
+  // Step 1: Insert into manage_guides
+  const sql1 = `INSERT INTO manage_guides (name, email) VALUES (?, ?)`;
+  db.query(sql1, [name, email], async (err1, result1) => {
+    if (err1) {
+      console.error('❌ Error adding to manage_guides:', err1);
+      if (err1.code === 'ER_DUP_ENTRY') {
+        return res.status(400).json({ message: 'Guide already exists' });
+      }
+      return res.status(500).json({ message: 'Database error', error: err1 });
+    }
+
+    // Step 2: Insert into users (if not already exists)
+    const defaultPassword = await bcrypt.hash('guide1234', 10);
+    const sql2 = `
+      INSERT INTO users (username, email, password, role)
+      VALUES (?, ?, ?, 'guide')
+    `;
+
+    db.query(sql2, [name, email, defaultPassword], (err2) => {
+      if (err2 && err2.code !== 'ER_DUP_ENTRY') {
+        console.error('❌ Error adding to users:', err2);
+        return res.status(500).json({ message: 'Guide added, but user account creation failed', error: err2 });
+      }
+
+      console.log('✅ Guide registered by admin');
+      return res.status(201).json({ message: 'Guide and user account created successfully' });
+    });
+  });
+});
+
+// PUT/api/update-role/:email
+app.put('/api/update-role/:email', (req, res) => {
+  const { email } = req.params;
+  const { role } = req.body;
+
+  if (!['admin', 'guide', 'visitor'].includes(role)) {
+    return res.status(400).json({ message: 'Invalid role' });
+  }
+
+  const updateSql = `UPDATE users SET role = ? WHERE email = ?`;
+  db.query(updateSql, [role, email], (err, result) => {
+    if (err) {
+      console.error('❌ Error updating role:', err);
+      return res.status(500).json({ message: 'Failed to update role', error: err });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'User role updated successfully' });
+  });
+});
 
 // ==============================
 // POST /api/login
@@ -179,62 +267,6 @@ app.post(
     });
   }
 );
-
-
-
-// ==============================
-// Create Parks info table (dummy*)
-// ==============================
-
-const createParkInfoTable = `
-CREATE TABLE IF NOT EXISTS park_info (
-  park_id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  location VARCHAR(100) NOT NULL,
-  description TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
-`;
-
-db.query(createParkInfoTable, (err) => {
-  if (err) {
-    console.error('❌ Error creating park_info table:', err);
-  } else {
-    console.log('✅ park_info table ready');
-  }
-});
-
-// ==============================
-// PARK INFO ROUTES
-// ==============================
-
-// GET all parks
-app.get('/api/parks', (req, res) => {
-  db.query('SELECT * FROM park_info', (err, results) => {
-    if (err) {
-      console.error('❌ Error fetching parks:', err);
-      return res.status(500).json({ message: 'Error fetching park data' });
-    }
-    res.json(results);
-  });
-});
-
-// POST a new park (optional: for admin use)
-app.post('/api/parks', (req, res) => {
-  const { name, location, description } = req.body;
-  if (!name || !location || !description) {
-    return res.status(400).json({ message: 'All fields are required' });
-  }
-
-  const sql = `INSERT INTO park_info (name, location, description) VALUES (?, ?, ?)`;
-  db.query(sql, [name, location, description], (err, result) => {
-    if (err) {
-      console.error('❌ Error inserting park:', err);
-      return res.status(500).json({ message: 'Error adding park' });
-    }
-    res.status(201).json({ message: 'Park added successfully', parkId: result.insertId });
-  });
-});
 
 // ==============================
 // Create training_available table
@@ -459,27 +491,71 @@ app.get('/api/manage-guides', (req, res) => {
 app.delete('/api/manage-guides/:id', (req, res) => {
   const guideId = req.params.id;
 
-  // First delete from guide_certifications
-  const deleteCerts = `DELETE FROM guide_certifications WHERE guide_id = ?`;
-  db.query(deleteCerts, [guideId], (certErr) => {
-    if (certErr) {
-      console.error('❌ Error deleting certifications:', certErr);
-      return res.status(500).json({ message: 'Failed to delete certifications', error: certErr });
+  // Step 1: Get guide's email first
+  const getEmailSql = `SELECT email FROM manage_guides WHERE guide_id = ?`;
+  db.query(getEmailSql, [guideId], (err, results) => {
+    if (err || results.length === 0) {
+      return res.status(404).json({ message: 'Guide not found' });
     }
 
-    // Then delete the guide
-    const deleteGuide = `DELETE FROM manage_guides WHERE guide_id = ?`;
-    db.query(deleteGuide, [guideId], (guideErr) => {
-      if (guideErr) {
-        console.error('❌ Error deleting guide:', guideErr);
-        return res.status(500).json({ message: 'Failed to delete guide', error: guideErr });
+    const email = results[0].email;
+
+    // Step 2: Delete related certifications
+    const deleteCertsSql = `DELETE FROM guide_certifications WHERE guide_id = ?`;
+    db.query(deleteCertsSql, [guideId], (certErr) => {
+      if (certErr) {
+        console.error('❌ Error deleting certifications:', certErr);
+        return res.status(500).json({ message: 'Failed to delete certifications', error: certErr });
       }
 
-      res.json({ message: 'Guide deleted successfully' });
+      // Step 3: Delete from manage_guides
+      const deleteGuideSql = `DELETE FROM manage_guides WHERE guide_id = ?`;
+      db.query(deleteGuideSql, [guideId], (guideErr) => {
+        if (guideErr) {
+          console.error('❌ Error deleting guide:', guideErr);
+          return res.status(500).json({ message: 'Failed to delete guide', error: guideErr });
+        }
+
+        // Step 4: Delete from users (only if it's a guide)
+        const deleteUserSql = `DELETE FROM users WHERE email = ? AND role = 'guide'`;
+        db.query(deleteUserSql, [email], (userErr) => {
+          if (userErr) {
+            console.error('❌ Error deleting from users:', userErr);
+            return res.status(500).json({ message: 'Guide deleted, but user not removed', error: userErr });
+          }
+
+          res.json({ message: 'Guide and user deleted successfully' });
+        });
+      });
     });
   });
 });
 
+// PUT /api/manage-guides/:id - Update guide info
+app.put('/api/manage-guides/:id', (req, res) => {
+  const guideId = req.params.id;
+  const { name, email } = req.body;
+
+  const getEmailSql = `SELECT email FROM manage_guides WHERE guide_id = ?`;
+  db.query(getEmailSql, [guideId], (err, result) => {
+    if (err || result.length === 0) return res.status(404).json({ message: 'Guide not found' });
+
+    const oldEmail = result[0].email;
+
+    const updateGuide = `UPDATE manage_guides SET name = ?, email = ? WHERE guide_id = ?`;
+    const updateUser = `UPDATE users SET username = ?, email = ? WHERE email = ? AND role = 'guide'`;
+
+    db.query(updateGuide, [name, email, guideId], (err1) => {
+      if (err1) return res.status(500).json({ message: 'Guide update failed', error: err1 });
+
+      db.query(updateUser, [name, email, oldEmail], (err2) => {
+        if (err2) return res.status(500).json({ message: 'User sync failed', error: err2 });
+
+        res.json({ message: 'Guide and user info updated successfully' });
+      });
+    });
+  });
+});
 
 // ==============================
 // Create guide_certifications table
@@ -576,6 +652,28 @@ app.get('/api/certifications/reminders', (req, res) => {
       console.error('❌ Reminder fetch error:', err);
       return res.status(500).json({ message: 'Failed to fetch reminders', error: err });
     }
+    res.json(results);
+  });
+});
+
+// GET /api/my-certifications-by-username?username=...
+app.get('/api/my-certifications-by-username', (req, res) => {
+  const { username } = req.query;
+
+  const sql = `
+    SELECT c.certification_name, c.expiry_date, c.status
+    FROM guide_certifications c
+    JOIN manage_guides g ON c.guide_id = g.guide_id
+    WHERE g.name = ?
+    ORDER BY c.expiry_date
+  `;
+
+  db.query(sql, [username], (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching certifications by username:', err);
+      return res.status(500).json({ message: 'Failed to fetch certifications', error: err });
+    }
+
     res.json(results);
   });
 });

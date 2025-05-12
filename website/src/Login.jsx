@@ -13,31 +13,40 @@ function Login({ onLogin }) {
     setCredentials(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      const response = await fetch('http://localhost:5000/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      });
+  try {
+    const response = await fetch('http://localhost:5000/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (!response.ok) {
-        setError(data.message || 'Login failed');
-      } else {
-        const { id, username, role } = data.user;
-        AuthService.login(id, username, role); // ✅ Now stores user ID
-        onLogin();
+    if (!response.ok) {
+      setError(data.message || 'Login failed');
+    } else {
+      const { id, username, role } = data.user;
+
+      AuthService.login(id, username, role); // ✅ Store ID + role
+      onLogin();
+
+      // ✅ Check if default password
+      //if (credentials.password === 'guide1234' && role === 'guide') {
+      //  alert('⚠️ You are using a default password. Please reset it.');
+      //  navigate('/reset-password'); // You can create this route
+      //} else 
+      {
         navigate('/dashboard');
       }
-    } catch (err) {
-      console.error('❌ Login error:', err);
-      setError('❌ Server error. Try again later.');
     }
-  };
+  } catch (err) {
+    console.error('❌ Login error:', err);
+    setError('❌ Server error. Try again later.');
+  }
+};
 
   return (
     <>

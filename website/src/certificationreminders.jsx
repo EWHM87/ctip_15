@@ -23,13 +23,30 @@ function CertificationReminders() {
           </tr>
         </thead>
         <tbody>
-          {reminders.map((item, index) => (
-            <tr key={index}>
-              <td>{item.name}</td>
-              <td>{item.certification_name}</td>
-              <td>{item.expiry_date}</td>
-            </tr>
-          ))}
+          {reminders.map((item, index) => {
+            const expiryDate = new Date(item.expiry_date);
+            const today = new Date();
+            const diffDays = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+
+            let rowClass = '';
+            if (diffDays <= 7) rowClass = 'table-danger';       // 🔴
+            else if (diffDays <= 14) rowClass = 'table-warning'; // 🟠
+            else if (diffDays <= 30) rowClass = 'table-light';   // 🟡
+
+            const formattedDate = expiryDate.toLocaleDateString('en-MY', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            });
+
+            return (
+              <tr key={index} className={rowClass}>
+                <td>{item.name}</td>
+                <td>{item.certification_name}</td>
+                <td>{formattedDate}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
