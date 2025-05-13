@@ -1,4 +1,3 @@
-// GuideSelfAssessment.jsx
 import React, { useState } from 'react';
 import './App.css';
 
@@ -10,16 +9,35 @@ function GuideSelfAssessment() {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const BASE_URL = 'http://localhost:5000';
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(formData);
-    setSubmitted(true);
+
+    try {
+      const response = await fetch(`${BASE_URL}/api/self-assessment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSubmitted(true);
+      } else {
+        alert(data.message || '❌ Submission failed');
+        console.error('❌ Backend error:', data.error || data);
+      }
+    } catch (err) {
+      console.error('❌ Network error:', err);
+      alert('❌ Could not submit. Please try again later.');
+    }
   };
 
   if (submitted) {
@@ -93,11 +111,22 @@ function GuideSelfAssessment() {
         </label>
 
         <label>7. Why do you want to become a park guide at Semenggoh?
-          <textarea name="q7" value={formData.q7} onChange={handleChange} required placeholder="Explain your motivation here..." />
+          <textarea
+            name="q7"
+            value={formData.q7}
+            onChange={handleChange}
+            required
+            placeholder="Explain your motivation here..."
+          />
         </label>
 
         <label>8. Do you have any concerns or needs we should be aware of?
-          <textarea name="q8" value={formData.q8} onChange={handleChange} placeholder="(Optional)" />
+          <textarea
+            name="q8"
+            value={formData.q8}
+            onChange={handleChange}
+            placeholder="(Optional)"
+          />
         </label>
 
         <button type="submit">Submit Assessment</button>
