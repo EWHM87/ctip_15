@@ -46,7 +46,6 @@ const VisitorDashboard = ({ navigation }) => {
             <Text style={styles.cardHeader}>💬 Visitor Feedback</Text>
             <Image source={require('../images/home2.jpeg')} style={styles.sectionImage} />
             <View style={styles.buttonGrid}>
-              <FeatureButton icon="thumbs-up" text="Rate Guides" onPress={() => navigation.navigate('RateGuide')} />
               <FeatureButton icon="chatbox-ellipses" text="Write Review" onPress={() => navigation.navigate('WriteReview')} />
             </View>
           </View>
@@ -59,9 +58,9 @@ const VisitorDashboard = ({ navigation }) => {
           <Ionicons name="home-outline" size={26} color="#fff" />
           <Text style={styles.navLabel}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('ParkRoutes')} style={styles.navButton}>
-          <Ionicons name="navigate-outline" size={26} color="#fff" />
-          <Text style={styles.navLabel}>Map</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('AIBiodiversityScanner')} style={styles.navButton}>
+          <Ionicons name="camera-outline" size={26} color="#fff" />
+          <Text style={styles.navLabel}>Scanner</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('WriteReview')} style={styles.navButton}>
           <Ionicons name="chatbox-ellipses-outline" size={26} color="#fff" />

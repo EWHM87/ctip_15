@@ -65,13 +65,13 @@ const VisitorDashboard = ({ navigation }) => {
           <Ionicons name="school-outline" size={26} color="#fff" />
           <Text style={styles.navLabel}>Training</Text>
         </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('AIBiodiversityScanner')} style={styles.navButton}>
+          <Ionicons name="camera-outline" size={26} color="#fff" />
+          <Text style={styles.navLabel}>Scanner</Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.navButton}>
           <Ionicons name="notifications-outline" size={26} color="#fff" />
           <Text style={styles.navLabel}>Notices</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('UserProfile')} style={styles.navButton}>
-          <Ionicons name="person-outline" size={26} color="#fff" />
-          <Text style={styles.navLabel}>Profile</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => {

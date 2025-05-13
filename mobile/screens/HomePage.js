@@ -51,7 +51,7 @@ const HomePage = ({ navigation }) => {
           <TouchableOpacity onPress={() => setIsSidebarVisible(!isSidebarVisible)} style={styles.hamburgerInline}>
             <Ionicons name="menu-outline" size={30} color="#065f46" />
           </TouchableOpacity>
-          <Text style={styles.title}>Welcome to the App!</Text>
+          <Text style={styles.title}>🌿 Sarawak Parks</Text>
         </View>
 
         {/* Interactive Map Section */}
@@ -73,6 +73,32 @@ const HomePage = ({ navigation }) => {
           <View style={styles.buttonGrid}>
             <FeatureButton icon="star" text="Must-see Spots" onPress={() => navigation.navigate('MustSeeSpot')} />
             <FeatureButton icon="book" text="Park History" onPress={() => navigation.navigate('ParkHistory')} />
+          </View>
+        </View>
+
+        {/* Visitor Information Section */}
+        <View style={styles.card}>
+          <Text style={styles.cardHeader}>🌳 Visitor Information</Text>
+          <View style={styles.infoGroup}>
+            <Ionicons name="location-outline" size={20} color="#065f46" style={styles.infoIcon} />
+            <Text style={styles.infoText}>Jalan Tapang, 93250 Kuching, Sarawak, Malaysia</Text>
+          </View>
+          <View style={styles.infoGroup}>
+            <Ionicons name="call-outline" size={20} color="#065f46" style={styles.infoIcon} />
+            <Text style={styles.infoText}>+60 82-123456</Text>
+          </View>
+          <View style={styles.infoGroup}>
+            <Ionicons name="mail-outline" size={20} color="#065f46" style={styles.infoIcon} />
+            <Text style={styles.infoText}>info@sarawakparks.com</Text>
+          </View>
+          <View style={styles.infoGroup}>
+            <Ionicons name="time-outline" size={20} color="#065f46" style={styles.infoIcon} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.infoText}>Operating Hours:</Text>
+              <Text style={styles.infoSubText}>Mon–Thu: 8:00am – 5:30pm</Text>
+              <Text style={styles.infoSubText}>Fri: 8:00am – 11:45am & 2:15pm – 5:00pm</Text>
+              <Text style={styles.infoSubText}>Weekends & Public Holidays: Closed</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -219,6 +245,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#065f46',
     fontWeight: 'bold',
+  },
+  infoGroup: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  infoIcon: {
+    marginRight: 10,
+    marginTop: 3,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#065f46',
+    fontWeight: '500',
+  },
+  infoSubText: {
+    fontSize: 13,
+    color: '#065f46',
+    marginLeft: 5,
+    marginTop: 2,
   },
 });
 
