@@ -9,9 +9,14 @@
   const bcrypt     = require('bcryptjs');
   const cors       = require('cors');
   const bodyParser = require('body-parser');
+  const authenticateToken = require('./authMiddleware');
 
   const app  = express();
   const PORT = process.env.PORT || 5000;
+
+ 
+  app.use(express.json());
+
 
   // —— LOCKED-DOWN CORS ——
   // 2️⃣ Security + parsing middleware (ONLY once each)
@@ -76,6 +81,49 @@
       console.log('✅ Users table ready');
     }
   });
+
+// ————————————————————————————————
+// Create park_info table & route
+// ————————————————————————————————
+
+const createParkInfoTable = `
+CREATE TABLE IF NOT EXISTS park_info (
+  park_id     INT AUTO_INCREMENT PRIMARY KEY,
+  name        VARCHAR(100) NOT NULL,
+  location    VARCHAR(100) NOT NULL,
+  description TEXT NOT NULL,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+`;
+db.query(createParkInfoTable, (err) => {
+  if (err) console.error('❌ Error creating park_info table:', err);
+  else console.log('✅ park_info table ready');
+});
+
+// GET all parks
+app.get('/api/parks', (req, res) => {
+  db.query('SELECT * FROM park_info', (err, rows) => {
+    if (err) return res.status(500).json({ message: 'Error fetching parks' });
+    res.json(rows);
+  });
+});
+
+// POST a new park
+app.post('/api/parks', (req, res) => {
+  const { name, location, description } = req.body;
+  if (!name || !location || !description) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+  const sql = 'INSERT INTO park_info (name, location, description) VALUES (?, ?, ?)';
+  db.query(sql, [name, location, description], (err, result) => {
+    if (err) {
+      console.error('❌ Error inserting park:', err);
+      return res.status(500).json({ message: 'Error adding park', error: err });
+    }
+    res.status(201).json({ message: 'Park added successfully', parkId: result.insertId });
+  });
+});
+
 
   // ==============================
   // POST /api/register
@@ -222,42 +270,50 @@
   // ==============================
   // POST /api/login
   // ==============================
+app.post(
+  '/api/login',
+  [
+    body('username').trim().notEmpty().withMessage('Username is required'),
+    body('password').notEmpty().withMessage('Password is required')
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
 
-  app.post(
-    '/api/login',
-    [
-      body('username').trim().notEmpty().withMessage('Username is required'),
-      body('password').notEmpty().withMessage('Password is required')
-    ],
-    async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(422).json({ errors: errors.array() });
+    const { username, password } = req.body;
+
+    const sql = `SELECT * FROM users WHERE username = ?`;
+    db.query(sql, [username], async (err, results) => {
+      if (err) {
+        console.error('❌ DB error:', err);
+        return res.status(500).json({ message: 'Database error' });
       }
 
-      const { username, password } = req.body;
+      if (results.length === 0) {
+        return res.status(401).json({ message: 'Invalid username or password' });
+      }
 
-      const sql = `SELECT * FROM users WHERE username = ?`;
-      db.query(sql, [username], async (err, results) => {
-        if (err) {
-          console.error('❌ DB error:', err);
-          return res.status(500).json({ message: 'Database error' });
-        }
+      const user = results[0];
+      const isMatch = await bcrypt.compare(password, user.password);
 
-        if (results.length === 0) {
-          return res.status(401).json({ message: 'Invalid username or password' });
-        }
+      if (!isMatch) {
+        return res.status(401).json({ message: 'Invalid username or password' });
+      }
 
-        const user = results[0];
-        const isMatch = await bcrypt.compare(password, user.password);
+      // ✅ Create JWT here
+      const jwt = require('jsonwebtoken');
+      const token = jwt.sign(
+        { id: user.id, username: user.username, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: '1d' }
+      );
 
-        if (!isMatch) {
-          return res.status(401).json({ message: 'Invalid username or password' });
-        }
-
-        // ✅ Success
+      // ✅ Return token in response
         res.json({
           message: 'Login successful',
+          token,
           user: {
             id: user.id,
             username: user.username,
@@ -687,6 +743,10 @@
     res.status(500).json({ error: 'Internal server error' });
   });
 
+  // Example protected route
+  app.get('/api/protected-route', authenticateToken, (req, res) => {
+    res.json({ message: `Welcome, ${req.user.username}! You are a ${req.user.role}` });
+  });
 
   // Start server
   app.listen(PORT, () => {

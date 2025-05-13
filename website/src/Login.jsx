@@ -30,8 +30,11 @@ const handleSubmit = async (e) => {
     } else {
       const { id, username, role } = data.user;
 
-      AuthService.login(id, username, role); // ✅ Store ID + role
-      onLogin();
+    localStorage.setItem('token', data.token); // 🔐 Save token first
+    AuthService.login(id, username, role);
+    onLogin();
+
+
 
       // ✅ Check if default password
       //if (credentials.password === 'guide1234' && role === 'guide') {
