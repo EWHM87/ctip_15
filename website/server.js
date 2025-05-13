@@ -325,42 +325,6 @@ app.post(
   );
 
   // ==============================
-  // Create training_available table
-  // ==============================
-
-  const createTrainingTable = `
-  CREATE TABLE IF NOT EXISTS training_available (
-    training_id INT AUTO_INCREMENT PRIMARY KEY,
-    topic VARCHAR(255) NOT NULL,
-    date DATE NOT NULL
-  ) ENGINE=InnoDB;
-  `;
-
-  db.query(createTrainingTable, (err) => {
-    if (err) console.error('❌ Error creating training_available table:', err);
-    else console.log('✅ training_available table ready');
-  });
-
-  // POST /api/training - Insert a new training session
-  app.post('/api/training-available', (req, res) => {
-    const { topic, date } = req.body;
-
-    const sql = `INSERT INTO training_available (topic, date) VALUES (?, ?)`;
-    db.query(sql, [topic, date], (err, result) => {
-      if (err) return res.status(500).json({ message: 'Insert error', error: err });
-      res.status(201).json({ message: 'Training available created', training_id: result.insertId });
-    });
-  });
-
-  // GET /api/training - Fetch all training sessions
-  app.get('/api/training-available', (req, res) => {
-    db.query(`SELECT * FROM training_available`, (err, results) => {
-      if (err) return res.status(500).json({ message: 'Fetch error', error: err });
-      res.json(results);
-    });
-  });
-
-  // ==============================
   // Create training_schedule table
   // ==============================
 
@@ -376,7 +340,7 @@ app.post(
     else console.log('✅ training_schedule table ready');
   });
 
-  // POST /api/training-schedule - Insert a new training schedule
+  // POST /api/training-schedule - Create a new training schedule
   app.post('/api/scheduletraining', (req, res) => {
     const { topic, date } = req.body;
 
@@ -439,11 +403,11 @@ app.post(
     const guideId = req.params.guideId;
 
     const sql = `
-      SELECT st.topic, st.date, gt.status
-      FROM training_history gt
-      JOIN schedule_training st ON gt.schedule_id = st.schedule_id
-      WHERE gt.guide_id = ?
-      ORDER BY st.date DESC
+    SELECT st.schedule_id, st.topic, st.date, th.status
+    FROM training_history th
+    JOIN schedule_training st ON th.schedule_id = st.schedule_id
+    WHERE th.guide_id = ?
+    ORDER BY st.date DESC
     `;
 
     db.query(sql, [guideId], (err, results) => {
@@ -459,17 +423,78 @@ app.post(
   app.post('/api/guide-training', (req, res) => {
     const { guide_id, schedule_id } = req.body;
 
-    const sql = `
-      INSERT INTO training_history (guide_id, schedule_id, status)
-      VALUES (?, ?, 'Upcoming')
+    if (!guide_id || !schedule_id) {
+      return res.status(400).json({ message: 'Guide ID and Schedule ID are required' });
+    }
+
+    const checkSql = `
+      SELECT * FROM training_history
+      WHERE guide_id = ? AND schedule_id = ?
     `;
 
-    db.query(sql, [guide_id, schedule_id], (err, result) => {
+    db.query(checkSql, [guide_id, schedule_id], (err, rows) => {
       if (err) {
-        console.error('❌ MySQL Error during INSERT:', err);
-        return res.status(500).json({ message: 'Signup error', error: err });
+        console.error('❌ Duplication check error:', err);
+        return res.status(500).json({ message: 'Check error', error: err });
       }
-      res.status(201).json({ message: 'Guide signed up for training', id: result.insertId });
+
+      if (rows.length > 0) {
+        return res.status(400).json({ message: 'Already signed up for this training' });
+      }
+
+      const insertSql = `
+        INSERT INTO training_history (guide_id, schedule_id, status)
+        VALUES (?, ?, 'Upcoming')
+      `;
+      db.query(insertSql, [guide_id, schedule_id], (err2, result) => {
+        if (err2) {
+          console.error('❌ Insert error:', err2);
+          return res.status(500).json({ message: 'Signup error', error: err2 });
+        }
+        res.status(201).json({ message: 'Guide signed up for training', id: result.insertId });
+      });
+    });
+  });
+
+  // PATCH /api/guide-training/:id – Mark training as completed (admin use)
+  app.patch('/api/guide-training/:id', (req, res) => {
+    const { status } = req.body;
+
+    if (!['Upcoming', 'Completed'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    const sql = `
+      UPDATE training_history SET status = ?
+      WHERE id = ?
+    `;
+
+    db.query(sql, [status, req.params.id], (err) => {
+      if (err) {
+        console.error('❌ Status update error:', err);
+        return res.status(500).json({ message: 'Update failed', error: err });
+      }
+
+      res.json({ message: 'Training status updated' });
+    });
+  });
+
+  // GET /api/all-training-history - Get all training history for a guide
+  app.get('/api/all-training-history', (req, res) => {
+    const sql = `
+    SELECT th.id, th.guide_id, st.topic, st.date, th.status
+    FROM training_history th
+    JOIN schedule_training st ON th.schedule_id = st.schedule_id
+    ORDER BY st.date DESC
+    `;
+
+    db.query(sql, (err, results) => {
+      if (err) {
+        console.error('❌ Admin fetch error:', err);
+        return res.status(500).json({ message: 'Failed to fetch all training history', error: err });
+      }
+
+      res.json(results);
     });
   });
 
@@ -733,6 +758,122 @@ app.post(
       res.json(results);
     });
   });
+
+//===============================
+// Create table for notifications
+//=============================
+const createNotificationsTable = `
+CREATE TABLE IF NOT EXISTS notifications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  recipient VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  sent_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+`;
+
+db.query(createNotificationsTable, (err) => {
+  if (err) console.error('❌ Error creating notifications table:', err);
+  else console.log('✅ notifications table ready');
+});
+
+// POST /api/notifications - Send/save a notification
+  app.post('/api/notifications', (req, res) => {
+    const { recipient, content } = req.body;
+
+    if (!recipient || !content) {
+      return res.status(400).json({ message: 'Recipient and message content are required' });
+    }
+
+    const sql = `INSERT INTO notifications (recipient, content) VALUES (?, ?)`;
+    db.query(sql, [recipient, content], (err, result) => {
+      if (err) {
+        console.error('❌ Insert error:', err);
+        return res.status(500).json({ message: 'Failed to send notification', error: err });
+      }
+
+      res.status(201).json({ message: 'Notification sent', id: result.insertId });
+    });
+  });
+
+// GET /api/notifications – Get all notifications
+  app.get('/api/notifications', (req, res) => {
+    const sql = `SELECT * FROM notifications ORDER BY sent_at DESC`;
+    db.query(sql, (err, results) => {
+      if (err) {
+        console.error('❌ Fetch error:', err);
+        return res.status(500).json({ message: 'Failed to fetch notifications', error: err });
+      }
+
+      res.json(results);
+    });
+  });
+  
+// GET /api/notifications/:recipient - Get notifications for a specific recipient
+  app.get('/api/notifications', (req, res) => {
+    const sql = `SELECT * FROM notifications ORDER BY sent_at DESC`;
+    db.query(sql, (err, results) => {
+      if (err) {
+        console.error('❌ Fetch error:', err);
+        return res.status(500).json({ message: 'Failed to fetch notifications', error: err });
+      }
+
+      res.json(results);
+    });
+  });
+
+//=============================================
+// Create table for guide self assessment
+//=============================================
+const createGuideAssessmentTable = `
+CREATE TABLE IF NOT EXISTS guide_self_assessments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  q1 ENUM('yes', 'no') NOT NULL,
+  q2 ENUM('yes', 'no') NOT NULL,
+  q3 ENUM('yes', 'no') NOT NULL,
+  q4 ENUM('yes', 'no') NOT NULL,
+  q5 ENUM('yes', 'no') NOT NULL,
+  q6 ENUM('yes', 'no') NOT NULL,
+  q7 TEXT NOT NULL,
+  q8 TEXT,
+  submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+`;
+
+db.query(createGuideAssessmentTable, (err) => {
+  if (err) {
+    console.error('❌ Error creating guide_self_assessments table:', err);
+  } else {
+    console.log('✅ guide_self_assessments table ready');
+  }
+});
+
+// POST /api/self-assessment - Route to Receive Form Submissions
+app.post('/api/self-assessment', (req, res) => {
+  const {
+    name, email, q1, q2, q3, q4, q5, q6, q7, q8
+  } = req.body;
+
+  if (!name || !email || !q1 || !q2 || !q3 || !q4 || !q5 || !q6 || !q7) {
+    return res.status(400).json({ message: 'Missing required fields' });
+  }
+
+  const sql = `
+    INSERT INTO guide_self_assessments
+    (name, email, q1, q2, q3, q4, q5, q6, q7, q8)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(sql, [name, email, q1, q2, q3, q4, q5, q6, q7, q8 || null], (err, result) => {
+    if (err) {
+      console.error('❌ Error inserting assessment:', err);
+      return res.status(500).json({ message: 'Submission failed', error: err });
+    }
+    res.status(201).json({ message: 'Assessment submitted successfully', id: result.insertId });
+  });
+});
+
 
   // 5️⃣ Centralized error-handler
   app.use((err, req, res, next) => {
