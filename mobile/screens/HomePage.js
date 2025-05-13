@@ -1,9 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, SafeAreaView } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Image,
+  SafeAreaView,
+} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const HomePage = ({ navigation }) => {
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
+  const [showLoginOptions, setShowLoginOptions] = useState(false);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -74,19 +83,34 @@ const HomePage = ({ navigation }) => {
           <Ionicons name="home-outline" size={26} color="#fff" />
           <Text style={styles.navLabel}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('VisitorLogin')} style={styles.navButton}>
-          <Ionicons name="person-outline" size={26} color="#fff" />
-          <Text style={styles.navLabel}>Visitor</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Wildlife')} style={styles.navButton}>
+          <Ionicons name="paw-outline" size={26} color="#fff" />
+          <Text style={styles.navLabel}>Wildlife</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('UserLogin')} style={styles.navButton}>
-          <Ionicons name="person-circle-outline" size={26} color="#fff" />
-          <Text style={styles.navLabel}>User</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Activities')} style={styles.navButton}>
+          <Ionicons name="bicycle-outline" size={26} color="#fff" />
+          <Text style={styles.navLabel}>Activities</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('AdminLogin')} style={styles.navButton}>
-          <Ionicons name="shield-checkmark-outline" size={26} color="#fff" />
-          <Text style={styles.navLabel}>Admin</Text>
+        <TouchableOpacity onPress={() => setShowLoginOptions(!showLoginOptions)} style={styles.navButton}>
+          <Ionicons name="log-in-outline" size={26} color="#fff" />
+          <Text style={styles.navLabel}>Login</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Login Options Popup */}
+      {showLoginOptions && (
+        <View style={styles.loginPopup}>
+          <TouchableOpacity style={styles.loginOption} onPress={() => { setShowLoginOptions(false); navigation.navigate('VisitorLogin'); }}>
+            <Text style={styles.loginText}>Visitor</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.loginOption} onPress={() => { setShowLoginOptions(false); navigation.navigate('UserLogin'); }}>
+            <Text style={styles.loginText}>User</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.loginOption} onPress={() => { setShowLoginOptions(false); navigation.navigate('AdminLogin'); }}>
+            <Text style={styles.loginText}>Admin</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -173,6 +197,28 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     marginLeft: 10,
+  },
+  loginPopup: {
+    position: 'absolute',
+    bottom: 70,
+    right: 10,
+    backgroundColor: '#ffffff',
+    padding: 10,
+    borderRadius: 8,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
+  loginOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+  },
+  loginText: {
+    fontSize: 14,
+    color: '#065f46',
+    fontWeight: 'bold',
   },
 });
 
