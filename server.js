@@ -930,47 +930,6 @@ app.post('/api/self-assessment', (req, res) => {
       res.status(200).json({ message: '✅ Feedback submitted successfully!' });
     });
   });
-
-  //save-feedback-summary
-
-  const createFeedbackSummaryTable = `
-CREATE TABLE IF NOT EXISTS feedback_summary (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  summary_text TEXT NOT NULL,
-  sentiment VARCHAR(20),
-  generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
-`;
-
-db.query(createFeedbackSummaryTable, (err) => {
-  if (err) {
-    console.error('❌ Error creating feedback_summary table:', err);
-  } else {
-    console.log('✅ feedback_summary table is ready');
-  }
-});
-
-  app.post('/api/save-feedback-summary', (req, res) => {
-    const { summary_text, sentiment } = req.body;
-  
-    if (!summary_text || !sentiment) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
-  
-    const sql = `
-      INSERT INTO feedback_summary (summary_text, sentiment)
-      VALUES (?, ?)
-    `;
-  
-    db.query(sql, [summary_text, sentiment], (err, result) => {
-      if (err) {
-        console.error('❌ Insert error:', err);
-        return res.status(500).json({ message: 'Insert failed', error: err });
-      }
-      res.status(201).json({ message: '✅ Summary saved successfully' });
-    });
-  });
-  
   
   // Start server
 app.listen(PORT, '0.0.0.0', () => {
