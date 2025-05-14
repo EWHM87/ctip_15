@@ -15,30 +15,37 @@ const UserLogin = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in both email and password');
-      return;
-    }
+ const handleLogin = async () => {
+  if (!email || !password) {
+    Alert.alert('Error', 'Please fill in both email and password');
+    return;
+  }
 
-    try {
-      const response = await fetch(`${API_URL}/api/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: email, password }), // 👈 use `username`
-      });
+  try {
+    console.log('📤 Attempting login:', { username: email, password });
 
-      const data = await response.json();
-      if (response.ok) {
-        Alert.alert('Success', 'Login successful');
-        navigation.navigate('UserDashboard'); // optionally pass user data
-      } else {
-        Alert.alert('Error', data.message || 'Login failed');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Server connection failed');
+    const response = await fetch(`${API_URL}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: email, password }),
+    });
+
+    console.log('📥 Status:', response.status);
+    const data = await response.json();
+    console.log('📦 Data:', data);
+
+    if (response.ok) {
+      Alert.alert('Success', 'Login successful');
+      navigation.navigate('UserDashboard');
+    } else {
+      Alert.alert('Error', data.message || 'Login failed');
     }
-  };
+  } catch (error) {
+    console.error('❌ Fetch error:', error);
+    Alert.alert('Error', 'Server connection failed');
+  }
+};
+
 
   return (
     <SafeAreaView style={styles.container}>
