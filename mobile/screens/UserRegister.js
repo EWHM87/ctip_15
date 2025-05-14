@@ -16,39 +16,34 @@ const UserRegister = ({ navigation }) => {
   const [password, setPassword] = useState('');
 
   const handleRegister = async () => {
-  if (!name || !email || !password) {
-    Alert.alert('Error', 'Please fill in all fields');
-    return;
-  }
-
-  try {
-    console.log('📤 Registering:', { name, email, password });
-    const response = await fetch(`${API_URL}/api/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: name,
-        email,
-        password,
-        role: 'guide',
-      }),
-    });
-
-    const data = await response.json();
-    console.log('📥 Response:', response.status, data);
-
-    if (response.ok) {
-      Alert.alert('Success', 'Registration successful!');
-      navigation.navigate('UserLogin');
-    } else {
-      Alert.alert('Error', data.message || 'Registration failed');
+    if (!name || !email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
     }
-  } catch (error) {
-    console.error('❌ Register Error:', error);
-    Alert.alert('Error', 'Server connection failed');
-  }
-};
 
+    try {
+      const response = await fetch(`${API_URL}/api/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: name,
+          email,
+          password,
+          role: 'guide'  // or 'visitor', depending on the intended user type
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        Alert.alert('Success', 'Registration successful!');
+        navigation.navigate('UserLogin');
+      } else {
+        Alert.alert('Error', data.message || 'Registration failed');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Server connection failed');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
