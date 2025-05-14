@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { API_URL } from '@env';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  Alert
+} from 'react-native';
 
 const UserRegister = ({ navigation }) => {
   const [name, setName] = useState('');
@@ -7,29 +16,39 @@ const UserRegister = ({ navigation }) => {
   const [password, setPassword] = useState('');
 
   const handleRegister = async () => {
-    if (!name || !email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
+  if (!name || !email || !password) {
+    Alert.alert('Error', 'Please fill in all fields');
+    return;
+  }
 
-    try {
-      const response = await fetch('http://10.0.2.2:3000/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
-      });
+  try {
+    console.log('📤 Registering:', { name, email, password });
+    const response = await fetch(`${API_URL}/api/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: name,
+        email,
+        password,
+        role: 'guide',
+      }),
+    });
 
-      const data = await response.json();
-      if (response.ok) {
-        Alert.alert('Success', 'Registration successful!');
-        navigation.navigate('UserLogin');
-      } else {
-        Alert.alert('Error', data.message || 'Registration failed');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Server connection failed');
+    const data = await response.json();
+    console.log('📥 Response:', response.status, data);
+
+    if (response.ok) {
+      Alert.alert('Success', 'Registration successful!');
+      navigation.navigate('UserLogin');
+    } else {
+      Alert.alert('Error', data.message || 'Registration failed');
     }
-  };
+  } catch (error) {
+    console.error('❌ Register Error:', error);
+    Alert.alert('Error', 'Server connection failed');
+  }
+};
+
 
   return (
     <SafeAreaView style={styles.container}>

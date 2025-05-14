@@ -40,6 +40,11 @@ const HomePage = ({ navigation }) => {
               <Ionicons name="shield-checkmark-outline" size={24} color="#fff" />
               <Text style={styles.verticalLabel}>Admin</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('AIBiodiversityScanner')} style={styles.verticalNavButton}>
+                <Ionicons name="camera-outline" size={26} color="#fff" />
+                <Text style={styles.verticalLabel}>Scanner</Text>
+              </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={() => setIsSidebarVisible(false)} style={styles.overlayBackground} />
         </View>

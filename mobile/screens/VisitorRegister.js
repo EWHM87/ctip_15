@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL } from '@env'; 
 import { 
   View, 
   Text, 
@@ -14,30 +15,45 @@ const VisitorRegister = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleRegister = async () => {
-    if (!name || !email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
+const handleRegister = async () => {
+  if (!name || !email || !password) {
+    Alert.alert('Error', 'Please fill in all fields');
+    return;
+  }
 
-    try {
-      const response = await fetch('http://10.0.2.2:3000/visitor/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        Alert.alert('Success', 'Registration successful!');
-        navigation.navigate('VisitorLogin');
-      } else {
-        Alert.alert('Error', data.message || 'Registration failed');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Server connection failed');
-    }
+  const url = `${API_URL}/api/register`;
+  const payload = {
+    username: name,
+    email,
+    password,
+    role: 'visitor',
   };
+
+  console.log('📤 Submitting to:', url);
+  console.log('📦 Payload:', payload);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    console.log('✅ Server response:', data);
+
+    if (response.ok) {
+      Alert.alert('Success', 'Registration successful!');
+      navigation.navigate('VisitorLogin');
+    } else {
+      Alert.alert('Error', data.message || 'Registration failed');
+    }
+  } catch (error) {
+    console.error('❌ Network error:', error);
+    Alert.alert('Error', 'Server connection failed');
+  }
+};
+
 
   return (
     <SafeAreaView style={styles.container}>
