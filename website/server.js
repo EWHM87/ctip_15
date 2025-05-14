@@ -889,6 +889,47 @@ app.post('/api/self-assessment', (req, res) => {
     res.json({ message: `Welcome, ${req.user.username}! You are a ${req.user.role}` });
   });
 
+  
+  app.use(cors());
+  app.use(bodyParser.json());
+  const createGuideFeedbackTable = `
+  CREATE TABLE IF NOT EXISTS guide_feedback (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    visitor_id VARCHAR(100),
+    guide_id VARCHAR(100),
+    feedback_text TEXT,
+    rating FLOAT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB;
+  `;
+  
+  db.query(createGuideFeedbackTable, (err) => {
+    if (err) console.error('❌ Error creating guide_feedback table:', err);
+    else console.log('✅ guide_feedback table ready');
+  });
+  app.post('/api/submit-feedback', (req, res) => {
+    const { visitorName, guideName, q1, q2, q3, q4, q5, q6, q7, q8 } = req.body;
+  
+    const avgRating = (
+      Number(q1) + Number(q2) + Number(q3) +
+      Number(q4) + Number(q5) + Number(q6) +
+      Number(q7)
+    ) / 7;
+  
+    const sql = `
+      INSERT INTO guide_feedback (visitor_id, guide_id, feedback_text, rating)
+      VALUES (?, ?, ?, ?)
+    `;
+  
+    db.query(sql, [visitorName, guideName, q8, avgRating], (err) => {
+      if (err) {
+        console.error('❌ Error inserting feedback:', err);
+        return res.status(500).json({ message: 'Insert failed', error: err });
+      }
+      res.status(200).json({ message: '✅ Feedback submitted successfully!' });
+    });
+  });
+  
   // Start server
   app.listen(PORT, () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);

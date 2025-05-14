@@ -1,6 +1,5 @@
-// FeedbackForm.jsx
 import React, { useState } from 'react';
-import './App.css'; // Include your CSS styles here
+import './App.css'; //Include your style CSS here
 
 function FeedbackForm() {
   const [formData, setFormData] = useState({
@@ -16,10 +15,21 @@ function FeedbackForm() {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(formData);
-    setSubmitted(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/submit-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const result = await response.json();
+      console.log(result);
+      setSubmitted(true);
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+    }
   };
 
   if (submitted) {
