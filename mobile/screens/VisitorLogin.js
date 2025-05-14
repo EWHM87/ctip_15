@@ -1,45 +1,58 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  SafeAreaView, 
-  Alert 
+import { API_URL } from '@env';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  Alert
 } from 'react-native';
 
 import { CommonActions } from '@react-navigation/native';
 
-
-const VisitorLogin = ({ navigation }) => {
+  const VisitorLogin = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in both email and password');
-      return;
-    }
+const handleLogin = async () => {
+  if (!email || !password) {
+    Alert.alert('Error', 'Please fill in both email and password');
+    return;
+  }
 
-    try {
-      const response = await fetch('http://10.0.2.2:3000/visitor/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        Alert.alert('Success', 'Login successful');
-        navigation.navigate('VisitorDashboard');
-      } else {
-        Alert.alert('Error', data.message || 'Login failed');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Server connection failed');
-    }
+  const url = `${API_URL}/api/login`;
+  const payload = {
+    username: email, // backend expects 'username', not 'email'
+    password
   };
+
+  console.log('📤 Logging in with:', url);
+  console.log('📦 Credentials:', payload);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    console.log('✅ Login response:', data);
+
+    if (response.ok) {
+      Alert.alert('Success', 'Login successful!');
+      navigation.navigate('VisitorDashboard');
+    } else {
+      Alert.alert('Error', data.message || 'Login failed');
+    }
+  } catch (error) {
+    console.error('❌ Login error:', error);
+    Alert.alert('Error', 'Server connection failed');
+  }
+};
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -48,7 +61,7 @@ const VisitorLogin = ({ navigation }) => {
 
         <TextInput
           style={styles.input}
-          placeholder="Enter Email"
+          placeholder="Enter UserID"
           value={email}
           onChangeText={setEmail}
         />
@@ -66,15 +79,14 @@ const VisitorLogin = ({ navigation }) => {
         </TouchableOpacity>
 
         <TouchableOpacity
-        onPress={() => {
-          navigation.dispatch(
-            CommonActions.reset({
-              index: 0,
-              routes: [{ name: 'HomePage' }],
-            })
-          );
-        }}
-        style={styles.footerButton} // Use your preferred styling
+          onPress={() => {
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'HomePage' }],
+              })
+            );
+          }}
         >
           <Text style={styles.footerText}>Back to Home</Text>
         </TouchableOpacity>

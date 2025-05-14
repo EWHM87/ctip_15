@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { API_URL } from '@env';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  Alert
+} from 'react-native';
 import { CommonActions } from '@react-navigation/native';
 
 const UserLogin = ({ navigation }) => {
@@ -13,16 +22,16 @@ const UserLogin = ({ navigation }) => {
     }
 
     try {
-      const response = await fetch('http://10.0.2.2:3000/login', {
+      const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username: email, password }), // 👈 use `username`
       });
 
       const data = await response.json();
       if (response.ok) {
         Alert.alert('Success', 'Login successful');
-        navigation.navigate('UserDashboard'); // You can pass user data here too
+        navigation.navigate('UserDashboard'); // optionally pass user data
       } else {
         Alert.alert('Error', data.message || 'Login failed');
       }
@@ -65,9 +74,7 @@ const UserLogin = ({ navigation }) => {
               })
             );
           }}
-          style={styles.footerButton} // Use your preferred styling
-        >
-          <Text style={styles.footerText}>Back to Home</Text>
+        ><Text style={styles.footerText}>Back to Home</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate('UserRegister')}>

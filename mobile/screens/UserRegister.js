@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { API_URL } from '@env';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  Alert
+} from 'react-native';
 
 const UserRegister = ({ navigation }) => {
   const [name, setName] = useState('');
@@ -13,10 +22,15 @@ const UserRegister = ({ navigation }) => {
     }
 
     try {
-      const response = await fetch('http://10.0.2.2:3000/register', {
+      const response = await fetch(`${API_URL}/api/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({
+          username: name,
+          email,
+          password,
+          role: 'guide'  // or 'visitor', depending on the intended user type
+        }),
       });
 
       const data = await response.json();

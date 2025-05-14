@@ -1,14 +1,45 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { API_URL } from '@env';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  Alert
+} from 'react-native';
 import { CommonActions } from '@react-navigation/native';
 
 const AdminLogin = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
-    // Add login logic here
-    navigation.navigate('AdminDashboard');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in both email and password');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: email, password }), // username expected by server
+      });
+
+      const data = await response.json();
+      if (response.ok && data.user?.role === 'admin') {
+        Alert.alert('Success', 'Login successful');
+        navigation.navigate('AdminDashboard');
+      } else if (response.ok) {
+        Alert.alert('Access Denied', 'You are not an admin');
+      } else {
+        Alert.alert('Error', data.message || 'Login failed');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Server connection failed');
+    }
   };
 
   return (
@@ -33,22 +64,22 @@ const AdminLogin = ({ navigation }) => {
         </TouchableOpacity>
 
         <TouchableOpacity
-                onPress={() => {
-                  navigation.dispatch(
-                    CommonActions.reset({
-                      index: 0,
-                      routes: [{ name: 'HomePage' }],
-                    })
-                  );
-                }}
-                style={styles.footerButton} // Use your preferred styling
-                >
-                  <Text style={styles.footerText}>Back to Home</Text>
-          </TouchableOpacity>
+          onPress={() => {
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'HomePage' }],
+              })
+            );
+          }}
+        >
+          <Text style={styles.footerText}>Back to Home</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
