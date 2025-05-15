@@ -28,6 +28,7 @@ import CreateTraining from './screens/CreateTraining';
 import SendReminders from './screens/SendReminders';
 import GuidePerformance from './screens/GuidePerformance';
 import AdminProfile from './screens/AdminProfile';
+import AdminRegister from './screens/AdminRegister';
 
 const Stack = createStackNavigator();
 
@@ -63,6 +64,7 @@ function App() {
         <Stack.Screen name="SendReminders" component={SendReminders} />
         <Stack.Screen name="GuidePerformance" component={GuidePerformance}  />
         <Stack.Screen name="AdminProfile" component={AdminProfile} />
+        <Stack.Screen name="AdminRegister" component={AdminRegister} />
       </Stack.Navigator>
     </NavigationContainer>
   );

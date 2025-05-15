@@ -54,7 +54,7 @@ const handleLogin = async () => {
         <Text style={styles.title}>Admin Login</Text>
         <TextInput
           style={styles.input}
-          placeholder="Enter UserID"
+          placeholder="Enter AdminID"
           value={email}
           onChangeText={setEmail}
         />
@@ -80,6 +80,9 @@ const handleLogin = async () => {
           }}
         >
           <Text style={styles.footerText}>Back to Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('AdminRegister')}>
+            <Text style={styles.footerText}>Don’t have an account? Register</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

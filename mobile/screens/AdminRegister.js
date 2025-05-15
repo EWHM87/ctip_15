@@ -1,58 +1,25 @@
 import React, { useState } from 'react';
-import { API_URL } from '@env';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  Alert
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 
-const UserRegister = ({ navigation }) => {
+const AdminRegister = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleRegister = async () => {
-    if (!name || !email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_URL}/api/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: name,
-          email,
-          password,
-          role: 'guide'  // or 'visitor', depending on the intended user type
-        }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        Alert.alert('Success', 'Registration successful!');
-        navigation.navigate('UserLogin');
-      } else {
-        Alert.alert('Error', data.message || 'Registration failed');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Server connection failed');
-    }
+  const handleRegister = () => {
+    // Admin registration logic can go here
+    alert('Admin registration successful!');
+    navigation.navigate('AdminLogin');
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>User Register</Text>
+        <Text style={styles.title}>Admin Register</Text>
 
         <TextInput
           style={styles.input}
-          placeholder="Enter ParkGuideID"
+          placeholder="Enter AdminID"
           value={name}
           onChangeText={setName}
         />
@@ -77,7 +44,7 @@ const UserRegister = ({ navigation }) => {
           <Text style={styles.buttonText}>Register</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('UserLogin')}>
+        <TouchableOpacity onPress={() => navigation.navigate('AdminLogin')}>
           <Text style={styles.footerText}>Already have an account? Login</Text>
         </TouchableOpacity>
       </View>
@@ -137,4 +104,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default UserRegister;
+export default AdminRegister;

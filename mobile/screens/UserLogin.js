@@ -47,7 +47,7 @@ const UserLogin = ({ navigation }) => {
 
         <TextInput
           style={styles.input}
-          placeholder="Enter Email"
+          placeholder="Enter ParkGuideId"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"

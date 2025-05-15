@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { API_URL } from '@env'; 
+import Constants from 'expo-constants';
+const API_URL = Constants.expoConfig?.extra?.API_URL ?? Constants.manifest?.extra?.API_URL;
 import { 
   View, 
   Text, 
@@ -62,7 +63,7 @@ const handleRegister = async () => {
 
         <TextInput
           style={styles.input}
-          placeholder="Enter Full Name"
+          placeholder="Enter UserID"
           value={name}
           onChangeText={setName}
         />
