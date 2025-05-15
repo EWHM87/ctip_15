@@ -16,34 +16,45 @@ const UserRegister = ({ navigation }) => {
   const [password, setPassword] = useState('');
 
   const handleRegister = async () => {
-    if (!name || !email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
+  if (!name || !email || !password) {
+    Alert.alert('Error', 'Please fill in all fields');
+    return;
+  }
 
-    try {
-      const response = await fetch(`${API_URL}/api/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: name,
-          email,
-          password,
-          role: 'guide'  // or 'visitor', depending on the intended user type
-        }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        Alert.alert('Success', 'Registration successful!');
-        navigation.navigate('UserLogin');
-      } else {
-        Alert.alert('Error', data.message || 'Registration failed');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Server connection failed');
-    }
+  const payload = {
+    username: name,
+    email,
+    password,
+    role: 'guide'
   };
+
+  const url = `${API_URL}/api/register`;
+  console.log('📤 Sending to:', url);
+  console.log('📦 Payload:', payload);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    console.log('✅ Register response:', data);
+
+    if (response.ok) {
+      Alert.alert('Success', 'Registration successful!');
+      navigation.navigate('UserLogin');
+    } else {
+      console.error('❌ Register failed:', data);
+      Alert.alert('Error', data.message || 'Registration failed');
+    }
+  } catch (error) {
+    console.error('❌ Registration error:', error);
+    Alert.alert('Error', 'Server connection failed');
+  }
+};
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -52,7 +63,7 @@ const UserRegister = ({ navigation }) => {
 
         <TextInput
           style={styles.input}
-          placeholder="Enter Full Name"
+          placeholder="Enter ParkGuideID"
           value={name}
           onChangeText={setName}
         />

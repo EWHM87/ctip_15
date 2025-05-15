@@ -1,72 +1,51 @@
 import React, { useState } from 'react';
-import Constants from 'expo-constants';
+import { API_URL } from '@env';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  SafeAreaView, 
-  Alert 
-} from 'react-native';
-
-
-const VisitorRegister = ({ navigation }) => {
+const AdminRegister = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const API_URL = Constants.expoConfig?.extra?.API_URL ?? Constants.manifest?.extra?.API_URL;
-  console.log('✅ API_URL:', API_URL);
 
 const handleRegister = async () => {
   if (!name || !email || !password) {
-    Alert.alert('Error', 'Please fill in all fields');
+    alert('Please fill in all fields');
     return;
   }
 
-  const url = `${API_URL}/api/register`;
-  const payload = {
-    username: name,
-    email,
-    password,
-    role: 'visitor',
-  };
-
-  console.log('📤 Submitting to:', url);
-  console.log('📦 Payload:', payload);
-
   try {
-    const response = await fetch(url, {
+    const response = await fetch(`${API_URL}/api/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        username: name,
+        email,
+        password,
+        role: 'admin'
+      }),
     });
 
     const data = await response.json();
-    console.log('✅ Server response:', data);
-
     if (response.ok) {
-      Alert.alert('Success', 'Registration successful!');
-      navigation.navigate('VisitorLogin');
+      alert('Admin registration successful!');
+      navigation.navigate('AdminLogin');
     } else {
-      Alert.alert('Error', data.message || 'Registration failed');
+      alert(data.message || 'Registration failed');
     }
   } catch (error) {
-    console.error('❌ Network error:', error);
-    Alert.alert('Error', 'Server connection failed');
+    alert('Server connection failed');
+    console.error('❌ Admin registration error:', error);
   }
 };
-
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>Visitor Register</Text>
+        <Text style={styles.title}>Admin Register</Text>
 
         <TextInput
           style={styles.input}
-          placeholder="Enter UserID"
+          placeholder="Enter AdminID"
           value={name}
           onChangeText={setName}
         />
@@ -91,7 +70,7 @@ const handleRegister = async () => {
           <Text style={styles.buttonText}>Register</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('VisitorLogin')}>
+        <TouchableOpacity onPress={() => navigation.navigate('AdminLogin')}>
           <Text style={styles.footerText}>Already have an account? Login</Text>
         </TouchableOpacity>
       </View>
@@ -151,4 +130,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default VisitorRegister;
+export default AdminRegister;

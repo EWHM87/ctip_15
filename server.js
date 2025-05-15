@@ -47,164 +47,262 @@
   app.use(bodyParser.json());
 
 
-  // 4️⃣ MySQL Connection
-  const db = mysql.createConnection({
-    host:     process.env.DB_HOST,
-    user:     process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-  });
-
-  db.connect(err => {
-    if (err) {
-      console.error('❌ DB connection error:', err);
-      process.exit(1);
-    }
-    console.log('✅ Connected to MySQL database');
-  });
-
-  // Create users table if it doesn't exist
-  const createUsersTable = `
-  CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'guide', 'visitor') DEFAULT 'visitor',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  ) ENGINE=InnoDB;
-  `;
-
-  db.query(createUsersTable, (err, result) => {
-    if (err) {
-      console.error('❌ Error creating users table:', err);
-    } else {
-      console.log('✅ Users table ready');
-    }
-  });
-
-// ————————————————————————————————
-// Create park_info table & route
-// ————————————————————————————————
-
-const createParkInfoTable = `
-CREATE TABLE IF NOT EXISTS park_info (
-  park_id     INT AUTO_INCREMENT PRIMARY KEY,
-  name        VARCHAR(100) NOT NULL,
-  location    VARCHAR(100) NOT NULL,
-  description TEXT NOT NULL,
-  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
-`;
-db.query(createParkInfoTable, (err) => {
-  if (err) console.error('❌ Error creating park_info table:', err);
-  else console.log('✅ park_info table ready');
+// 4️⃣ MySQL Connection
+const db = mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  multipleStatements: false,
 });
 
-// GET all parks
-app.get('/api/parks', (req, res) => {
-  db.query('SELECT * FROM park_info', (err, rows) => {
-    if (err) return res.status(500).json({ message: 'Error fetching parks' });
-    res.json(rows);
-  });
-});
-
-// POST a new park
-app.post('/api/parks', (req, res) => {
-  const { name, location, description } = req.body;
-  if (!name || !location || !description) {
-    return res.status(400).json({ message: 'All fields are required' });
+// 1️⃣ Connect first
+db.connect(err => {
+  if (err) {
+    console.error('❌ DB connection error:', err);
+    process.exit(1);
   }
-  const sql = 'INSERT INTO park_info (name, location, description) VALUES (?, ?, ?)';
-  db.query(sql, [name, location, description], (err, result) => {
+});
+
+  // 2️⃣ Create DB if it doesn't exist
+  db.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`, (err) => {
     if (err) {
-      console.error('❌ Error inserting park:', err);
-      return res.status(500).json({ message: 'Error adding park', error: err });
+      console.error('❌ Error creating database:', err);
+      return;
     }
-    res.status(201).json({ message: 'Park added successfully', parkId: result.insertId });
+    console.log(`✅ Database ${process.env.DB_NAME} ready`);
+
+    // 3️⃣ Switch to your database
+    db.changeUser({ database: process.env.DB_NAME }, (err) => {
+      if (err) {
+        console.error('❌ Error switching to database:', err);
+        return;
+      }
+      // 4️⃣ Confirm DB
+      db.query('SELECT DATABASE() AS db', (err, result) => {
+        if (err) {
+          console.error('❌ Could not confirm DB:', err);
+        } else {
+          console.log('🧠 Connected to database:', result[0].db); // ✅ Should say "sarawakparks"
+        }
+      });
+            // Users table
+      const createUsersTable = `
+        CREATE TABLE IF NOT EXISTS users (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          username VARCHAR(50) UNIQUE NOT NULL,
+          email VARCHAR(100) UNIQUE NOT NULL,
+          password VARCHAR(255) NOT NULL,
+          role ENUM('admin', 'guide', 'visitor') DEFAULT 'visitor',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB;
+      `;
+      db.query(createUsersTable, err => {
+        if (err) console.error('❌ Error creating users table:', err);
+        else console.log('✅ Users table ready');
+      });
+
+      // Park info table
+      const createParkInfoTable = `
+        CREATE TABLE IF NOT EXISTS park_info (
+          park_id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(100) NOT NULL,
+          location VARCHAR(100) NOT NULL,
+          description TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB;
+      `;
+      db.query(createParkInfoTable, err => {
+        if (err) console.error('❌ Error creating park_info table:', err);
+        else console.log('✅ park_info table ready');
+      });
+
+      // Training schedule table
+      const createTrainingScheduleTable = `
+        CREATE TABLE IF NOT EXISTS schedule_training (
+          schedule_id INT AUTO_INCREMENT PRIMARY KEY,
+          topic VARCHAR(255) NOT NULL,
+          date DATE NOT NULL
+        );
+      `;
+
+      // Guide training history table
+      const createGuideTrainingTable = `
+        CREATE TABLE IF NOT EXISTS training_history (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          guide_id INT NOT NULL,
+          schedule_id INT NOT NULL,
+          status ENUM('Upcoming', 'Completed') DEFAULT 'Upcoming',
+          FOREIGN KEY (schedule_id) REFERENCES schedule_training(schedule_id)
+        );
+      `;
+      
+    // Create schedule_training table
+    db.query(createTrainingScheduleTable, err => {
+      if (err) {
+        console.error('❌ Error creating schedule_training table:', err);
+      } else {
+        console.log('✅ schedule_training table ready');
+      }
+    });
+
+    // Create training_history table
+    db.query(createGuideTrainingTable, err => {
+      if (err) {
+        console.error('❌ Error creating guide_training table:', err);
+      } else {
+        console.log('✅ guide_training table ready');
+      }
+    });
+
+
+      // Manage guides table
+      const createManageGuidesTable = `
+        CREATE TABLE IF NOT EXISTS manage_guides (
+          guide_id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          certifications TEXT DEFAULT ''
+        ) ENGINE=InnoDB;
+      `;
+      db.query(createManageGuidesTable, err => {
+        if (err) console.error('❌ Error creating manage_guides table:', err);
+        else console.log('✅ manage_guides table ready');
+      });
+
+      // Guide certifications table
+      const createCertificationsTable = `
+        CREATE TABLE IF NOT EXISTS guide_certifications (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          guide_id INT NOT NULL,
+          certification_name VARCHAR(255) NOT NULL,
+          expiry_date DATE NOT NULL,
+          status ENUM('Valid', 'Expiring Soon', 'Expired') DEFAULT 'Valid',
+          FOREIGN KEY (guide_id) REFERENCES manage_guides(guide_id)
+        ) ENGINE=InnoDB;
+      `;
+      db.query(createCertificationsTable, err => {
+        if (err) console.error('❌ Error creating guide_certifications table:', err);
+        else console.log('✅ guide_certifications table ready');
+      });
+
+      // Notifications table
+      const createNotificationsTable = `
+        CREATE TABLE IF NOT EXISTS notifications (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          recipient VARCHAR(255) NOT NULL,
+          content TEXT NOT NULL,
+          sent_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB;
+      `;
+      db.query(createNotificationsTable, err => {
+        if (err) console.error('❌ Error creating notifications table:', err);
+        else console.log('✅ notifications table ready');
+      });
+
+      // Guide self-assessments table
+      const createGuideAssessmentTable = `
+        CREATE TABLE IF NOT EXISTS guide_self_assessments (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) NOT NULL,
+          q1 ENUM('yes', 'no') NOT NULL,
+          q2 ENUM('yes', 'no') NOT NULL,
+          q3 ENUM('yes', 'no') NOT NULL,
+          q4 ENUM('yes', 'no') NOT NULL,
+          q5 ENUM('yes', 'no') NOT NULL,
+          q6 ENUM('yes', 'no') NOT NULL,
+          q7 TEXT NOT NULL,
+          q8 TEXT,
+          submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB;
+      `;
+      db.query(createGuideAssessmentTable, err => {
+        if (err) console.error('❌ Error creating guide_self_assessments table:', err);
+        else console.log('✅ guide_self_assessments table ready');});
   });
 });
 
 
-  // ==============================
-  // POST /api/register
-  // ==============================
-
-  app.post(
-    '/api/register',
-    [
-      body('username')
-        .trim()
-        .isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
-      body('email')
-        .isEmail().withMessage('Must be a valid email')
-        .normalizeEmail(),
-      body('password')
-        .isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-      body('role')
-        .optional()
-        .isIn(['admin', 'guide', 'visitor']).withMessage('Invalid role')
-    ],
-    async (req, res) => {
-      console.log('📥 Received registration:', req.body);
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        console.log('❌ Validation failed:', errors.array());
-        return res.status(422).json({ message: 'Validation error', errors: errors.array() });
-      }
-
-      const { username, email, password, role } = req.body;
-
-      try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const sql = `INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`;
-        db.query(sql, [username, email, hashedPassword, role], (err, result) => {
-          if (err) {
-            console.error('❌ MySQL Error:', err);
-            if (err.code === 'ER_DUP_ENTRY') {
-              return res.status(400).json({ message: 'Username or email already exists' });
-            }
-            return res.status(500).json({ message: 'DB insert failed', error: err });
+      // ==============================
+      // POST /api/register
+      // ==============================
+      app.post(
+        '/api/register',
+        [
+          body('username')
+            .trim()
+            .isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
+          body('email')
+            .isEmail().withMessage('Must be a valid email')
+            .normalizeEmail(),
+          body('password')
+            .isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+          body('role')
+            .optional()
+            .isIn(['admin', 'guide', 'visitor']).withMessage('Invalid role')
+        ],
+        async (req, res) => {
+          const errors = validationResult(req);
+          if (!errors.isEmpty()) {
+            console.log('❌ Validation failed:', errors.array());
+            return res.status(422).json({ message: 'Validation error', errors: errors.array() });
           }
 
-          // If registering as guide, also insert into manage_guides
-          if (role === 'guide') {
-            const sql2 = `INSERT INTO manage_guides (name, email) VALUES (?, ?)`;
-            db.query(sql2, [username, email], (err2) => {
-              if (err2 && err2.code !== 'ER_DUP_ENTRY') {
-                console.error('❌ Error inserting into manage_guides:', err2);
-                return res.status(500).json({ message: 'Guide registration failed', error: err2 });
+          const { username, email, password, role } = req.body;
+          console.log('📥 Received registration:', req.body);
+          console.log('🔍 Attempting user insert with:', { username, email, password, role });
+
+          try {
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            const sql = `INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`;
+            db.query(sql, [username, email, hashedPassword, role], (err, result) => {
+              if (err) {
+                console.error('❌ MySQL Error:', err);
+                if (err.code === 'ER_DUP_ENTRY') {
+                  return res.status(400).json({ message: 'Username or email already exists' });
+                }
+                return res.status(500).json({ message: 'DB insert failed', error: err });
               }
-              console.log('✅ Guide also added to manage_guides');
-            });
-          }
 
-          console.log('✅ Registered new user:', result);
-          return res.status(201).json({ message: 'User registered successfully' });
-        });
-      } catch (err) {
-        console.error('❌ Server error:', err);
-        return res.status(500).json({ message: 'Server error' });
-      }
-    }
-  );
+              // If registering as guide, also insert into manage_guides
+              if (role === 'guide') {
+                const sql2 = `INSERT INTO manage_guides (name, email) VALUES (?, ?)`;
+                db.query(sql2, [username, email], (err2) => {
+                  if (err2 && err2.code !== 'ER_DUP_ENTRY') {
+                    console.error('❌ Error inserting into manage_guides:', err2);
+                    return res.status(500).json({ message: 'Guide registration failed', error: err2 });
+                  }
+                  console.log('✅ Guide also added to manage_guides');
+                });
+              }
+
+              console.log('✅ Registered new user:', result);
+              return res.status(201).json({ message: 'User registered successfully' });
+            });
+          } catch (err) {
+            console.error('❌ Server error:', err);
+            return res.status(500).json({ message: 'Server error' });
+          }
+        }
+      );
+
 
   // PUT /api/update-role/:email
-  app.put('/api/update-role/:email', (req, res) => {
-    const { email } = req.params;
-    const { role } = req.body;
+      app.put('/api/update-role/:email', (req, res) => {
+        const { email } = req.params;
+        const { role } = req.body;
 
-    const sql = `UPDATE users SET role = ? WHERE email = ?`;
-    db.query(sql, [role, email], (err) => {
-      if (err) {
-        console.error('❌ Role update failed:', err);
-        return res.status(500).json({ message: 'Failed to update role', error: err });
-      }
-      res.json({ message: 'Role updated successfully' });
-    });
-  });
+        const sql = `UPDATE users SET role = ? WHERE email = ?`;
+        db.query(sql, [role, email], (err) => {
+          if (err) {
+            console.error('❌ Role update failed:', err);
+            return res.status(500).json({ message: 'Failed to update role', error: err });
+          }
+          res.json({ message: 'Role updated successfully'
+          });
+        });
+      });
 
   //  POST /api/register-guide
   app.post('/api/register-guide', async (req, res) => {
@@ -324,23 +422,7 @@ app.post(
       });
     }
   );
-
-  // ==============================
-  // Create training_schedule table
-  // ==============================
-
-  const createTrainingScheduleTable = `
-  CREATE TABLE IF NOT EXISTS schedule_training (
-    schedule_id INT AUTO_INCREMENT PRIMARY KEY,
-    topic VARCHAR(255) NOT NULL,
-    date DATE NOT NULL
-  );`;
-
-  db.query(createTrainingScheduleTable, (err) => {
-    if (err) console.error('❌ Error creating training_schedule table:', err);
-    else console.log('✅ training_schedule table ready');
-  });
-
+  
   // POST /api/training-schedule - Create a new training schedule
   app.post('/api/scheduletraining', (req, res) => {
     const { topic, date } = req.body;
@@ -376,29 +458,7 @@ app.post(
       res.status(200).json(result);
     });
   });
-
-  // ==============================
-  // Create training_history table
-  // ==============================
-
-  const createGuideTrainingTable = `
-  CREATE TABLE IF NOT EXISTS training_history (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    guide_id INT NOT NULL,
-    schedule_id INT NOT NULL,
-    status ENUM('Upcoming', 'Completed') DEFAULT 'Upcoming',
-    FOREIGN KEY (schedule_id) REFERENCES schedule_training(schedule_id)
-  );
-  `;
-
-  db.query(createGuideTrainingTable, (err) => {
-    if (err) {
-      console.error('❌ Error creating guide_training table:', err);
-    } else {
-      console.log('✅ guide_training table ready');
-    }
-  });
-
+  
   // GET /api/my-training/:guideId - Get training history for a guide
   app.get('/api/my-training/:guideId', (req, res) => {
     const guideId = req.params.guideId;
@@ -498,26 +558,7 @@ app.post(
       res.json(results);
     });
   });
-
-  // ==============================
-  // Create manage_guides table
-  // ==============================
-
-  const createManageGuidesTable = `
-  CREATE TABLE IF NOT EXISTS manage_guides (
-      guide_id INT AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      email VARCHAR(255) UNIQUE NOT NULL,
-      certifications TEXT DEFAULT ''
-  )ENGINE=InnoDB;
-  `;
-
-  db.query(createManageGuidesTable, (err) => {
-      if (err) console.error('❌ Error creating manage_guides table:', err);
-      else console.log('✅ manage_guides table ready');
-  });
-
-  // POST /api/manage-guides - Fetch all guides
+    // POST /api/manage-guides - Fetch all guides
   app.post('/api/register-guide', (req, res) => {
     const { name, email, role = 'guide' } = req.body;
 
@@ -638,27 +679,7 @@ app.post(
       });
     });
   });
-
-  // ==============================
-  // Create guide_certifications table
-  // ==============================
-  const createCertificationsTable = `
-  CREATE TABLE IF NOT EXISTS guide_certifications (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    guide_id INT NOT NULL,
-    certification_name VARCHAR(255) NOT NULL,
-    expiry_date DATE NOT NULL,
-    status ENUM('Valid', 'Expiring Soon', 'Expired') DEFAULT 'Valid',
-    FOREIGN KEY (guide_id) REFERENCES manage_guides(guide_id)
-  ) ENGINE=InnoDB;
-  `;
-
-  db.query(createCertificationsTable, (err) => {
-    if (err) console.error('❌ Error creating guide_certifications table:', err);
-    else console.log('✅ guide_certifications table ready');
-  });
-
-  // POST /api/guide-certifications - Add a certification for a guide
+    // POST /api/guide-certifications - Add a certification for a guide
   app.post('/api/certifications', (req, res) => {
     const { guide_id, certification_name, expiry_date, status = 'Valid' } = req.body;
 
@@ -759,25 +780,8 @@ app.post(
       res.json(results);
     });
   });
-
-//===============================
-// Create table for notifications
-//=============================
-const createNotificationsTable = `
-CREATE TABLE IF NOT EXISTS notifications (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  recipient VARCHAR(255) NOT NULL,
-  content TEXT NOT NULL,
-  sent_at DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
-`;
-
-db.query(createNotificationsTable, (err) => {
-  if (err) console.error('❌ Error creating notifications table:', err);
-  else console.log('✅ notifications table ready');
-});
-
-// POST /api/notifications - Send/save a notification
+  
+  // POST /api/notifications - Send/save a notification
   app.post('/api/notifications', (req, res) => {
     const { recipient, content } = req.body;
 
@@ -809,47 +813,6 @@ db.query(createNotificationsTable, (err) => {
     });
   });
   
-// GET /api/notifications/:recipient - Get notifications for a specific recipient
-  app.get('/api/notifications', (req, res) => {
-    const sql = `SELECT * FROM notifications ORDER BY sent_at DESC`;
-    db.query(sql, (err, results) => {
-      if (err) {
-        console.error('❌ Fetch error:', err);
-        return res.status(500).json({ message: 'Failed to fetch notifications', error: err });
-      }
-
-      res.json(results);
-    });
-  });
-
-//=============================================
-// Create table for guide self assessment
-//=============================================
-const createGuideAssessmentTable = `
-CREATE TABLE IF NOT EXISTS guide_self_assessments (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
-  email VARCHAR(255) NOT NULL,
-  q1 ENUM('yes', 'no') NOT NULL,
-  q2 ENUM('yes', 'no') NOT NULL,
-  q3 ENUM('yes', 'no') NOT NULL,
-  q4 ENUM('yes', 'no') NOT NULL,
-  q5 ENUM('yes', 'no') NOT NULL,
-  q6 ENUM('yes', 'no') NOT NULL,
-  q7 TEXT NOT NULL,
-  q8 TEXT,
-  submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
-`;
-
-db.query(createGuideAssessmentTable, (err) => {
-  if (err) {
-    console.error('❌ Error creating guide_self_assessments table:', err);
-  } else {
-    console.log('✅ guide_self_assessments table ready');
-  }
-});
-
 // POST /api/self-assessment - Route to Receive Form Submissions
 app.post('/api/self-assessment', (req, res) => {
   const {
@@ -975,3 +938,7 @@ db.query(createFeedbackSummaryTable, (err) => {
   app.listen(PORT, () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);
   });
+
+  // ✅ This stays at the bottom of your server.js
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);})

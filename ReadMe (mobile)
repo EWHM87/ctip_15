@@ -1,0 +1,116 @@
+# 📱 CTiP_15 Project
+
+This repository contains the **React Native mobile app** using Expo and a **Node.js backend server** with MySQL integration.
+
+---
+
+## 🚀 Prerequisites
+
+### 🔧 Local Machine
+
+- Node.js (v18+ recommended)
+- npm
+- Expo CLI (`npm install -g expo-cli`)
+- MySQL (e.g. XAMPP or MySQL server running locally)
+
+### 📱 Mobile Environment
+
+- Android Studio (with Emulator) or a real device
+- Expo Go (install from Google Play / App Store)
+
+---
+
+## 🔁 First-Time Setup
+
+### 1️⃣ Clone the Repo
+
+```bash
+git clone https://github.com/yourusername/ctip_15.git
+cd ctip_15
+```
+
+### 2️⃣ Backend Setup
+
+```bash
+cd server   # or wherever your server.js is located
+npm install
+```
+
+### ➕ Set up `.env` in server folder
+
+Create a `.env` file beside `server.js` with:
+
+```env
+DB_HOST=127.0.0.1
+DB_USER=root
+DB_PASS=
+DB_NAME=sarawakparks
+JWT_SECRET=your_super_secret_key
+```
+
+Start your MySQL (XAMPP) and run:
+
+```bash
+node server.js
+```
+
+Expected output:
+
+```
+🚀 Server running at http://0.0.0.0:5000
+✅ Connected to MySQL database
+```
+
+---
+
+### 3️⃣ Mobile Setup
+
+```bash
+cd mobile
+npm install
+```
+
+Ensure the `.env` file exists in `/mobile` directory:
+
+```env
+API_URL=http://<your-local-ip>:5000
+```
+
+> Replace `<your-local-ip>` with your IPv4 address (check with `ipconfig` or `ifconfig`). Example:
+> `API_URL=http://192.168.0.20:5000`
+
+Start the mobile app:
+
+```bash
+npm start
+```
+
+Then press `a` to launch on Android (or scan the QR code with Expo Go).
+
+---
+
+## 🌐 Notes
+
+- Both backend and mobile must be on the **same Wi-Fi network**
+- Restart Expo with `npm start --reset-cache` if issues arise
+- Use `node server.js` every time you boot the server
+- Make sure `.env` changes match your IP and ports
+
+---
+
+## 👥 User Roles
+
+- Roles supported: `visitor`, `guide`, `admin`
+- Registration and login available for all roles
+- Admin functionality is linked to backend `/server.js`
+
+---
+
+## 📂 Folder Structure
+
+```
+ctip_15/
+├── mobile/        # React Native app
+│   └── .env       # API_URL
+├── server.js      # Node.js backend
+└── .env           # MySQL & JWT config
