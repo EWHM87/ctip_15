@@ -38,6 +38,7 @@ import SpeciesDatabase from './SpeciesDatabase';
 import FeedbackForm from './FeedbackForm';
 import GuideSelfAssessment from './GuideSelfAssessment';
 
+import GuidePerformance from './GuidePerformance';
 
 function MainLayout({ user, onLogout, children }) {
   return (
@@ -248,6 +249,15 @@ function App() {
           </MainLayout>
         </ProtectedRoute>
       } />
+
+      <Route path="/guide-performance" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <GuidePerformance />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
 
       {/* Forbidden and Fallback */}
       <Route path="/forbidden" element={<Forbidden />} />

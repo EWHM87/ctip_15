@@ -1,6 +1,5 @@
-// FeedbackForm.jsx
 import React, { useState } from 'react';
-import './App.css'; // Include your CSS styles here
+import './App.css'; // Ensure CSS includes ff-visitor styles
 
 function FeedbackForm() {
   const [formData, setFormData] = useState({
@@ -18,18 +17,18 @@ function FeedbackForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log(formData);
+    console.log(formData); // This will be posted to backend later
     setSubmitted(true);
   };
 
   if (submitted) {
-    return <div className="thank-you">Thank you for your feedback!</div>;
+    return <div className="thank-you">✅ Thank you for your feedback!</div>;
   }
 
   return (
-    <div className="feedback-form-container">
-      <h2>📝 Semenggoh Wildlife Centre Feedback Form</h2>
-      <form onSubmit={handleSubmit} className="feedback-form">
+    <div className="ff-visitor-container">
+      <h2>📝 Park Guide Visitor Feedback Form</h2>
+      <form onSubmit={handleSubmit} className="ff-visitor-form">
         <label>
           Visitor Name:
           <input type="text" name="visitorName" value={formData.visitorName} onChange={handleChange} required />
@@ -41,59 +40,57 @@ function FeedbackForm() {
         </label>
 
         <hr />
-        <p>Please rate the following on a scale of 1 (Poor) to 5 (Excellent):</p>
+        <p>Please rate the following aspects of your guide’s performance (1 = Poor, 5 = Excellent):</p>
 
-        <label>1. How informative was the guide about orangutan behavior?
+        <label>1. Knowledge of wildlife and biodiversity
           <select name="q1" value={formData.q1} onChange={handleChange} required>
-            <option value="">Select</option>
-            {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+            <option value="">Select</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
           </select>
         </label>
 
-        <label>2. Was the guide respectful toward the wildlife and environment?
+        <label>2. Communication clarity and confidence
           <select name="q2" value={formData.q2} onChange={handleChange} required>
-            <option value="">Select</option>
-            {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+            <option value="">Select</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
           </select>
         </label>
 
-        <label>3. Did the guide communicate clearly and answer questions effectively?
+        <label>3. Friendliness and professionalism
           <select name="q3" value={formData.q3} onChange={handleChange} required>
-            <option value="">Select</option>
-            {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+            <option value="">Select</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
           </select>
         </label>
 
-        <label>4. How well did the guide manage the group during the visit?
+        <label>4. Engagement and storytelling skills
           <select name="q4" value={formData.q4} onChange={handleChange} required>
-            <option value="">Select</option>
-            {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+            <option value="">Select</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
           </select>
         </label>
 
-        <label>5. Was the safety information provided adequate and helpful?
+        <label>5. Adherence to safety procedures
           <select name="q5" value={formData.q5} onChange={handleChange} required>
-            <option value="">Select</option>
-            {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+            <option value="">Select</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
           </select>
         </label>
 
-        <label>6. How satisfied are you with the overall tour experience?
+        <label>6. Respect shown to wildlife and environment
           <select name="q6" value={formData.q6} onChange={handleChange} required>
-            <option value="">Select</option>
-            {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+            <option value="">Select</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
           </select>
         </label>
 
-        <label>7. How would you rate the cleanliness and facilities of the park?
+        <label>7. Overall visitor satisfaction
           <select name="q7" value={formData.q7} onChange={handleChange} required>
-            <option value="">Select</option>
-            {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+            <option value="">Select</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
           </select>
         </label>
 
-        <label>8. Any suggestions or comments?
-          <textarea name="q8" value={formData.q8} onChange={handleChange} placeholder="Write your comments here..." />
+        <label>8. Additional comments or suggestions
+          <textarea
+            name="q8"
+            value={formData.q8}
+            onChange={handleChange}
+            placeholder="Your feedback helps us improve..."
+          />
         </label>
 
         <button type="submit">Submit Feedback</button>

@@ -318,7 +318,8 @@ ul li {
 }
 
 /*FeedbackForm*/
-.feedback-form-container {
+/* FeedbackForm styles (scoped with ff-visitor) */
+.ff-visitor-container {
   max-width: 700px;
   margin: auto;
   padding: 2rem;
@@ -327,32 +328,34 @@ ul li {
   box-shadow: 0 0 20px rgba(0,0,0,0.1);
 }
 
-.feedback-form h2 {
+.ff-visitor-form h2 {
   text-align: center;
   margin-bottom: 1rem;
 }
 
-.feedback-form label {
+.ff-visitor-form label {
   display: block;
   margin-top: 1rem;
   font-weight: 500;
 }
 
-.feedback-form input,
-.feedback-form select,
-.feedback-form textarea {
+.ff-visitor-form input,
+.ff-visitor-form select,
+.ff-visitor-form textarea {
   width: 100%;
   padding: 10px;
   margin-top: 4px;
   border: 1px solid #ccc;
   border-radius: 6px;
+  font-size: 1rem;
 }
 
-.feedback-form textarea {
+.ff-visitor-form textarea {
   min-height: 80px;
+  resize: vertical;
 }
 
-.feedback-form button {
+.ff-visitor-form button {
   margin-top: 20px;
   padding: 10px 20px;
   background: #28a745;
@@ -364,7 +367,7 @@ ul li {
   width: 100%;
 }
 
-.feedback-form button:hover {
+.ff-visitor-form button:hover {
   background: #218838;
 }
 
@@ -374,6 +377,7 @@ ul li {
   margin-top: 2rem;
   color: #28a745;
 }
+
 
 /*GuideSelfAssessment.jsx*/
 .guide-form-container {
@@ -531,4 +535,28 @@ ul li {
   font-weight: 600;
 }
 
+/*GuidePerformance.jsx*/
+/* GuidePerformance.jsx Scoped Styling */
+.gp-card-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.gp-card-text {
+  font-size: 0.95rem;
+}
+
+.gp-feedback-list {
+  padding-left: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.gp-feedback-item {
+  font-size: 0.9rem;
+}
+
+.gp-list-group-item {
+  font-weight: 500;
+  font-size: 0.95rem;
+}
 
