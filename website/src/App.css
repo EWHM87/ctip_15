@@ -424,3 +424,91 @@ ul li {
   font-size: 1.3rem;
   margin-top: 3rem;
 }
+
+
+/* BiodiversityCamera Component */
+
+.biodiversity-camera-container {
+  max-width: 900px;
+  margin: auto;
+  padding: 2rem;
+  background: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+}
+
+.biodiversity-camera-container h2 {
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: #14532d;
+}
+
+.biodiversity-camera-container p {
+  text-align: center;
+  color: #555;
+  margin-bottom: 2rem;
+}
+
+.biodiversity-camera-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
+}
+
+.camera-column,
+.upload-column {
+  flex: 1 1 300px;
+  max-width: 420px;
+}
+
+.camera-preview,
+.upload-preview {
+  width: 100%;
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.08);
+  margin-top: 1rem;
+}
+
+.capture-button,
+.identify-button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin-top: 1rem;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  transition: background 0.3s ease;
+}
+
+.capture-button {
+  background-color: #3498db;
+  color: white;
+}
+
+.capture-button:hover {
+  background-color: #2e86c1;
+}
+
+.identify-button {
+  background-color: #27ae60;
+  color: white;
+}
+
+.identify-button:hover {
+  background-color: #1e8449;
+}
+
+.ai-result {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 1.25rem;
+  background: #eafaf1;
+  padding: 1rem;
+  border-radius: 10px;
+  color: #117a65;
+  font-weight: 600;
+}
