@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Constants from 'expo-constants';
-const API_URL = Constants.expoConfig?.extra?.API_URL ?? Constants.manifest?.extra?.API_URL;
+
 import { 
   View, 
   Text, 
@@ -11,6 +11,7 @@ import {
   Alert 
 } from 'react-native';
 
+const API_URL = Constants.expoConfig?.extra?.API_URL ?? Constants.manifest?.extra?.API_URL;
 const VisitorRegister = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
