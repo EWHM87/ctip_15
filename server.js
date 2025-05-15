@@ -125,10 +125,25 @@ db.connect(err => {
           FOREIGN KEY (schedule_id) REFERENCES schedule_training(schedule_id)
         );
       `;
-      db.query(createGuideTrainingTable, err => {
-        if (err) console.error('❌ Error creating guide_training table:', err);
-        else console.log('✅ guide_training table ready');
-      });
+      
+    // Create schedule_training table
+    db.query(createTrainingScheduleTable, err => {
+      if (err) {
+        console.error('❌ Error creating schedule_training table:', err);
+      } else {
+        console.log('✅ schedule_training table ready');
+      }
+    });
+
+    // Create training_history table
+    db.query(createGuideTrainingTable, err => {
+      if (err) {
+        console.error('❌ Error creating guide_training table:', err);
+      } else {
+        console.log('✅ guide_training table ready');
+      }
+    });
+
 
       // Manage guides table
       const createManageGuidesTable = `
