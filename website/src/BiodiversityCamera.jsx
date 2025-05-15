@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import Webcam from 'react-webcam';
+import './App.css';
 
 const BiodiversityCamera = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -8,7 +9,7 @@ const BiodiversityCamera = () => {
   const [loading, setLoading] = useState(false);
   const webcamRef = useRef(null);
 
-  const API_URL = 'http://localhost:5000/api/ai/identify'; // change to your AI endpoint
+  const API_URL = 'http://localhost:5000/api/ai/identify'; // Change this to your backend
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -46,49 +47,77 @@ const BiodiversityCamera = () => {
       const data = await res.json();
       setAiResult(data.label || 'Unknown');
     } catch (error) {
-      setAiResult('Error identifying image.');
+      setAiResult('❌ Error identifying image.');
     }
     setLoading(false);
   };
 
   return (
-    <div className="container mt-4">
+    <div className="biodiversity-camera-container">
       <h2>📷 Species Identification Camera</h2>
-      <p>Upload an image or capture one using your webcam to identify species using our AI engine.</p>
+      <p>Upload or capture a photo to let our AI model identify the species in real-time.</p>
 
-      <div className="row mt-4">
-        {/* Webcam Panel */}
-        <div className="col-md-6 text-center">
-          <Webcam
-            audio={false}
-            ref={webcamRef}
-            screenshotFormat="image/jpeg"
-            width="100%"
-            className="rounded shadow-sm"
-          />
-          <button className="btn btn-outline-primary mt-3" onClick={captureFromWebcam}>
-            📸 Capture from Webcam
-          </button>
+      <div className="biodiversity-camera-panel">
+        {/* 📸 Webcam Section */}
+        <div className="camera-column">
+          <div className="card shadow-sm p-3">
+            <h5 className="text-center">Live Webcam</h5>
+            <Webcam
+              audio={false}
+              ref={webcamRef}
+              screenshotFormat="image/jpeg"
+              className="camera-preview"
+            />
+            <button
+              className="capture-button"
+              onClick={captureFromWebcam}
+              title="Capture an image from webcam"
+            >
+              📸 Capture from Webcam
+            </button>
+          </div>
         </div>
 
-        {/* File Upload Panel */}
-        <div className="col-md-6">
-          <label className="form-label">📁 Upload Image</label>
-          <input type="file" accept="image/*" onChange={handleImageChange} className="form-control mb-3" />
+        {/* 📁 Upload Section */}
+        <div className="upload-column">
+          <div className="card shadow-sm p-3">
+            <h5 className="text-center">Upload Image</h5>
+            <label className="form-label" htmlFor="imageUpload">Choose an image file</label>
+            <input
+              type="file"
+              id="imageUpload"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="form-control"
+            />
 
-          {previewSrc && (
-            <img src={previewSrc} alt="Preview" className="img-fluid rounded shadow-sm mb-3" />
-          )}
+            {previewSrc && (
+              <img src={previewSrc} alt="Preview" className="upload-preview mt-3" />
+            )}
 
-          <button className="btn btn-success w-100" onClick={handleSubmit} disabled={loading}>
-            {loading ? '🔍 Identifying...' : '🔍 Identify Species'}
-          </button>
+            <button
+              className="identify-button"
+              onClick={handleSubmit}
+              title="Submit image for AI species identification"
+              disabled={loading}
+            >
+              {loading ? '🔄 Identifying...' : '🔍 Identify Species'}
+            </button>
 
-          {aiResult && (
-            <div className="alert alert-info mt-4 text-center">
-              🧠 <strong>AI Prediction:</strong> {aiResult}
-            </div>
-          )}
+            {loading && (
+              <div className="text-center mt-3">
+                <div className="spinner-border text-success" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            )}
+
+            {aiResult && (
+              <div className="ai-result mt-3">
+                🧠 <strong>AI Prediction:</strong> {aiResult}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
