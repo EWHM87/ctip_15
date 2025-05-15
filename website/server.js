@@ -760,6 +760,21 @@ app.post(
     });
   });
 
+  // calling backend
+const { exec } = require('child_process');
+
+app.post('/api/generate-feedback-summary', (req, res) => {
+  exec('python summarise_feedback.py', (error, stdout, stderr) => {
+    if (error) {
+      console.error(`❌ Script error: ${error.message}`);
+      return res.status(500).json({ message: 'Script error', error: error.message });
+    }
+    console.log(`✅ Script output: ${stdout}`);
+    res.json({ message: 'Feedback summary generated successfully' });
+  });
+});
+
+
 //===============================
 // Create table for notifications
 //=============================
