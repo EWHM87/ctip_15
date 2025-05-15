@@ -85,6 +85,37 @@ db.connect(err => {
           console.log('🧠 Connected to database:', result[0].db); // ✅ Should say "sarawakparks"
         }
       });
+
+            // Guide feedback table
+      const createGuideFeedbackTable = `
+        CREATE TABLE IF NOT EXISTS guide_feedback (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          visitor_id VARCHAR(100),
+          guide_id VARCHAR(100),
+          feedback_text TEXT,
+          rating FLOAT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB;
+      `;
+      db.query(createGuideFeedbackTable, err => {
+        if (err) console.error('❌ Error creating guide_feedback table:', err);
+        else console.log('✅ guide_feedback table ready');
+      });
+
+      // Feedback summary table
+      const createFeedbackSummaryTable = `
+        CREATE TABLE IF NOT EXISTS feedback_summary (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          summary_text TEXT NOT NULL,
+          sentiment VARCHAR(20),
+          generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB;
+      `;
+      db.query(createFeedbackSummaryTable, err => {
+        if (err) console.error('❌ Error creating feedback_summary table:', err);
+        else console.log('✅ feedback_summary table ready');
+      });
+
             // Users table
       const createUsersTable = `
         CREATE TABLE IF NOT EXISTS users (
@@ -221,6 +252,53 @@ db.connect(err => {
         else console.log('✅ guide_self_assessments table ready');});
   });
 });
+
+// POST /api/submit-feedback
+app.post('/api/submit-feedback', (req, res) => {
+  const { visitorName, guideName, q1, q2, q3, q4, q5, q6, q7, q8 } = req.body;
+
+  if (!visitorName || !guideName || !q1 || !q2 || !q3 || !q4 || !q5 || !q6 || !q7) {
+    return res.status(400).json({ message: 'Missing required fields' });
+  }
+
+  const avgRating = (
+    Number(q1) + Number(q2) + Number(q3) +
+    Number(q4) + Number(q5) + Number(q6) +
+    Number(q7)
+  ) / 7;
+
+  const sql = `
+    INSERT INTO guide_feedback (visitor_id, guide_id, feedback_text, rating)
+    VALUES (?, ?, ?, ?)
+  `;
+
+  db.query(sql, [visitorName, guideName, q8 || '', avgRating], (err) => {
+    if (err) {
+      console.error('❌ Error inserting feedback:', err);
+      return res.status(500).json({ message: 'Insert failed' });
+    }
+    res.status(200).json({ message: '✅ Feedback submitted successfully!' });
+  });
+});
+// POST /api/save-feedback-summary
+app.post('/api/save-feedback-summary', (req, res) => {
+  const { summary_text, sentiment } = req.body;
+
+  if (!summary_text || !sentiment) {
+    return res.status(400).json({ message: 'Missing required fields' });
+  }
+
+  const sql = `INSERT INTO feedback_summary (summary_text, sentiment) VALUES (?, ?)`;
+  db.query(sql, [summary_text, sentiment], (err, result) => {
+    if (err) {
+      console.error('❌ Insert error:', err);
+      return res.status(500).json({ message: 'Insert failed', error: err });
+    }
+    res.status(201).json({ message: '✅ Summary saved successfully' });
+  });
+});
+
+const { exec } = require('child_process');
 
 
       // ==============================
@@ -851,93 +929,7 @@ app.post('/api/self-assessment', (req, res) => {
   // Example protected route
   app.get('/api/protected-route', authenticateToken, (req, res) => {
     res.json({ message: `Welcome, ${req.user.username}! You are a ${req.user.role}` });
-  });
-
-  app.use(cors());
-  app.use(bodyParser.json());
-  const createGuideFeedbackTable = `
-  CREATE TABLE IF NOT EXISTS guide_feedback (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    visitor_id VARCHAR(100),
-    guide_id VARCHAR(100),
-    feedback_text TEXT,
-    rating FLOAT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  ) ENGINE=InnoDB;
-  `;
-  
-  db.query(createGuideFeedbackTable, (err) => {
-    if (err) console.error('❌ Error creating guide_feedback table:', err);
-    else console.log('✅ guide_feedback table ready');
-  });
-  app.post('/api/submit-feedback', (req, res) => {
-    const { visitorName, guideName, q1, q2, q3, q4, q5, q6, q7, q8 } = req.body;
-  
-    const avgRating = (
-      Number(q1) + Number(q2) + Number(q3) +
-      Number(q4) + Number(q5) + Number(q6) +
-      Number(q7)
-    ) / 7;
-  
-    const sql = `
-      INSERT INTO guide_feedback (visitor_id, guide_id, feedback_text, rating)
-      VALUES (?, ?, ?, ?)
-    `;
-  
-    db.query(sql, [visitorName, guideName, q8, avgRating], (err) => {
-      if (err) {
-        console.error('❌ Error inserting feedback:', err);
-        return res.status(500).json({ message: 'Insert failed', error: err });
-      }
-      res.status(200).json({ message: '✅ Feedback submitted successfully!' });
-    });
-  });
-
-  //save-feedback-summary
-
-  const createFeedbackSummaryTable = `
-CREATE TABLE IF NOT EXISTS feedback_summary (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  summary_text TEXT NOT NULL,
-  sentiment VARCHAR(20),
-  generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
-`;
-
-db.query(createFeedbackSummaryTable, (err) => {
-  if (err) {
-    console.error('❌ Error creating feedback_summary table:', err);
-  } else {
-    console.log('✅ feedback_summary table is ready');
-  }
-});
-
-  app.post('/api/save-feedback-summary', (req, res) => {
-    const { summary_text, sentiment } = req.body;
-  
-    if (!summary_text || !sentiment) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
-  
-    const sql = `
-      INSERT INTO feedback_summary (summary_text, sentiment)
-      VALUES (?, ?)
-    `;
-  
-    db.query(sql, [summary_text, sentiment], (err, result) => {
-      if (err) {
-        console.error('❌ Insert error:', err);
-        return res.status(500).json({ message: 'Insert failed', error: err });
-      }
-      res.status(201).json({ message: '✅ Summary saved successfully' });
-    });
-  });
-  
-  
-  // Start server
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
-  });
+  })
 
   // ✅ This stays at the bottom of your server.js
 app.listen(PORT, '0.0.0.0', () => {
