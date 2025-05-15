@@ -300,6 +300,14 @@ app.post('/api/save-feedback-summary', (req, res) => {
 
 const { exec } = require('child_process');
 
+app.get('/api/feedback-summaries', (req, res) => {
+  const sql = `SELECT * FROM feedback_summary ORDER BY generated_at DESC`;
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ message: 'Failed to fetch summaries' });
+    res.status(200).json(results);
+  });
+});
+
 
       // ==============================
       // POST /api/register

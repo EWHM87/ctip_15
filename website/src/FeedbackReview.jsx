@@ -1,52 +1,18 @@
 import React, { useEffect, useState } from 'react';
 
-const FeedbackReview = () => {
+const FeedbackSummary = () => {
   const [summaries, setSummaries] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [statusMsg, setStatusMsg] = useState('');
 
-  const fetchSummaries = () => {
+  useEffect(() => {
     fetch('http://localhost:5000/api/feedback-summaries')
       .then(res => res.json())
       .then(data => setSummaries(data))
-      .catch(err => {
-        console.error('Fetch error:', err);
-        setStatusMsg('⚠️ Failed to fetch summaries');
-      });
-  };
-
-  const generateSummary = async () => {
-    setLoading(true);
-    setStatusMsg('🔄 Generating AI summary...');
-    try {
-      const res = await fetch('http://localhost:5000/api/generate-feedback-summary', {
-        method: 'POST',
-      });
-
-      const data = await res.json();
-      setStatusMsg(data.message || '✅ Summary generated');
-      fetchSummaries(); // refresh
-    } catch (err) {
-      console.error(err);
-      setStatusMsg('❌ Failed to generate summary');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSummaries();
+      .catch(err => console.error('Fetch error:', err));
   }, []);
 
   return (
     <div style={{ padding: '2rem' }}>
       <h2>📝 Visitor Feedback Summaries</h2>
-
-      <button onClick={generateSummary} disabled={loading}>
-        {loading ? 'Generating...' : 'Generate New Summary'}
-      </button>
-      <p>{statusMsg}</p>
-
       {summaries.length === 0 ? (
         <p>No summaries available.</p>
       ) : (
@@ -64,4 +30,4 @@ const FeedbackReview = () => {
   );
 };
 
-export default FeedbackReview;
+export default FeedbackSummary;
