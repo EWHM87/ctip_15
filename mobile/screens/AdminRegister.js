@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL } from '@env';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 
 const AdminRegister = ({ navigation }) => {
@@ -6,11 +7,36 @@ const AdminRegister = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleRegister = () => {
-    // Admin registration logic can go here
-    alert('Admin registration successful!');
-    navigation.navigate('AdminLogin');
-  };
+const handleRegister = async () => {
+  if (!name || !email || !password) {
+    alert('Please fill in all fields');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/api/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: name,
+        email,
+        password,
+        role: 'admin'
+      }),
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      alert('Admin registration successful!');
+      navigation.navigate('AdminLogin');
+    } else {
+      alert(data.message || 'Registration failed');
+    }
+  } catch (error) {
+    alert('Server connection failed');
+    console.error('❌ Admin registration error:', error);
+  }
+};
 
   return (
     <SafeAreaView style={styles.container}>

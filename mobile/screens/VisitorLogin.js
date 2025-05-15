@@ -25,7 +25,9 @@ const handleLogin = async () => {
   const url = `${API_URL}/api/login`;
   const payload = {
     username: email,
-    password
+    email,
+    password,
+    role: 'visitor',
   };
 
 

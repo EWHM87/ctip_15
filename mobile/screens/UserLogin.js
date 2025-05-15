@@ -20,6 +20,12 @@ const UserLogin = ({ navigation }) => {
       Alert.alert('Error', 'Please fill in both email and password');
       return;
     }
+      const payload = {
+    username: email,
+    email,
+    password,
+    role: 'guide'
+    };
 
     try {
       const response = await fetch(`${API_URL}/api/login`, {
