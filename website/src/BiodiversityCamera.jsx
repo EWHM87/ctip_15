@@ -6,10 +6,11 @@ const BiodiversityCamera = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewSrc, setPreviewSrc] = useState(null);
   const [aiResult, setAiResult] = useState('');
+  const [confidence, setConfidence] = useState('');
   const [loading, setLoading] = useState(false);
   const webcamRef = useRef(null);
 
-  const API_URL = 'http://localhost:5000/api/ai/identify'; // Change this to your backend
+  const API_URL = 'http://localhost:8000/predict'; // Updated backend route
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -17,6 +18,7 @@ const BiodiversityCamera = () => {
       setSelectedImage(file);
       setPreviewSrc(URL.createObjectURL(file));
       setAiResult('');
+      setConfidence('');
     }
   };
 
@@ -25,9 +27,11 @@ const BiodiversityCamera = () => {
     fetch(imageSrc)
       .then(res => res.blob())
       .then(blob => {
-        setSelectedImage(new File([blob], 'webcam-capture.jpg', { type: blob.type }));
+        const file = new File([blob], 'webcam-capture.jpg', { type: blob.type });
+        setSelectedImage(file);
         setPreviewSrc(imageSrc);
         setAiResult('');
+        setConfidence('');
       });
   };
 
@@ -45,9 +49,17 @@ const BiodiversityCamera = () => {
       });
 
       const data = await res.json();
-      setAiResult(data.label || 'Unknown');
+
+      if (data.error) {
+        setAiResult('❌ Error: ' + data.error);
+        setConfidence('');
+      } else {
+        setAiResult(data.plant);
+        setConfidence((data.confidence * 100).toFixed(2) + '%');
+      }
     } catch (error) {
-      setAiResult('❌ Error identifying image.');
+      setAiResult('❌ Error connecting to AI backend.');
+      setConfidence('');
     }
     setLoading(false);
   };
@@ -58,7 +70,7 @@ const BiodiversityCamera = () => {
       <p>Upload or capture a photo to let our AI model identify the species in real-time.</p>
 
       <div className="biodiversity-camera-panel">
-        {/* 📸 Webcam Section */}
+        {/* Webcam Section */}
         <div className="camera-column">
           <div className="card shadow-sm p-3">
             <h5 className="text-center">Live Webcam</h5>
@@ -78,7 +90,7 @@ const BiodiversityCamera = () => {
           </div>
         </div>
 
-        {/* 📁 Upload Section */}
+        {/* Upload Section */}
         <div className="upload-column">
           <div className="card shadow-sm p-3">
             <h5 className="text-center">Upload Image</h5>
@@ -114,7 +126,8 @@ const BiodiversityCamera = () => {
 
             {aiResult && (
               <div className="ai-result mt-3">
-                🧠 <strong>AI Prediction:</strong> {aiResult}
+                🧠 <strong>AI Prediction:</strong> {aiResult} <br />
+                🎯 <strong>Confidence:</strong> {confidence}
               </div>
             )}
           </div>
