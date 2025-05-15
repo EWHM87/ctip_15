@@ -46,6 +46,10 @@
   gap: 8px;
 }
 
+.sidebar li.text-uppercase {
+  cursor: pointer;
+  user-select: none;
+}
 
 .sidebar a,
 .sidebar button {
@@ -91,6 +95,20 @@
   padding: 2rem;
   background-color: #f9f9f9;
 }
+
+.collapsible-wrapper {
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.collapsible-wrapper.closed {
+  max-height: 0;
+}
+
+.collapsible-wrapper.open {
+  max-height: 600px; /* Adjust as needed */
+}
+
 
 /* Hero Banner */
 .hero-section {
@@ -512,3 +530,5 @@ ul li {
   color: #117a65;
   font-weight: 600;
 }
+
+
