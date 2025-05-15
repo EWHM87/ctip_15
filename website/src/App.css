@@ -46,6 +46,10 @@
   gap: 8px;
 }
 
+.sidebar li.text-uppercase {
+  cursor: pointer;
+  user-select: none;
+}
 
 .sidebar a,
 .sidebar button {
@@ -512,3 +516,5 @@ ul li {
   color: #117a65;
   font-weight: 600;
 }
+
+
