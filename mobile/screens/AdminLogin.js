@@ -15,32 +15,38 @@ const AdminLogin = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in both email and password');
-      return;
-    }
+const handleLogin = async () => {
+  if (!email || !password) {
+    Alert.alert('Error', 'Please fill in both email and password');
+    return;
+  }
 
-    try {
-      const response = await fetch(`${API_URL}/api/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: email, password }), // username expected by server
-      });
+  console.log('📤 Attempting admin login:', { username: email, password });
 
-      const data = await response.json();
-      if (response.ok && data.user?.role === 'admin') {
-        Alert.alert('Success', 'Login successful');
-        navigation.navigate('AdminDashboard');
-      } else if (response.ok) {
-        Alert.alert('Access Denied', 'You are not an admin');
-      } else {
-        Alert.alert('Error', data.message || 'Login failed');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Server connection failed');
+  try {
+    const response = await fetch(`${API_URL}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: email, password }), // server expects `username`
+    });
+
+    console.log('📥 Response status:', response.status);
+    const data = await response.json();
+    console.log('📦 Response data:', data);
+
+    if (response.ok && data.user?.role === 'admin') {
+      Alert.alert('Success', 'Login successful');
+      navigation.navigate('AdminDashboard');
+    } else if (response.ok) {
+      Alert.alert('Access Denied', 'You are not an admin');
+    } else {
+      Alert.alert('Error', data.message || 'Login failed');
     }
-  };
+  } catch (error) {
+    console.error('❌ Network error:', error);
+    Alert.alert('Error', 'Server connection failed');
+  }
+};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -48,7 +54,7 @@ const AdminLogin = ({ navigation }) => {
         <Text style={styles.title}>Admin Login</Text>
         <TextInput
           style={styles.input}
-          placeholder="Enter Email"
+          placeholder="Enter UserID"
           value={email}
           onChangeText={setEmail}
         />
