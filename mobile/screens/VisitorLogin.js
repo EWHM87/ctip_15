@@ -24,9 +24,10 @@ const handleLogin = async () => {
 
   const url = `${API_URL}/api/login`;
   const payload = {
-    username: email, // backend expects 'username', not 'email'
+    username: email,
     password
   };
+
 
   console.log('📤 Logging in with:', url);
   console.log('📦 Credentials:', payload);
