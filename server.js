@@ -52,15 +52,18 @@ const db = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
-  multipleStatements: false
+  multipleStatements: false,
 });
 
+// 1️⃣ Connect first
 db.connect(err => {
   if (err) {
     console.error('❌ DB connection error:', err);
     process.exit(1);
   }
+});
 
+  // 2️⃣ Create DB if it doesn't exist
   db.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`, (err) => {
     if (err) {
       console.error('❌ Error creating database:', err);
@@ -68,14 +71,21 @@ db.connect(err => {
     }
     console.log(`✅ Database ${process.env.DB_NAME} ready`);
 
+    // 3️⃣ Switch to your database
     db.changeUser({ database: process.env.DB_NAME }, (err) => {
       if (err) {
         console.error('❌ Error switching to database:', err);
         return;
       }
-      console.log('✅ Connected to MySQL database');
-
-      // Users table
+      // 4️⃣ Confirm DB
+      db.query('SELECT DATABASE() AS db', (err, result) => {
+        if (err) {
+          console.error('❌ Could not confirm DB:', err);
+        } else {
+          console.log('🧠 Connected to database:', result[0].db); // ✅ Should say "sarawakparks"
+        }
+      });
+            // Users table
       const createUsersTable = `
         CREATE TABLE IF NOT EXISTS users (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -208,91 +218,91 @@ db.connect(err => {
       `;
       db.query(createGuideAssessmentTable, err => {
         if (err) console.error('❌ Error creating guide_self_assessments table:', err);
-        else console.log('✅ guide_self_assessments table ready');
-      });
-    });
+        else console.log('✅ guide_self_assessments table ready');});
   });
 });
 
-  // ==============================
-  // POST /api/register
-  // ==============================
 
-  app.post(
-    '/api/register',
-    [
-      body('username')
-        .trim()
-        .isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
-      body('email')
-        .isEmail().withMessage('Must be a valid email')
-        .normalizeEmail(),
-      body('password')
-        .isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-      body('role')
-        .optional()
-        .isIn(['admin', 'guide', 'visitor']).withMessage('Invalid role')
-    ],
-    async (req, res) => {
-      console.log('📥 Received registration:', req.body);
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        console.log('❌ Validation failed:', errors.array());
-        return res.status(422).json({ message: 'Validation error', errors: errors.array() });
-      }
-
-      const { username, email, password, role } = req.body;
-
-      try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const sql = `INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`;
-        db.query(sql, [username, email, hashedPassword, role], (err, result) => {
-          if (err) {
-            console.error('❌ MySQL Error:', err);
-            if (err.code === 'ER_DUP_ENTRY') {
-              return res.status(400).json({ message: 'Username or email already exists' });
-            }
-            return res.status(500).json({ message: 'DB insert failed', error: err });
+      // ==============================
+      // POST /api/register
+      // ==============================
+      app.post(
+        '/api/register',
+        [
+          body('username')
+            .trim()
+            .isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
+          body('email')
+            .isEmail().withMessage('Must be a valid email')
+            .normalizeEmail(),
+          body('password')
+            .isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+          body('role')
+            .optional()
+            .isIn(['admin', 'guide', 'visitor']).withMessage('Invalid role')
+        ],
+        async (req, res) => {
+          const errors = validationResult(req);
+          if (!errors.isEmpty()) {
+            console.log('❌ Validation failed:', errors.array());
+            return res.status(422).json({ message: 'Validation error', errors: errors.array() });
           }
 
-          // If registering as guide, also insert into manage_guides
-          if (role === 'guide') {
-            const sql2 = `INSERT INTO manage_guides (name, email) VALUES (?, ?)`;
-            db.query(sql2, [username, email], (err2) => {
-              if (err2 && err2.code !== 'ER_DUP_ENTRY') {
-                console.error('❌ Error inserting into manage_guides:', err2);
-                return res.status(500).json({ message: 'Guide registration failed', error: err2 });
+          const { username, email, password, role } = req.body;
+          console.log('📥 Received registration:', req.body);
+          console.log('🔍 Attempting user insert with:', { username, email, password, role });
+
+          try {
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            const sql = `INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`;
+            db.query(sql, [username, email, hashedPassword, role], (err, result) => {
+              if (err) {
+                console.error('❌ MySQL Error:', err);
+                if (err.code === 'ER_DUP_ENTRY') {
+                  return res.status(400).json({ message: 'Username or email already exists' });
+                }
+                return res.status(500).json({ message: 'DB insert failed', error: err });
               }
-              console.log('✅ Guide also added to manage_guides');
-            });
-          }
 
-          console.log('✅ Registered new user:', result);
-          return res.status(201).json({ message: 'User registered successfully' });
-        });
-      } catch (err) {
-        console.error('❌ Server error:', err);
-        return res.status(500).json({ message: 'Server error' });
-      }
-    }
-  );
+              // If registering as guide, also insert into manage_guides
+              if (role === 'guide') {
+                const sql2 = `INSERT INTO manage_guides (name, email) VALUES (?, ?)`;
+                db.query(sql2, [username, email], (err2) => {
+                  if (err2 && err2.code !== 'ER_DUP_ENTRY') {
+                    console.error('❌ Error inserting into manage_guides:', err2);
+                    return res.status(500).json({ message: 'Guide registration failed', error: err2 });
+                  }
+                  console.log('✅ Guide also added to manage_guides');
+                });
+              }
+
+              console.log('✅ Registered new user:', result);
+              return res.status(201).json({ message: 'User registered successfully' });
+            });
+          } catch (err) {
+            console.error('❌ Server error:', err);
+            return res.status(500).json({ message: 'Server error' });
+          }
+        }
+      );
+
 
   // PUT /api/update-role/:email
-  app.put('/api/update-role/:email', (req, res) => {
-    const { email } = req.params;
-    const { role } = req.body;
+      app.put('/api/update-role/:email', (req, res) => {
+        const { email } = req.params;
+        const { role } = req.body;
 
-    const sql = `UPDATE users SET role = ? WHERE email = ?`;
-    db.query(sql, [role, email], (err) => {
-      if (err) {
-        console.error('❌ Role update failed:', err);
-        return res.status(500).json({ message: 'Failed to update role', error: err });
-      }
-      res.json({ message: 'Role updated successfully' });
-    });
-  });
+        const sql = `UPDATE users SET role = ? WHERE email = ?`;
+        db.query(sql, [role, email], (err) => {
+          if (err) {
+            console.error('❌ Role update failed:', err);
+            return res.status(500).json({ message: 'Failed to update role', error: err });
+          }
+          res.json({ message: 'Role updated successfully'
+          });
+        });
+      });
 
   //  POST /api/register-guide
   app.post('/api/register-guide', async (req, res) => {
@@ -803,20 +813,7 @@ app.post(
     });
   });
   
-// GET /api/notifications/:recipient - Get notifications for a specific recipient
-  app.get('/api/notifications', (req, res) => {
-    const sql = `SELECT * FROM notifications ORDER BY sent_at DESC`;
-    db.query(sql, (err, results) => {
-      if (err) {
-        console.error('❌ Fetch error:', err);
-        return res.status(500).json({ message: 'Failed to fetch notifications', error: err });
-      }
-
-      res.json(results);
-    });
-  });
-  
-  // POST /api/self-assessment - Route to Receive Form Submissions
+// POST /api/self-assessment - Route to Receive Form Submissions
 app.post('/api/self-assessment', (req, res) => {
   const {
     name, email, q1, q2, q3, q4, q5, q6, q7, q8
@@ -856,7 +853,6 @@ app.post('/api/self-assessment', (req, res) => {
     res.json({ message: `Welcome, ${req.user.username}! You are a ${req.user.role}` });
   });
 
-  // Start server
+  // ✅ This stays at the bottom of your server.js
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);
-});
+  console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);});

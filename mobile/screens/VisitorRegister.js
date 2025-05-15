@@ -11,11 +11,13 @@ import {
   Alert 
 } from 'react-native';
 
-const API_URL = Constants.expoConfig?.extra?.API_URL ?? Constants.manifest?.extra?.API_URL;
+
 const VisitorRegister = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const API_URL = Constants.expoConfig?.extra?.API_URL ?? Constants.manifest?.extra?.API_URL;
+  console.log('✅ API_URL:', API_URL);
 
 const handleRegister = async () => {
   if (!name || !email || !password) {
