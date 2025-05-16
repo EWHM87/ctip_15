@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   verticalNavbar: {
     width: 200,
     backgroundColor: '#065f46',
-    paddingTop: 60,
+    paddingTop: 30,
     paddingHorizontal: 10,
   },
   verticalNavButton: {

@@ -2,11 +2,11 @@
   "name": "app",
   "version": "1.0.0",
   "main": "index.js",
-"scripts": {
-  "start": "dotenv -e .env -- expo start",
-  "android": "expo start --android",
-  "ios": "expo start --ios",
-  "web": "expo start --web"
+  "scripts": {
+    "start": "dotenv -e .env -- expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
   },
   "dependencies": {
     "@react-native-picker/picker": "^2.11.0",
@@ -16,6 +16,7 @@
     "@react-navigation/stack": "^7.2.10",
     "@tensorflow/tfjs": "^4.22.0",
     "@tensorflow/tfjs-react-native": "^1.0.0",
+    "axios": "^1.9.0",
     "expo": "^53.0.9",
     "expo-camera": "~16.1.6",
     "expo-gl": "~15.1.5",
