@@ -1,5 +1,7 @@
 //AdminDashboard.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -13,6 +15,39 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { CommonActions } from '@react-navigation/native';
 
 const AdminDashboard = ({ navigation }) => {
+useEffect(() => {
+  const verifyToken = async () => {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) {
+      redirectToLogin();
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/api/admin-only`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        console.log('❌ Not admin or invalid token');
+        redirectToLogin();
+      } else {
+        console.log('✅ Admin verified');
+      }
+    } catch (err) {
+      console.error('❌ Verification failed', err);
+      redirectToLogin();
+    }
+  };
+
+  const redirectToLogin = () => {
+    Alert.alert('Unauthorized', 'Please login as admin');
+    navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'AdminLogin' }] }));
+  };
+
+  verifyToken();
+}, []);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.mainContent}>

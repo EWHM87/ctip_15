@@ -1,5 +1,5 @@
 //VisitorDashboard.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,45 @@ import {
   Image,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { CommonActions } from '@react-navigation/native';
+import { CommonActions } from '@react-navigation/native'; 
+import { API_URL } from '@env'; 
+import { Alert } from 'react-native'; 
 
 const VisitorDashboard = ({ navigation }) => {
+  useEffect(() => {
+  const verifyToken = async () => {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) {
+      redirectToLogin();
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/api/protected-route`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+      if (!res.ok || data?.user?.role !== 'visitor') {
+        console.log('❌ Not authorized or not a visitor');
+        redirectToLogin();
+      } else {
+        console.log('✅ Visitor verified');
+      }
+    } catch (err) {
+      console.error('❌ Verification failed', err);
+      redirectToLogin();
+    }
+  };
+
+  const redirectToLogin = () => {
+    Alert.alert('Unauthorized', 'Please login as a visitor');
+    navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'VisitorLogin' }] }));
+  };
+
+  verifyToken();
+}, []);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.mainContent}>

@@ -1,5 +1,6 @@
 //UserDashboard.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Alert } from 'react-native';
 import {
   View,
   Text,
@@ -11,8 +12,46 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { CommonActions } from '@react-navigation/native';
+import { API_URL } from '@env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const UserDashboard = ({ navigation }) => {
+  useEffect(() => {
+  const verifyToken = async () => {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) {
+      redirectToLogin();
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/api/protected-route`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+if (!res.ok || !data.message?.includes('guide')) {
+  console.log('❌ Not authorized or not a guide');
+  redirectToLogin();
+}
+else {
+        console.log('✅ Guide verified');
+      }
+    } catch (err) {
+      console.error('❌ Verification failed', err);
+      redirectToLogin();
+    }
+  };
+
+  const redirectToLogin = () => {
+    Alert.alert('Unauthorized', 'Please login as a guide');
+    navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'UserLogin' }] }));
+  };
+
+  verifyToken();
+}, []);
+
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
 
   return (

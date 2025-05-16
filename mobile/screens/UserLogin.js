@@ -9,39 +9,37 @@ import {
   SafeAreaView,
   Alert
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Make sure this is imported!
 import { CommonActions } from '@react-navigation/native';
 
 const UserLogin = ({ navigation }) => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in both email and password');
+    if (!username || !password) {
+      Alert.alert('Error', 'Please fill in both username and password');
       return;
     }
-      const payload = {
-    username: email,
-    email,
-    password,
-    role: 'guide'
-    };
-
+    
     try {
       const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: email, password }), // 👈 use `username`
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
+
       if (response.ok) {
+        await AsyncStorage.setItem('token', data.token);
         Alert.alert('Success', 'Login successful');
-        navigation.navigate('UserDashboard'); // optionally pass user data
+        navigation.navigate('UserDashboard');
       } else {
         Alert.alert('Error', data.message || 'Login failed');
       }
     } catch (error) {
+      console.error('Login error:', error);
       Alert.alert('Error', 'Server connection failed');
     }
   };
@@ -54,9 +52,8 @@ const UserLogin = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="Enter ParkGuideId"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
+          value={username}
+          onChangeText={setUsername}
         />
 
         <TextInput
@@ -80,7 +77,8 @@ const UserLogin = ({ navigation }) => {
               })
             );
           }}
-        ><Text style={styles.footerText}>Back to Home</Text>
+        >
+          <Text style={styles.footerText}>Back to Home</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate('UserRegister')}>
@@ -90,6 +88,7 @@ const UserLogin = ({ navigation }) => {
     </SafeAreaView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

@@ -477,21 +477,22 @@ app.get('/api/feedback-summaries', (req, res) => {
         return res.status(500).json({ message: 'Database error', error: err1 });
       }
 
-      // Step 2: Insert into users (if not already exists)
+      // Step 2: Insert or update user
       const defaultPassword = await bcrypt.hash('guide1234', 10);
-      const sql2 = `
+      const insertOrUpdateSql = `
         INSERT INTO users (username, email, password, role)
         VALUES (?, ?, ?, 'guide')
+        ON DUPLICATE KEY UPDATE role = 'guide'
       `;
 
-      db.query(sql2, [name, email, defaultPassword], (err2) => {
-        if (err2 && err2.code !== 'ER_DUP_ENTRY') {
-          console.error('❌ Error adding to users:', err2);
-          return res.status(500).json({ message: 'Guide added, but user account creation failed', error: err2 });
+      db.query(insertOrUpdateSql, [name, email, defaultPassword], (err2) => {
+        if (err2) {
+          console.error('❌ Error inserting/updating user:', err2);
+          return res.status(500).json({ message: 'User insert/update failed', error: err2 });
         }
 
-        console.log('✅ Guide registered by admin');
-        return res.status(201).json({ message: 'Guide and user account created successfully' });
+        console.log('✅ Guide registered or role updated in users');
+        return res.status(201).json({ message: 'Guide registered successfully' });
       });
     });
   });
@@ -520,9 +521,9 @@ app.get('/api/feedback-summaries', (req, res) => {
     });
   });
 
-  // ==============================
-  // POST /api/login
-  // ==============================
+// ==============================
+// POST /api/login
+// ==============================
 app.post(
   '/api/login',
   [
@@ -555,27 +556,30 @@ app.post(
         return res.status(401).json({ message: 'Invalid username or password' });
       }
 
-      // ✅ Create JWT here
-      const jwt = require('jsonwebtoken');
+    const jwt = require('jsonwebtoken');
       const token = jwt.sign(
-        { id: user.id, username: user.username, role: user.role },
+        {
+          id: user.id,
+          username: user.username,
+          role: user.role
+        },
         process.env.JWT_SECRET,
         { expiresIn: '1d' }
       );
 
-      // ✅ Return token in response
-        res.json({
-          message: 'Login successful',
-          token,
-          user: {
-            id: user.id,
-            username: user.username,
-            role: user.role
-          }
-        });
+      res.json({
+        message: 'Login successful',
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          role: user.role
+        }
       });
-    }
-  );
+    });
+  }
+);
+
   
   // POST /api/training-schedule - Create a new training schedule
   app.post('/api/scheduletraining', (req, res) => {
