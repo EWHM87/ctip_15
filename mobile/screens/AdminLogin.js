@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { API_URL } from '@env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -21,13 +22,11 @@ const handleLogin = async () => {
     return;
   }
 
-  console.log('📤 Attempting admin login:', { username: email, password });
-
   try {
     const response = await fetch(`${API_URL}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: email, password }), // server expects `username`
+      body: JSON.stringify({ username: email, password }),
     });
 
     console.log('📥 Response status:', response.status);
@@ -35,6 +34,7 @@ const handleLogin = async () => {
     console.log('📦 Response data:', data);
 
     if (response.ok && data.user?.role === 'admin') {
+      await AsyncStorage.setItem('token', data.token); // ✅ Save token
       Alert.alert('Success', 'Login successful');
       navigation.navigate('AdminDashboard');
     } else if (response.ok) {
@@ -47,6 +47,7 @@ const handleLogin = async () => {
     Alert.alert('Error', 'Server connection failed');
   }
 };
+
 
   return (
     <SafeAreaView style={styles.container}>

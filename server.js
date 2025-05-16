@@ -16,6 +16,21 @@
  
   app.use(express.json());
 
+// 👇 Add this new route for admin check anywhere under your existing routes
+app.get('/api/admin-only', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Access denied' });
+  }
+  res.json({ message: 'Welcome, Admin!' });
+});
+
+app.get('/api/secure-data', authenticateToken, (req, res) => {
+  if (req.user.role !== 'guide') {
+    return res.status(403).json({ message: 'Not authorized' });
+  }
+  res.json({ data: 'This is guide-only data' });
+});
+
 
   // —— LOCKED-DOWN CORS ——
   // 2️⃣ Security + parsing middleware (ONLY once each)
