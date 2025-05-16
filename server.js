@@ -253,6 +253,59 @@ db.connect(err => {
   });
 });
 
+
+// POST /api/save-prediction – Log AI prediction result
+app.post('/api/save-prediction', (req, res) => {
+  const { plant_name, confidence } = req.body;
+
+  if (!plant_name?.trim() || typeof confidence !== 'number') {
+    return res.status(400).json({ message: 'Missing or invalid data for prediction logging' });
+  }
+
+  const createTableSql = `
+    CREATE TABLE IF NOT EXISTS ai_predictions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      plant_name VARCHAR(255) NOT NULL,
+      confidence FLOAT NOT NULL,
+      predicted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
+  db.query(createTableSql, err => {
+    if (err) {
+      console.error('❌ Error ensuring ai_predictions table:', err);
+      return res.status(500).json({ message: 'Table creation failed', error: err });
+    }
+
+    console.log('✅ ai_predictions table ready or already exists');
+
+    const insertSql = `
+      INSERT INTO ai_predictions (plant_name, confidence)
+      VALUES (?, ?)
+    `;
+
+    db.query(insertSql, [plant_name, confidence], (err2) => {
+      if (err2) {
+        console.error('❌ Insert prediction error:', err2);
+        return res.status(500).json({ message: 'Insert failed', error: err2 });
+      }
+
+      console.log(`✅ AI prediction saved: ${plant_name} (${confidence.toFixed(2)})`);
+      res.status(201).json({ message: '✅ Prediction saved' });
+    });
+  });
+});
+
+app.get('/api/ai-predictions', (req, res) => {
+  db.query(`SELECT * FROM ai_predictions ORDER BY predicted_at DESC`, (err, results) => {
+    if (err) {
+      console.error('❌ Fetch error:', err);
+      return res.status(500).json({ message: 'Fetch failed', error: err });
+    }
+    res.json(results);
+  });
+});
+
 // POST /api/submit-feedback
 app.post('/api/submit-feedback', (req, res) => {
   const { visitorName, guideName, q1, q2, q3, q4, q5, q6, q7, q8 } = req.body;
