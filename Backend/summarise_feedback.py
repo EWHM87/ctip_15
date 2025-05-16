@@ -1,56 +1,61 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import tensorflow as tf
-import numpy as np
-from PIL import Image
-import io
-import os
+import mysql.connector
+from transformers import pipeline
+from textblob import TextBlob
+import requests
 
-# === Load TFLite Model ===
-interpreter = tf.lite.Interpreter(model_path="models/plant_identification_model.tflite")
-interpreter.allocate_tensors()
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
-IMAGE_SIZE = (224, 224)
+# === Connect to MySQL ===
+db = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="",
+    database="sarawakparks"
+)
 
-# === Load Class Names from .txt file ===
+cursor = db.cursor()
+cursor.execute("SELECT feedback_text FROM guide_feedback WHERE feedback_text IS NOT NULL AND feedback_text != ''")
+rows = cursor.fetchall()
+
+# === Combine Feedback into One Text ===
+feedbacks = [row[0].strip().replace("\n", " ") for row in rows if row[0].strip()]
+all_feedback = " ".join(feedbacks)
+
+if not all_feedback:
+    print("⚠️ No feedback found.")
+    exit()
+
+# Optional: limit to avoid token cutoff
+if len(all_feedback) > 2000:
+    all_feedback = all_feedback[:2000]
+
+# === Summarization (using BART) ===
+print("\n🔄 Generating summary...")
+summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+summary = summarizer(all_feedback, max_length=120, min_length=30, do_sample=False)
+
+# === Sentiment Analysis ===
+sentiment_score = TextBlob(all_feedback).sentiment.polarity
+if sentiment_score > 0.2:
+    sentiment = "😊 Positive"
+elif sentiment_score < -0.2:
+    sentiment = "😠 Negative"
+else:
+    sentiment = "😐 Neutral"
+
+# === Output to terminal ===
+print("\n📝 AI Summary:\n", summary[0]['summary_text'])
+print("📊 Overall Sentiment:", sentiment)
+
+# === Save to backend ===
 try:
-    with open('models/classname.txt', 'r') as f:
-        class_names = [line.strip() for line in f if line.strip()]
-except FileNotFoundError:
-    print("❌ Error: 'models/classname.txt' not found.")
-    exit()
+    response = requests.post("http://localhost:5000/api/save-feedback-summary", json={
+        "summary_text": summary[0]['summary_text'],
+        "sentiment": sentiment
+    })
+
+    if response.status_code == 201:
+        print("✅ Summary saved to backend.")
+    else:
+        print(f"⚠️ Failed to save summary (status {response.status_code}) - {response.text}")
+
 except Exception as e:
-    print(f"❌ Error reading class names: {e}")
-    exit()
-
-# === Flask Setup ===
-app = Flask(__name__)
-CORS(app)
-
-@app.route('/predict', methods=['POST'])
-def predict():
-    if 'image' not in request.files:
-        return jsonify({'error': 'No image uploaded'}), 400
-
-    try:
-        # Load and preprocess image
-        img = Image.open(request.files['image'].stream).convert("RGB").resize(IMAGE_SIZE)
-        img_array = np.expand_dims(np.array(img) / 255.0, axis=0).astype(np.float32)
-
-        # Run inference
-        interpreter.set_tensor(input_details[0]['index'], img_array)
-        interpreter.invoke()
-        output = interpreter.get_tensor(output_details[0]['index'])[0]
-
-        index = int(np.argmax(output))
-        label = class_names[index]
-        confidence = float(output[index])
-
-        return jsonify({'plant': label, 'confidence': confidence})
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)
+    print("❌ Error posting to backend:", str(e))
