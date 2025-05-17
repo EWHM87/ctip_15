@@ -120,9 +120,10 @@ db.connect(err => {
       // Feedback summary table
       const createFeedbackSummaryTable = `
         CREATE TABLE IF NOT EXISTS feedback_summary (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          summary_text TEXT NOT NULL,
-          sentiment VARCHAR(20),
+           id INT AUTO_INCREMENT PRIMARY KEY,
+           guide_id VARCHAR(100),
+           summary_text TEXT NOT NULL,
+           sentiment VARCHAR(20),
           generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB;
       `;
@@ -269,6 +270,7 @@ db.connect(err => {
 });
 
 
+
 // POST /api/save-prediction – Log AI prediction result
 app.post('/api/save-prediction', (req, res) => {
   const { plant_name, confidence } = req.body;
@@ -348,16 +350,19 @@ app.post('/api/submit-feedback', (req, res) => {
     res.status(200).json({ message: '✅ Feedback submitted successfully!' });
   });
 });
-// POST /api/save-feedback-summary
-app.post('/api/save-feedback-summary', (req, res) => {
-  const { summary_text, sentiment } = req.body;
 
-  if (!summary_text || !sentiment) {
+// Save summary
+app.post('/api/save-feedback-summary', (req, res) => {
+  const { guide_id, summary_text, sentiment } = req.body;
+  if (!guide_id || !summary_text || !sentiment) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
-  const sql = `INSERT INTO feedback_summary (summary_text, sentiment) VALUES (?, ?)`;
-  db.query(sql, [summary_text, sentiment], (err, result) => {
+  const sql = `
+    INSERT INTO feedback_summary (guide_id, summary_text, sentiment)
+    VALUES (?, ?, ?)
+  `;
+  db.query(sql, [guide_id, summary_text, sentiment], (err) => {
     if (err) {
       console.error('❌ Insert error:', err);
       return res.status(500).json({ message: 'Insert failed', error: err });
@@ -366,15 +371,55 @@ app.post('/api/save-feedback-summary', (req, res) => {
   });
 });
 
-const { exec } = require('child_process');
-
+//=============================
+// Fetch summaries
+//=============================
 app.get('/api/feedback-summaries', (req, res) => {
-  const sql = `SELECT * FROM feedback_summary ORDER BY generated_at DESC`;
+  const sql = `
+    SELECT fs.*, mg.name AS guide_name
+    FROM feedback_summary fs
+    LEFT JOIN manage_guides mg ON fs.guide_id = mg.guide_id
+    ORDER BY fs.generated_at DESC
+  `;
   db.query(sql, (err, results) => {
     if (err) return res.status(500).json({ message: 'Failed to fetch summaries' });
     res.status(200).json(results);
   });
 });
+
+//=============================
+// POST: Run Python script to generate summary
+//=============================
+const path = require('path');
+const { exec } = require('child_process');
+
+app.post('/api/generate-feedback-summary', (req, res) => {
+  const scriptPath = path.join(__dirname, 'Backend', 'summarise_feedback.py'); // <-- updated path
+
+  exec(`py "${scriptPath}"`, (error, stdout, stderr) => {
+    if (error) {
+      console.error('❌ Script error:', error);
+      console.error('stderr:', stderr);
+      return res.status(500).json({ message: 'Script execution failed', error: stderr });
+    }
+
+    console.log('✅ Script output:', stdout);
+    res.status(200).json({ message: '✅ Summary generated', output: stdout });
+  });
+});
+
+
+//=============================
+// DELETE: Clear all summaries
+//=============================
+app.delete('/api/clear-feedback-summaries', (req, res) => {
+  const sql = 'DELETE FROM feedback_summary';
+  db.query(sql, (err) => {
+    if (err) return res.status(500).json({ message: 'Failed to clear summaries', error: err });
+    res.status(200).json({ message: '✅ All summaries cleared' });
+  });
+});
+
 
 
       // ==============================
