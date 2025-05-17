@@ -11,10 +11,68 @@
   const bodyParser = require('body-parser');
   const { authenticateToken, isAdmin, isGuide } = require('./middleware/authMiddleware');
   const app  = express();
+  const passport = require('passport');
+  const OAuth2Strategy = require('passport-oauth2');
   const PORT = process.env.PORT || 5000;
+  const fs    = require('fs');
+  const https = require('https');
+  const path    = require('path');
+  const options = {
+    key : fs.readFileSync(path.join(__dirname, 'localhost-key.pem')),
+    cert: fs.readFileSync(path.join(__dirname, 'localhost.pem'))
+  };
 
- 
+
+const { encrypt, decrypt } = require('./utils/crypto');
+
+passport.use(new OAuth2Strategy({
+  authorizationURL: process.env.OAUTH2_AUTH_URL,
+  tokenURL:         process.env.OAUTH2_TOKEN_URL,
+  clientID:         process.env.OAUTH2_CLIENT_ID,
+  clientSecret:     process.env.OAUTH2_CLIENT_SECRET,
+  callbackURL:      process.env.OAUTH2_CALLBACK_URL
+},
+(accessToken, refreshToken, profile, done) => {
+  // TODO: upsert/find the user in your DB
+  return done(null, {
+    id:       profile.id,
+    username: profile.username,
+    role:     'visitor'
+  });
+}));
+app.use(passport.initialize());
+
+// ─── Security & Body–Parsing (only once, before routes) ─────────
+app.use(helmet());
+
+const allowedOrigins = [
+  'http://localhost:19006',
+  'http://localhost:3000',
+  'http://localhost:8081',
+  'https://your-frontend-domain.com'
+];
+
+app.use(cors({
+  origin: (incomingOrigin, callback) => {
+    // allow server-to-server or same-origin (no Origin header)
+    if (!incomingOrigin) return callback(null, true);
+
+    if (allowedOrigins.includes(incomingOrigin)) {
+      return callback(null, true);
+    }
+
+    // block all others
+    return callback(new Error(`⚠️ CORS blocked for ${incomingOrigin}`), false);
+  },
+  credentials: true
+}));
+
 app.use(express.json());
+app.use(bodyParser.json());
+
+app.get('/', (req, res) => {
+  res.send('Welcome to Sarawak Parks API 🚀');
+});
 
 // 👇 Add this new route for admin check anywhere under your existing routes
 app.get('/api/admin-only', authenticateToken, isAdmin, (req, res) => {
@@ -23,40 +81,7 @@ app.get('/api/admin-only', authenticateToken, isAdmin, (req, res) => {
 
 app.get('/api/secure-data', authenticateToken, isGuide, (req, res) => {
   res.json({ data: 'This is guide-only data' });
-});
-
-
-
-  // —— LOCKED-DOWN CORS ——
-  // 2️⃣ Security + parsing middleware (ONLY once each)
-  app.use(helmet());
-
-  // —— LOCKED-DOWN CORS —— 
-  const allowedOrigins = [
-    'http://localhost:19006',
-    'http://localhost:3000',
-    'http://localhost:8081', // React Native default
-    'https://your-frontend-domain.com'
-  ];
-
-
-  app.use(cors({
-    origin: (incomingOrigin, callback) => {
-      // allow server-to-server tools (no origin)
-      if (!incomingOrigin) return callback(null, true);
-
-      if (allowedOrigins.includes(incomingOrigin)) {
-        return callback(null, true);
-      }
-      callback(new Error(`⚠️ CORS blocked for ${incomingOrigin}`), false);
-    },
-    credentials: true
-  }));
-
-  // now JSON parser
-  app.use(bodyParser.json());
-
-
+}); 
 // 4️⃣ MySQL Connection
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -302,6 +327,26 @@ function logActivity(guideId, action, description = '') {
   });
 }
 
+// POST /api/save-feedback-summary
+app.post('/api/save-feedback-summary', (req, res) => {
+  let { summary_text, sentiment } = req.body;
+  summary_text = encrypt(summary_text);
+
+  if (!summary_text || !sentiment) {
+    return res.status(400).json({ message: 'Missing required fields' });
+  }
+
+  const sql = `INSERT INTO feedback_summary (summary_text, sentiment) VALUES (?, ?)`;
+  db.query(sql, [summary_text, sentiment], (err) => {
+    if (err) {
+      console.error('❌ Insert error:', err);
+      return res.status(500).json({ message: 'Insert failed', error: err });
+    }
+    res.status(201).json({ message: '✅ Summary saved successfully' });
+  });
+});
+
+
 // POST /api/save-prediction – Log AI prediction result
 app.post('/api/save-prediction', (req, res) => {
   const { plant_name, confidence } = req.body;
@@ -375,31 +420,20 @@ app.post('/api/submit-feedback', (req, res) => {
   });
 });
 
-// POST /api/save-feedback-summary
-app.post('/api/save-feedback-summary', (req, res) => {
-  const { summary_text, sentiment } = req.body;
-
-  if (!summary_text || !sentiment) {
-    return res.status(400).json({ message: 'Missing required fields' });
-  }
-
-  const sql = `INSERT INTO feedback_summary (summary_text, sentiment) VALUES (?, ?)`;
-  db.query(sql, [summary_text, sentiment], (err, result) => {
-    if (err) {
-      console.error('❌ Insert error:', err);
-      return res.status(500).json({ message: 'Insert failed', error: err });
-    }
-    res.status(201).json({ message: '✅ Summary saved successfully' });
-  });
-});
-
-const { exec } = require('child_process');
-
+// GET /api/feedback-summaries – fetch & decrypt summaries
 app.get('/api/feedback-summaries', (req, res) => {
-  const sql = `SELECT * FROM feedback_summary ORDER BY generated_at DESC`;
+  const sql = `SELECT id, summary_text, sentiment, generated_at FROM feedback_summary ORDER BY generated_at DESC`;
   db.query(sql, (err, results) => {
     if (err) return res.status(500).json({ message: 'Failed to fetch summaries' });
-    res.status(200).json(results);
+
+    const decrypted = results.map(row => ({
+      id:           row.id,
+      summary_text: decrypt(row.summary_text),
+      sentiment:    row.sentiment,
+      generated_at: row.generated_at
+    }));
+
+    res.status(200).json(decrypted);
   });
 });
 
@@ -568,55 +602,44 @@ app.post(
   ],
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
-    }
-
+    if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
     const { username, password } = req.body;
-
-    const sql = `SELECT * FROM users WHERE username = ?`;
+    const sql = `SELECT * FROM users WHERE username=?`;
     db.query(sql, [username], async (err, results) => {
-      if (err) {
-        console.error('❌ DB error:', err);
-        return res.status(500).json({ message: 'Database error' });
-      }
-
-      if (results.length === 0) {
-        return res.status(401).json({ message: 'Invalid username or password' });
-      }
-
+      if (err) return res.status(500).json({ message:'Database error' });
+      if (!results.length) return res.status(401).json({ message:'Invalid credentials' });
       const user = results[0];
-      const isMatch = await bcrypt.compare(password, user.password);
-
-      if (!isMatch) {
-        return res.status(401).json({ message: 'Invalid username or password' });
-      }
-
-    const jwt = require('jsonwebtoken');
+      if (!(await bcrypt.compare(password, user.password)))
+        return res.status(401).json({ message:'Invalid credentials' });
+      const jwt = require('jsonwebtoken');
       const token = jwt.sign(
-        {
-          id: user.id,
-          username: user.username,
-          role: user.role
-        },
+        { id:user.id, username:user.username, role:user.role },
         process.env.JWT_SECRET,
-        { expiresIn: '1d' }
+        { expiresIn:'1d' }
       );
-
-      res.json({
-        message: 'Login successful',
-        token,
-        user: {
-          id: user.id,
-          username: user.username,
-          role: user.role
-        }
-      });
+      res.json({ message:'Login successful', token, user:{ id:user.id,username:user.username,role:user.role } });
     });
   }
 );
 
-  
+// 1) Start the OAuth2 flow
+app.get('/auth/login',
+  passport.authenticate('oauth2')
+);
+
+// 2) Handle the callback and issue a JWT
+app.get('/auth/callback',
+  passport.authenticate('oauth2', { session: false }),
+  (req, res) => {
+    const jwt = require('jsonwebtoken');
+    const token = jwt.sign(
+      { id: req.user.id, username: req.user.username, role: req.user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+    res.json({ message: 'OAuth login successful', token });
+  }
+); 
 // POST /api/scheduletraining - Create a new training schedule
 app.post('/api/scheduletraining', (req, res) => {
   const { topic, date } = req.body;
@@ -1137,5 +1160,7 @@ app.get('/api/guide-activity-log/:guideId', (req, res) => {
   })
 
   // ✅ This stays at the bottom of your server.js
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);})
+https.createServer(options, app)
+  .listen(PORT, () => {
+    console.log(`🚀 HTTPS Server running at https://0.0.0.0:${PORT}`);
+  });
