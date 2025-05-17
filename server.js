@@ -46,11 +46,22 @@ app.use(passport.initialize());
 app.use(helmet());
 
 const allowedOrigins = [
-  'http://localhost:19006',
   'http://localhost:3000',
-  'http://localhost:8081',
-  'https://your-frontend-domain.com'
+  'http://localhost:8080',     
+  'http://localhost:19006',
+'http://localhost:8081',
+  'http://your-frontend-domain.com'
 ];
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error(`⚠️ CORS blocked for ${origin}`), false);
+  },
+  credentials: true,
+  allowedHeaders: ['Content-Type','Authorization']  // make sure Authorization header is allowed
+}));
+
 
 app.use(cors({
   origin: (incomingOrigin, callback) => {
@@ -1160,7 +1171,9 @@ app.get('/api/guide-activity-log/:guideId', (req, res) => {
   })
 
   // ✅ This stays at the bottom of your server.js
-https.createServer(options, app)
-  .listen(PORT, () => {
-    console.log(`🚀 HTTPS Server running at https://0.0.0.0:${PORT}`);
-  });
+// … all your routes, middleware, etc.
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);
+});
+
