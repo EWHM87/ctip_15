@@ -21,14 +21,15 @@ import Certification from './screens/Certification';
 import Notifications from './screens/Notifications';
 import AIBiodiversityScanner from './screens/AIBiodiversityScanner';
 import UserProfile from './screens/UserProfile';
-import AddGuide from './screens/AddGuide';
-import UpdateGuide from './screens/UpdateGuide';
-import DeleteGuide from './screens/DeleteGuide';
 import CreateTraining from './screens/CreateTraining';
 import SendReminders from './screens/SendReminders';
 import GuidePerformance from './screens/GuidePerformance';
 import AdminProfile from './screens/AdminProfile';
 import AdminRegister from './screens/AdminRegister';
+import VisitorFeedbackReview from './screens/VisitorFeedbackReview';
+import RegisterGuide from './screens/RegisterGuide';
+import ManageGuide from './screens/ManageGuide';
+import IoTMonitor from './screens/IoTMonitor';
 
 const Stack = createStackNavigator();
 
@@ -57,14 +58,15 @@ function App() {
         <Stack.Screen name="Notifications" component={Notifications} />
         <Stack.Screen name="AIBiodiversityScanner" component={AIBiodiversityScanner} />
         <Stack.Screen name="UserProfile" component={UserProfile} />
-        <Stack.Screen name="AddGuide" component={AddGuide}  />
-        <Stack.Screen name="UpdateGuide" component={UpdateGuide}  />
-        <Stack.Screen name="DeleteGuide" component={DeleteGuide} />
         <Stack.Screen name="CreateTraining" component={CreateTraining} />
         <Stack.Screen name="SendReminders" component={SendReminders} />
         <Stack.Screen name="GuidePerformance" component={GuidePerformance}  />
         <Stack.Screen name="AdminProfile" component={AdminProfile} />
         <Stack.Screen name="AdminRegister" component={AdminRegister} />
+        <Stack.Screen name="VisitorFeedbackReview" component={VisitorFeedbackReview} />
+        <Stack.Screen name="RegisterGuide" component={RegisterGuide} />
+        <Stack.Screen name="ManageGuide" component={ManageGuide} />
+        <Stack.Screen name="IoTMonitor" component={IoTMonitor} />
       </Stack.Navigator>
     </NavigationContainer>
   );
