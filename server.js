@@ -9,27 +9,22 @@
   const bcrypt     = require('bcryptjs');
   const cors       = require('cors');
   const bodyParser = require('body-parser');
-  const authenticateToken = require('./website/authMiddleware');
+  const { authenticateToken, isAdmin, isGuide } = require('./middleware/authMiddleware');
   const app  = express();
   const PORT = process.env.PORT || 5000;
 
  
-  app.use(express.json());
+app.use(express.json());
 
 // 👇 Add this new route for admin check anywhere under your existing routes
-app.get('/api/admin-only', authenticateToken, (req, res) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Access denied' });
-  }
+app.get('/api/admin-only', authenticateToken, isAdmin, (req, res) => {
   res.json({ message: 'Welcome, Admin!' });
 });
 
-app.get('/api/secure-data', authenticateToken, (req, res) => {
-  if (req.user.role !== 'guide') {
-    return res.status(403).json({ message: 'Not authorized' });
-  }
+app.get('/api/secure-data', authenticateToken, isGuide, (req, res) => {
   res.json({ data: 'This is guide-only data' });
 });
+
 
 
   // —— LOCKED-DOWN CORS ——
