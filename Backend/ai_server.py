@@ -5,7 +5,6 @@ from flask_cors import CORS
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-import io
 import os
 import requests
 
@@ -42,23 +41,25 @@ def predict():
         return jsonify({'error': 'No image uploaded'}), 400
 
     try:
+        # 1. Load and preprocess image
         img = Image.open(request.files['image'].stream).convert("RGB").resize(IMAGE_SIZE)
         img_array = np.expand_dims(np.array(img) / 255.0, axis=0).astype(np.float32)
 
+        # 2. Inference
         interpreter.set_tensor(input_details[0]['index'], img_array)
         interpreter.invoke()
         output = interpreter.get_tensor(output_details[0]['index'])[0]
 
         index = int(np.argmax(output))
-        label = class_names[index]
         confidence = float(output[index])
 
-        # Classify as 'Unknown' if below threshold
-        confidence_threshold = 0.5
-        if confidence < confidence_threshold:
+        # 3. Safety Check: Index + Threshold
+        if index >= len(class_names) or confidence < 0.2:
             label = "Unknown Species"
+        else:
+            label = class_names[index]
 
-        # Send to main backend for logging
+        # 4. Save prediction to main server
         try:
             requests.post(
                 "http://localhost:5000/api/save-prediction",

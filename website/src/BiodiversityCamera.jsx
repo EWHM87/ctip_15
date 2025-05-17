@@ -10,7 +10,7 @@ const BiodiversityCamera = () => {
   const [loading, setLoading] = useState(false);
   const webcamRef = useRef(null);
 
-  const API_URL = 'http://localhost:8000/predict'; // Updated backend route
+  const API_URL = 'http://localhost:8000/predict';
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -54,14 +54,15 @@ const BiodiversityCamera = () => {
         setAiResult('❌ Error: ' + data.error);
         setConfidence('');
       } else {
-        setAiResult(data.plant);
-        setConfidence((data.confidence * 100).toFixed(2) + '%');
+        setAiResult(data.plant || 'Unknown');
+        setConfidence(data.confidence !== undefined ? `${(data.confidence * 100).toFixed(2)}%` : 'N/A');
       }
     } catch (error) {
       setAiResult('❌ Error connecting to AI backend.');
       setConfidence('');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -94,7 +95,7 @@ const BiodiversityCamera = () => {
         <div className="upload-column">
           <div className="card shadow-sm p-3">
             <h5 className="text-center">Upload Image</h5>
-            <label className="form-label" htmlFor="imageUpload">Choose an image file</label>
+            <label htmlFor="imageUpload" className="form-label">Choose an image file</label>
             <input
               type="file"
               id="imageUpload"
