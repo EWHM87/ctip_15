@@ -32,7 +32,7 @@ const AIBiodiversity = () => {
       });
 
       try {
-        const res = await axios.post('http://192.168.0.10:8000/predict', formData, {
+        const res = await axios.post('http://172.17.9.163:8000/predict', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
