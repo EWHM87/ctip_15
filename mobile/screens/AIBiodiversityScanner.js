@@ -18,7 +18,7 @@ const AIBiodiversity = () => {
       allowsEditing: true,
       quality: 1,
     });
-
+    
     if (!result.canceled) {
       const image = result.assets[0];
       setPhotoUri(image.uri);
