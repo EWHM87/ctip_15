@@ -10,8 +10,8 @@ import requests
 
 # === Use absolute paths ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-model_path = os.path.join(BASE_DIR, "models", "plant_identification_model.tflite")
-class_file = os.path.join(BASE_DIR, "models", "classname.txt")
+model_path = os.path.join(BASE_DIR, "models", "plant_identification_mode2.tflite")
+class_file = os.path.join(BASE_DIR, "models", "classname2.txt")
 
 # === Load TFLite Model ===
 interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -25,7 +25,7 @@ try:
     with open(class_file, 'r') as f:
         class_names = [line.strip() for line in f if line.strip()]
 except FileNotFoundError:
-    print("❌ Error: 'classname.txt' not found.")
+    print("❌ Error: 'classname2.txt' not found.")
     exit()
 except Exception as e:
     print(f"❌ Error reading class names: {e}")
