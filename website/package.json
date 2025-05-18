@@ -28,7 +28,7 @@
   "scripts": {
     "start": "npx concurrently \"npm run start-frontend\" \"npm run start-backend\"",
     "start-frontend": "webpack serve --open",
-    "start-backend": "py ../Backend/ai_server.py",
+    "start-backend": "cd .. && node server.js",
     "build": "webpack"
   },
   "devDependencies": {
@@ -38,6 +38,7 @@
     "babel-loader": "^9.2.1",
     "concurrently": "^9.1.2",
     "css-loader": "^6.8.1",
+    "dotenv-webpack": "^8.1.0",
     "style-loader": "^3.3.3",
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4",

@@ -15,6 +15,7 @@ import { API_URL } from '@env';
 import { Alert } from 'react-native'; 
 
 const VisitorDashboard = ({ navigation }) => {
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   useEffect(() => {
   const verifyToken = async () => {
     const token = await AsyncStorage.getItem('token');
@@ -51,9 +52,53 @@ const VisitorDashboard = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* Sidebar */}
+      {isSidebarVisible && (
+        <View style={styles.sidebarOverlay}>
+          <View style={styles.verticalNavbar}>
+            <TouchableOpacity onPress={() => setIsSidebarVisible(false)} style={styles.verticalNavButton}>
+              <Ionicons name="close-outline" size={26} color="#fff" />
+              <Text style={styles.verticalLabel}>Close</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('VisitorDashboard')} style={styles.verticalNavButton}>
+              <Ionicons name="home-outline" size={24} color="#fff" />
+              <Text style={styles.verticalLabel}>Home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('AIBiodiversityScanner')} style={styles.verticalNavButton}>
+              <Ionicons name="camera-outline" size={24} color="#fff" />
+              <Text style={styles.verticalLabel}>Scanner</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('WriteReview')} style={styles.verticalNavButton}>
+              <Ionicons name="chatbox-ellipses-outline" size={24} color="#fff" />
+              <Text style={styles.verticalLabel}>Feedback</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                navigation.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'HomePage' }],
+                  })
+                );
+              }}
+              style={styles.verticalNavButton}
+            >
+              <Ionicons name="log-out-outline" size={24} color="#fff" />
+              <Text style={styles.verticalLabel}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity onPress={() => setIsSidebarVisible(false)} style={styles.overlayBackground} />
+        </View>
+      )}
+
       <View style={styles.mainContent}>
         <ScrollView contentContainerStyle={styles.container}>
-          <Text style={styles.title}>Visitor Dashboard</Text>
+          <View style={styles.headerRow}>
+            <TouchableOpacity onPress={() => setIsSidebarVisible(!isSidebarVisible)} style={styles.hamburgerInline}>
+              <Ionicons name="menu-outline" size={30} color="#065f46" />
+            </TouchableOpacity>
+            <Text style={styles.title}>Visitor Dashboard</Text>
+          </View>
 
           {/* Interactive Map Section */}
           <View style={styles.card}>
@@ -128,24 +173,31 @@ const FeatureButton = ({ icon, text, onPress }) => (
   </TouchableOpacity>
 );
 
+
+
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#ecfdf5',
-  },
-  mainContent: {
-    flex: 1,
-  },
-  container: {
-    padding: 20,
-    paddingBottom: 80,
-  },
+  safeArea: { flex: 1, backgroundColor: '#ecfdf5' },
+  mainContent: { flex: 1 },
+  container: { padding: 20, paddingBottom: 80 },
   title: {
     fontSize: 26,
     fontWeight: 'bold',
     color: '#065f46',
     textAlign: 'center',
+    
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 40,
     marginBottom: 20,
+   
+  },
+  hamburgerInline: {
+    padding: 6,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    elevation: 4,
   },
   card: {
     backgroundColor: '#ffffff',
@@ -158,18 +210,9 @@ const styles = StyleSheet.create({
     elevation: 3,
     marginBottom: 20,
   },
-  cardHeader: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#065f46',
-    marginBottom: 12,
-  },
-  buttonGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    justifyContent: 'space-between',
-  },
+  cardHeader: { fontSize: 20, fontWeight: '600', color: '#065f46', marginBottom: 12 },
+  sectionImage: { width: '100%', height: 200, borderRadius: 8, marginTop: 8, marginBottom: 12 },
+  buttonGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
   featureButton: {
     backgroundColor: '#10b981',
     paddingVertical: 12,
@@ -181,21 +224,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 10,
   },
-  icon: {
-    marginRight: 6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  sectionImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginTop: 8,
-    marginBottom: 12,
-  },
+  icon: { marginRight: 6 },
+  buttonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
   navbar: {
     position: 'absolute',
     bottom: 0,
@@ -213,16 +243,35 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
   },
-  navButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 8,
+  navButton: { alignItems: 'center', justifyContent: 'center', padding: 8 },
+  navLabel: { color: '#fff', fontSize: 9, fontWeight: 'bold', marginTop: 3 },
+  sidebarOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    zIndex: 5,
   },
-  navLabel: {
+  overlayBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' },
+  verticalNavbar: {
+    width: 200,
+    backgroundColor: '#065f46',
+    paddingTop: 30,
+    paddingHorizontal: 10,
+  },
+  verticalNavButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
+  verticalLabel: {
     color: '#fff',
-    fontSize: 9,
-    fontWeight: 'bold',
-    marginTop: 3,
+    fontSize: 14,
+    marginLeft: 10,
   },
 });
 

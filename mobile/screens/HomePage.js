@@ -34,7 +34,7 @@ const HomePage = ({ navigation }) => {
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('UserLogin')} style={styles.verticalNavButton}>
               <Ionicons name="person-circle-outline" size={24} color="#fff" />
-              <Text style={styles.verticalLabel}>User</Text>
+              <Text style={styles.verticalLabel}>Park Guide</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('AdminLogin')} style={styles.verticalNavButton}>
               <Ionicons name="shield-checkmark-outline" size={24} color="#fff" />
@@ -135,7 +135,7 @@ const HomePage = ({ navigation }) => {
             <Text style={styles.loginText}>Visitor</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.loginOption} onPress={() => { setShowLoginOptions(false); navigation.navigate('UserLogin'); }}>
-            <Text style={styles.loginText}>User</Text>
+            <Text style={styles.loginText}>Park Guide</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.loginOption} onPress={() => { setShowLoginOptions(false); navigation.navigate('AdminLogin'); }}>
             <Text style={styles.loginText}>Admin</Text>

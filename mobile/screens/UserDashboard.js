@@ -105,7 +105,7 @@ else {
             <TouchableOpacity onPress={() => setIsSidebarVisible(!isSidebarVisible)} style={styles.hamburgerInline}>
               <Ionicons name="menu-outline" size={30} color="#065f46" />
             </TouchableOpacity>
-            <Text style={styles.title}>User Dashboard</Text>
+            <Text style={styles.title}>Guide Dashboard</Text>
           </View>
 
           {/* Interactive Map Section */}
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#ecfdf5' },
   mainContent: { flex: 1 },
   container: { padding: 20, paddingBottom: 100 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 50, marginBottom: 20, marginTop: 20 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 40, marginBottom: 20, marginTop: 20 },
   hamburgerInline: { padding: 6, backgroundColor: '#ffffff', borderRadius: 8, elevation: 4 },
   title: { fontSize: 26, fontWeight: 'bold', color: '#065f46' },
   card: {

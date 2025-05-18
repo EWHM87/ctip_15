@@ -9,59 +9,90 @@
   const bcrypt     = require('bcryptjs');
   const cors       = require('cors');
   const bodyParser = require('body-parser');
-  const authenticateToken = require('./website/authMiddleware');
+  const { authenticateToken, isAdmin, isGuide } = require('./middleware/authMiddleware');
   const app  = express();
+  const passport = require('passport');
+  const OAuth2Strategy = require('passport-oauth2');
   const PORT = process.env.PORT || 5000;
+  const fs    = require('fs');
+  const https = require('https');
+  const path    = require('path');
+  const options = {
+    key : fs.readFileSync(path.join(__dirname, 'localhost-key.pem')),
+    cert: fs.readFileSync(path.join(__dirname, 'localhost.pem'))
+  };
 
- 
-  app.use(express.json());
+
+const { encrypt, decrypt } = require('./utils/crypto');
+
+passport.use(new OAuth2Strategy({
+  authorizationURL: process.env.OAUTH2_AUTH_URL,
+  tokenURL:         process.env.OAUTH2_TOKEN_URL,
+  clientID:         process.env.OAUTH2_CLIENT_ID,
+  clientSecret:     process.env.OAUTH2_CLIENT_SECRET,
+  callbackURL:      process.env.OAUTH2_CALLBACK_URL
+},
+(accessToken, refreshToken, profile, done) => {
+  // TODO: upsert/find the user in your DB
+  return done(null, {
+    id:       profile.id,
+    username: profile.username,
+    role:     'visitor'
+  });
+}));
+app.use(passport.initialize());
+
+// ─── Security & Body–Parsing (only once, before routes) ─────────
+app.use(helmet());
+
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:8080',     
+  'http://localhost:19006',
+'http://localhost:8081',
+  'http://your-frontend-domain.com'
+];
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error(`⚠️ CORS blocked for ${origin}`), false);
+  },
+  credentials: true,
+  allowedHeaders: ['Content-Type','Authorization']  // make sure Authorization header is allowed
+}));
+
+
+app.use(cors({
+  origin: (incomingOrigin, callback) => {
+    // allow server-to-server or same-origin (no Origin header)
+    if (!incomingOrigin) return callback(null, true);
+
+    if (allowedOrigins.includes(incomingOrigin)) {
+      return callback(null, true);
+    }
+
+    // block all others
+    return callback(new Error(`⚠️ CORS blocked for ${incomingOrigin}`), false);
+  },
+  credentials: true
+}));
+
+app.use(express.json());
+app.use(bodyParser.json());
+
+app.get('/', (req, res) => {
+  res.send('Welcome to Sarawak Parks API 🚀');
+});
 
 // 👇 Add this new route for admin check anywhere under your existing routes
-app.get('/api/admin-only', authenticateToken, (req, res) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Access denied' });
-  }
+app.get('/api/admin-only', authenticateToken, isAdmin, (req, res) => {
   res.json({ message: 'Welcome, Admin!' });
 });
 
-app.get('/api/secure-data', authenticateToken, (req, res) => {
-  if (req.user.role !== 'guide') {
-    return res.status(403).json({ message: 'Not authorized' });
-  }
+app.get('/api/secure-data', authenticateToken, isGuide, (req, res) => {
   res.json({ data: 'This is guide-only data' });
-});
-
-
-  // —— LOCKED-DOWN CORS ——
-  // 2️⃣ Security + parsing middleware (ONLY once each)
-  app.use(helmet());
-
-  // —— LOCKED-DOWN CORS —— 
-  const allowedOrigins = [
-    'http://localhost:19006',
-    'http://localhost:3000',
-    'http://localhost:8081', // React Native default
-    'https://your-frontend-domain.com'
-  ];
-
-
-  app.use(cors({
-    origin: (incomingOrigin, callback) => {
-      // allow server-to-server tools (no origin)
-      if (!incomingOrigin) return callback(null, true);
-
-      if (allowedOrigins.includes(incomingOrigin)) {
-        return callback(null, true);
-      }
-      callback(new Error(`⚠️ CORS blocked for ${incomingOrigin}`), false);
-    },
-    credentials: true
-  }));
-
-  // now JSON parser
-  app.use(bodyParser.json());
-
-
+}); 
 // 4️⃣ MySQL Connection
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -78,30 +109,30 @@ db.connect(err => {
   }
 });
 
-  // 2️⃣ Create DB if it doesn't exist
-  db.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`, (err) => {
+// 2️⃣ Create DB if it doesn't exist
+db.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`, (err) => {
+  if (err) {
+    console.error('❌ Error creating database:', err);
+    return;
+  }
+  console.log(`✅ Database ${process.env.DB_NAME} ready`);
+
+  // 3️⃣ Switch to your database
+  db.changeUser({ database: process.env.DB_NAME }, (err) => {
     if (err) {
-      console.error('❌ Error creating database:', err);
+      console.error('❌ Error switching to database:', err);
       return;
     }
-    console.log(`✅ Database ${process.env.DB_NAME} ready`);
-
-    // 3️⃣ Switch to your database
-    db.changeUser({ database: process.env.DB_NAME }, (err) => {
+    // 4️⃣ Confirm DB
+    db.query('SELECT DATABASE() AS db', (err, result) => {
       if (err) {
-        console.error('❌ Error switching to database:', err);
-        return;
+        console.error('❌ Could not confirm DB:', err);
+      } else {
+        console.log('🧠 Connected to database:', result[0].db); // ✅ Should say "sarawakparks"
       }
-      // 4️⃣ Confirm DB
-      db.query('SELECT DATABASE() AS db', (err, result) => {
-        if (err) {
-          console.error('❌ Could not confirm DB:', err);
-        } else {
-          console.log('🧠 Connected to database:', result[0].db); // ✅ Should say "sarawakparks"
-        }
-      });
+    });
 
-            // Guide feedback table
+    // Guide feedback table
       const createGuideFeedbackTable = `
         CREATE TABLE IF NOT EXISTS guide_feedback (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -117,7 +148,7 @@ db.connect(err => {
         else console.log('✅ guide_feedback table ready');
       });
 
-      // Feedback summary table
+    // Feedback summary table
       const createFeedbackSummaryTable = `
         CREATE TABLE IF NOT EXISTS feedback_summary (
            id INT AUTO_INCREMENT PRIMARY KEY,
@@ -132,7 +163,7 @@ db.connect(err => {
         else console.log('✅ feedback_summary table ready');
       });
 
-            // Users table
+    // Users table
       const createUsersTable = `
         CREATE TABLE IF NOT EXISTS users (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -148,7 +179,7 @@ db.connect(err => {
         else console.log('✅ Users table ready');
       });
 
-      // Park info table
+    // Park info table
       const createParkInfoTable = `
         CREATE TABLE IF NOT EXISTS park_info (
           park_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -163,7 +194,7 @@ db.connect(err => {
         else console.log('✅ park_info table ready');
       });
 
-      // Training schedule table
+    // Create schedule_training table
       const createTrainingScheduleTable = `
         CREATE TABLE IF NOT EXISTS schedule_training (
           schedule_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -171,8 +202,15 @@ db.connect(err => {
           date DATE NOT NULL
         );
       `;
+      db.query(createTrainingScheduleTable, err => {
+        if (err) {
+          console.error('❌ Error creating schedule_training table:', err);
+        } else {
+          console.log('✅ schedule_training table ready');
+        }
+      });
 
-      // Guide training history table
+    // Create training_history table
       const createGuideTrainingTable = `
         CREATE TABLE IF NOT EXISTS training_history (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -182,27 +220,15 @@ db.connect(err => {
           FOREIGN KEY (schedule_id) REFERENCES schedule_training(schedule_id)
         );
       `;
-      
-    // Create schedule_training table
-    db.query(createTrainingScheduleTable, err => {
-      if (err) {
-        console.error('❌ Error creating schedule_training table:', err);
-      } else {
-        console.log('✅ schedule_training table ready');
-      }
-    });
+      db.query(createGuideTrainingTable, err => {
+        if (err) {
+          console.error('❌ Error creating guide_training table:', err);
+        } else {
+          console.log('✅ guide_training table ready');
+        }
+      });
 
-    // Create training_history table
-    db.query(createGuideTrainingTable, err => {
-      if (err) {
-        console.error('❌ Error creating guide_training table:', err);
-      } else {
-        console.log('✅ guide_training table ready');
-      }
-    });
-
-
-      // Manage guides table
+    // Create Manage guides table
       const createManageGuidesTable = `
         CREATE TABLE IF NOT EXISTS manage_guides (
           guide_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -216,7 +242,7 @@ db.connect(err => {
         else console.log('✅ manage_guides table ready');
       });
 
-      // Guide certifications table
+    // Guide certifications table
       const createCertificationsTable = `
         CREATE TABLE IF NOT EXISTS guide_certifications (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -232,7 +258,7 @@ db.connect(err => {
         else console.log('✅ guide_certifications table ready');
       });
 
-      // Notifications table
+    // Create Notifications table
       const createNotificationsTable = `
         CREATE TABLE IF NOT EXISTS notifications (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -246,7 +272,7 @@ db.connect(err => {
         else console.log('✅ notifications table ready');
       });
 
-      // Guide self-assessments table
+    // Guide self-assessments table
       const createGuideAssessmentTable = `
         CREATE TABLE IF NOT EXISTS guide_self_assessments (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -270,7 +296,6 @@ db.connect(err => {
 });
 
 
-
 // POST /api/save-prediction – Log AI prediction result
 app.post('/api/save-prediction', (req, res) => {
   const { plant_name, confidence } = req.body;
@@ -290,29 +315,39 @@ app.post('/api/save-prediction', (req, res) => {
 
   db.query(createTableSql, err => {
     if (err) {
-      console.error('❌ Error ensuring ai_predictions table:', err);
-      return res.status(500).json({ message: 'Table creation failed', error: err });
+      console.error('❌ Insert error:', err);
+      return res.status(500).json({ message: 'Insert failed', error: err });
     }
-
-    console.log('✅ ai_predictions table ready or already exists');
-
-    const insertSql = `
-      INSERT INTO ai_predictions (plant_name, confidence)
-      VALUES (?, ?)
-    `;
-
-    db.query(insertSql, [plant_name, confidence], (err2) => {
-      if (err2) {
-        console.error('❌ Insert prediction error:', err2);
-        return res.status(500).json({ message: 'Insert failed', error: err2 });
-      }
-
-      console.log(`✅ AI prediction saved: ${plant_name} (${confidence.toFixed(2)})`);
-      res.status(201).json({ message: '✅ Prediction saved' });
-    });
+    res.status(201).json({ message: '✅ Summary saved successfully' });
   });
 });
 
+
+// POST /api/save-prediction – Log AI prediction result
+app.post('/api/save-prediction', (req, res) => {
+  const { plant_name, confidence } = req.body;
+
+  if (!plant_name?.trim() || typeof confidence !== 'number') {
+    return res.status(400).json({ message: 'Missing or invalid data for prediction logging' });
+  }
+
+  const insertSql = `
+    INSERT INTO ai_predictions (plant_name, confidence)
+    VALUES (?, ?)
+  `;
+
+  db.query(insertSql, [plant_name, confidence], (err2) => {
+    if (err2) {
+      console.error('❌ Insert prediction error:', err2);
+      return res.status(500).json({ message: 'Insert failed', error: err2 });
+    }
+
+    console.log(`✅ AI prediction saved: ${plant_name} (${confidence.toFixed(2)})`);
+    res.status(201).json({ message: '✅ Prediction saved' });
+  });
+});
+
+// GET /api/ai-predictions – Fetch AI predictions
 app.get('/api/ai-predictions', (req, res) => {
   db.query(`SELECT * FROM ai_predictions ORDER BY predicted_at DESC`, (err, results) => {
     if (err) {
@@ -350,19 +385,16 @@ app.post('/api/submit-feedback', (req, res) => {
     res.status(200).json({ message: '✅ Feedback submitted successfully!' });
   });
 });
-
-// Save summary
+// POST /api/save-feedback-summary
 app.post('/api/save-feedback-summary', (req, res) => {
-  const { guide_id, summary_text, sentiment } = req.body;
-  if (!guide_id || !summary_text || !sentiment) {
+  const { summary_text, sentiment } = req.body;
+
+  if (!summary_text || !sentiment) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
-  const sql = `
-    INSERT INTO feedback_summary (guide_id, summary_text, sentiment)
-    VALUES (?, ?, ?)
-  `;
-  db.query(sql, [guide_id, summary_text, sentiment], (err) => {
+  const sql = `INSERT INTO feedback_summary (summary_text, sentiment) VALUES (?, ?)`;
+  db.query(sql, [summary_text, sentiment], (err, result) => {
     if (err) {
       console.error('❌ Insert error:', err);
       return res.status(500).json({ message: 'Insert failed', error: err });
@@ -371,19 +403,21 @@ app.post('/api/save-feedback-summary', (req, res) => {
   });
 });
 
-//=============================
-// Fetch summaries
-//=============================
+const { exec } = require('child_process');
+
 app.get('/api/feedback-summaries', (req, res) => {
-  const sql = `
-    SELECT fs.*, mg.name AS guide_name
-    FROM feedback_summary fs
-    LEFT JOIN manage_guides mg ON fs.guide_id = mg.guide_id
-    ORDER BY fs.generated_at DESC
-  `;
+  const sql = `SELECT * FROM feedback_summary ORDER BY generated_at DESC`;
   db.query(sql, (err, results) => {
     if (err) return res.status(500).json({ message: 'Failed to fetch summaries' });
-    res.status(200).json(results);
+
+    const decrypted = results.map(row => ({
+      id:           row.id,
+      summary_text: decrypt(row.summary_text),
+      sentiment:    row.sentiment,
+      generated_at: row.generated_at
+    }));
+
+    res.status(200).json(decrypted);
   });
 });
 
@@ -422,149 +456,158 @@ app.delete('/api/clear-feedback-summaries', (req, res) => {
 
 
 
-      // ==============================
-      // POST /api/register
-      // ==============================
-      app.post(
-        '/api/register',
-        [
-          body('username')
-            .trim()
-            .isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
-          body('email')
-            .isEmail().withMessage('Must be a valid email')
-            .normalizeEmail(),
-          body('password')
-            .isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-          body('role')
-            .optional()
-            .isIn(['admin', 'guide', 'visitor']).withMessage('Invalid role')
-        ],
-        async (req, res) => {
-          const errors = validationResult(req);
-          if (!errors.isEmpty()) {
-            console.log('❌ Validation failed:', errors.array());
-            return res.status(422).json({ message: 'Validation error', errors: errors.array() });
+// ==============================
+// POST /api/register
+// ==============================
+app.post(
+  '/api/register',
+  [
+    body('username')
+      .trim()
+      .isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
+    body('email')
+      .isEmail().withMessage('Must be a valid email')
+      .normalizeEmail(),
+    body('password')
+      .isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+    body('role')
+      .optional()
+      .isIn(['admin', 'guide', 'visitor']).withMessage('Invalid role')
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('❌ Validation failed:', errors.array());
+      return res.status(422).json({ message: 'Validation error', errors: errors.array() });
+    }
+
+    const { username, email, password, role } = req.body;
+    console.log('📥 Received registration:', req.body);
+
+    try {
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const sql = `INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`;
+      db.query(sql, [username, email, hashedPassword, role], (err, result) => {
+        if (err) {
+          console.error('❌ MySQL Error:', err);
+          if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ message: 'Username or email already exists' });
           }
-
-          const { username, email, password, role } = req.body;
-          console.log('📥 Received registration:', req.body);
-          console.log('🔍 Attempting user insert with:', { username, email, password, role });
-
-          try {
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            const sql = `INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`;
-            db.query(sql, [username, email, hashedPassword, role], (err, result) => {
-              if (err) {
-                console.error('❌ MySQL Error:', err);
-                if (err.code === 'ER_DUP_ENTRY') {
-                  return res.status(400).json({ message: 'Username or email already exists' });
-                }
-                return res.status(500).json({ message: 'DB insert failed', error: err });
-              }
-
-              // If registering as guide, also insert into manage_guides
-              if (role === 'guide') {
-                const sql2 = `INSERT INTO manage_guides (name, email) VALUES (?, ?)`;
-                db.query(sql2, [username, email], (err2) => {
-                  if (err2 && err2.code !== 'ER_DUP_ENTRY') {
-                    console.error('❌ Error inserting into manage_guides:', err2);
-                    return res.status(500).json({ message: 'Guide registration failed', error: err2 });
-                  }
-                  console.log('✅ Guide also added to manage_guides');
-                });
-              }
-
-              console.log('✅ Registered new user:', result);
-              return res.status(201).json({ message: 'User registered successfully' });
-            });
-          } catch (err) {
-            console.error('❌ Server error:', err);
-            return res.status(500).json({ message: 'Server error' });
-          }
+          return res.status(500).json({ message: 'DB insert failed', error: err });
         }
-      );
 
+        const userId = result.insertId;
 
-  // PUT /api/update-role/:email
-      app.put('/api/update-role/:email', (req, res) => {
-        const { email } = req.params;
-        const { role } = req.body;
-
-        const sql = `UPDATE users SET role = ? WHERE email = ?`;
-        db.query(sql, [role, email], (err) => {
-          if (err) {
-            console.error('❌ Role update failed:', err);
-            return res.status(500).json({ message: 'Failed to update role', error: err });
-          }
-          res.json({ message: 'Role updated successfully'
+        if (role === 'guide') {
+          const sql2 = `INSERT INTO manage_guides (name, email) VALUES (?, ?)`;
+          db.query(sql2, [username, email], (err2) => {
+            if (err2 && err2.code !== 'ER_DUP_ENTRY') {
+              console.error('❌ Error inserting into manage_guides:', err2);
+              return res.status(500).json({ message: 'Guide registration failed', error: err2 });
+            }
+            console.log('✅ Guide also added to manage_guides');
           });
+
+          // ✅ Log guide registration activity
+          logActivity(userId, 'Guide Registered', 'Registered through /api/register');
+        }
+
+        console.log('✅ Registered new user:', result);
+        return res.status(201).json({ message: 'User registered successfully' });
+      });
+    } catch (err) {
+      console.error('❌ Server error:', err);
+      return res.status(500).json({ message: 'Server error' });
+    }
+  }
+);
+// PUT /api/update-role/:email
+    app.put('/api/update-role/:email', (req, res) => {
+      const { email } = req.params;
+      const { role } = req.body;
+
+      const sql = `UPDATE users SET role = ? WHERE email = ?`;
+      db.query(sql, [role, email], (err) => {
+        if (err) {
+          console.error('❌ Role update failed:', err);
+          return res.status(500).json({ message: 'Failed to update role', error: err });
+        }
+        res.json({ message: 'Role updated successfully'
         });
       });
+    });
 
-  //  POST /api/register-guide
-  app.post('/api/register-guide', async (req, res) => {
-    const { name, email } = req.body;
+app.post('/api/register-guide', async (req, res) => {
+  const { name, email } = req.body;
 
-    if (!name || !email) {
-      return res.status(400).json({ message: 'Name and Email are required' });
+  if (!name || !email) {
+    return res.status(400).json({ message: 'Name and Email are required' });
+  }
+
+  // Step 1: Insert into manage_guides
+  const sql1 = `INSERT INTO manage_guides (name, email) VALUES (?, ?)`;
+  db.query(sql1, [name, email], async (err1, result1) => {
+    if (err1) {
+      console.error('❌ Error adding to manage_guides:', err1);
+      if (err1.code === 'ER_DUP_ENTRY') {
+        return res.status(400).json({ message: 'Guide already exists' });
+      }
+      return res.status(500).json({ message: 'Database error', error: err1 });
     }
 
-    // Step 1: Insert into manage_guides
-    const sql1 = `INSERT INTO manage_guides (name, email) VALUES (?, ?)`;
-    db.query(sql1, [name, email], async (err1, result1) => {
-      if (err1) {
-        console.error('❌ Error adding to manage_guides:', err1);
-        if (err1.code === 'ER_DUP_ENTRY') {
-          return res.status(400).json({ message: 'Guide already exists' });
-        }
-        return res.status(500).json({ message: 'Database error', error: err1 });
+    // Step 2: Insert or update user
+    const defaultPassword = await bcrypt.hash('guide1234', 10);
+    const insertOrUpdateSql = `
+      INSERT INTO users (username, email, password, role)
+      VALUES (?, ?, ?, 'guide')
+      ON DUPLICATE KEY UPDATE role = 'guide'
+    `;
+
+    db.query(insertOrUpdateSql, [name, email, defaultPassword], (err2, result2) => {
+      if (err2) {
+        console.error('❌ Error inserting/updating user:', err2);
+        return res.status(500).json({ message: 'User insert/update failed', error: err2 });
       }
 
-      // Step 2: Insert or update user
-      const defaultPassword = await bcrypt.hash('guide1234', 10);
-      const insertOrUpdateSql = `
-        INSERT INTO users (username, email, password, role)
-        VALUES (?, ?, ?, 'guide')
-        ON DUPLICATE KEY UPDATE role = 'guide'
-      `;
+      console.log('✅ Guide registered or role updated in users');
 
-      db.query(insertOrUpdateSql, [name, email, defaultPassword], (err2) => {
-        if (err2) {
-          console.error('❌ Error inserting/updating user:', err2);
-          return res.status(500).json({ message: 'User insert/update failed', error: err2 });
+      // ✅ Retrieve guide_id from users to log activity
+      const getUserSql = `SELECT id FROM users WHERE email = ? AND role = 'guide'`;
+      db.query(getUserSql, [email], (err3, rows) => {
+        if (!err3 && rows.length > 0) {
+          const guideId = rows[0].id;
+          logActivity(guideId, 'Guide Registered', 'Registered through /api/register-guide');
         }
-
-        console.log('✅ Guide registered or role updated in users');
-        return res.status(201).json({ message: 'Guide registered successfully' });
       });
+      return res.status(201).json({ message: 'Guide registered successfully' });
     });
   });
+});
 
-  // PUT/api/update-role/:email
-  app.put('/api/update-role/:email', (req, res) => {
-    const { email } = req.params;
-    const { role } = req.body;
+// PUT/api/update-role/:email
+app.put('/api/update-role/:email', (req, res) => {
+  const { email } = req.params;
+  const { role } = req.body;
 
-    if (!['admin', 'guide', 'visitor'].includes(role)) {
-      return res.status(400).json({ message: 'Invalid role' });
+  if (!['admin', 'guide', 'visitor'].includes(role)) {
+    return res.status(400).json({ message: 'Invalid role' });
+  }
+
+  const updateSql = `UPDATE users SET role = ? WHERE email = ?`;
+  db.query(updateSql, [role, email], (err, result) => {
+    if (err) {
+      console.error('❌ Error updating role:', err);
+      return res.status(500).json({ message: 'Failed to update role', error: err });
     }
 
-    const updateSql = `UPDATE users SET role = ? WHERE email = ?`;
-    db.query(updateSql, [role, email], (err, result) => {
-      if (err) {
-        console.error('❌ Error updating role:', err);
-        return res.status(500).json({ message: 'Failed to update role', error: err });
-      }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-
-      res.json({ message: 'User role updated successfully' });
-    });
+    res.json({ message: 'User role updated successfully' });
   });
+});
 
 // ==============================
 // POST /api/login
@@ -577,191 +620,198 @@ app.post(
   ],
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
-    }
-
+    if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
     const { username, password } = req.body;
-
-    const sql = `SELECT * FROM users WHERE username = ?`;
+    const sql = `SELECT * FROM users WHERE username=?`;
     db.query(sql, [username], async (err, results) => {
-      if (err) {
-        console.error('❌ DB error:', err);
-        return res.status(500).json({ message: 'Database error' });
-      }
-
-      if (results.length === 0) {
-        return res.status(401).json({ message: 'Invalid username or password' });
-      }
-
+      if (err) return res.status(500).json({ message:'Database error' });
+      if (!results.length) return res.status(401).json({ message:'Invalid credentials' });
       const user = results[0];
-      const isMatch = await bcrypt.compare(password, user.password);
-
-      if (!isMatch) {
-        return res.status(401).json({ message: 'Invalid username or password' });
-      }
-
-    const jwt = require('jsonwebtoken');
+      if (!(await bcrypt.compare(password, user.password)))
+        return res.status(401).json({ message:'Invalid credentials' });
+      const jwt = require('jsonwebtoken');
       const token = jwt.sign(
-        {
-          id: user.id,
-          username: user.username,
-          role: user.role
-        },
+        { id:user.id, username:user.username, role:user.role },
         process.env.JWT_SECRET,
-        { expiresIn: '1d' }
+        { expiresIn:'1d' }
       );
-
-      res.json({
-        message: 'Login successful',
-        token,
-        user: {
-          id: user.id,
-          username: user.username,
-          role: user.role
-        }
-      });
+      res.json({ message:'Login successful', token, user:{ id:user.id,username:user.username,role:user.role } });
     });
   }
 );
 
-  
-  // POST /api/training-schedule - Create a new training schedule
-  app.post('/api/scheduletraining', (req, res) => {
-    const { topic, date } = req.body;
+// 1) Start the OAuth2 flow
+app.get('/auth/login',
+  passport.authenticate('oauth2')
+);
 
-    if (!topic || !date) {
-      return res.status(400).json({ message: 'Topic and Date are required' });
+// 2) Handle the callback and issue a JWT
+app.get('/auth/callback',
+  passport.authenticate('oauth2', { session: false }),
+  (req, res) => {
+    const jwt = require('jsonwebtoken');
+    const token = jwt.sign(
+      { id: req.user.id, username: req.user.username, role: req.user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+    res.json({ message: 'OAuth login successful', token });
+  }
+); 
+// POST /api/scheduletraining - Create a new training schedule
+app.post('/api/scheduletraining', (req, res) => {
+  const { topic, date } = req.body;
+
+  if (!topic || !date) {
+    return res.status(400).json({ message: 'Topic and Date are required' });
+  }
+
+  const sql = 'INSERT INTO schedule_training (topic, date) VALUES (?, ?)';
+  db.query(sql, [topic, date], (err, result) => {
+    if (err) {
+      console.error('❌ Error inserting training:', err);
+      return res.status(500).json({ message: 'Error inserting training', error: err });
     }
 
-    const sql = 'INSERT INTO schedule_training (topic, date) VALUES (?, ?)';
-    db.query(sql, [topic, date], (err, result) => {
-      if (err) {
-        console.error('❌ Error inserting training:', err);
-        return res.status(500).json({ message: 'Error inserting training', error: err });
-      }
-
-      res.status(201).json({
-        message: 'Training scheduled successfully',
-        schedule_id: result.insertId,
-        topic,
-        date,
-      });
+    res.status(201).json({
+      message: 'Training scheduled successfully',
+      schedule_id: result.insertId,
+      topic,
+      date,
     });
   });
+});
 
-  // GET /api/scheduletraining - Fetch scheduled trainings
-  app.get('/api/scheduletraining', (req, res) => {
-    const sql = 'SELECT * FROM schedule_training ORDER BY date';
-    db.query(sql, (err, result) => {
-      if (err) {
-        console.error('❌ Error fetching trainings:', err);
-        return res.status(500).json({ message: 'Error fetching trainings', error: err });
-      }
-      res.status(200).json(result);
-    });
+// GET /api/scheduletraining - Fetch scheduled trainings
+app.get('/api/scheduletraining', (req, res) => {
+  const sql = 'SELECT * FROM schedule_training ORDER BY date';
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error('❌ Error fetching trainings:', err);
+      return res.status(500).json({ message: 'Error fetching trainings', error: err });
+    }
+    res.status(200).json(result);
   });
+});
+
   
-  // GET /api/my-training/:guideId - Get training history for a guide
-  app.get('/api/my-training/:guideId', (req, res) => {
-    const guideId = req.params.guideId;
+// GET /api/my-training/:guideId - Get training history for a guide
+app.get('/api/my-training/:guideId', (req, res) => {
+  const guideId = req.params.guideId;
 
-    const sql = `
+  const sql = `
     SELECT st.schedule_id, st.topic, st.date, th.status
     FROM training_history th
     JOIN schedule_training st ON th.schedule_id = st.schedule_id
     WHERE th.guide_id = ?
     ORDER BY st.date DESC
-    `;
+  `;
 
-    db.query(sql, [guideId], (err, results) => {
-      if (err) {
-        console.error('❌ Error fetching training history:', err);
-        return res.status(500).json({ message: 'Fetch error', error: err });
-      }
-      res.json(results);
-    });
+  db.query(sql, [guideId], (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching training history:', err);
+      return res.status(500).json({ message: 'Fetch error', error: err });
+    }
+    res.json(results);
   });
+});
 
-  // POST /api/guide-training - Sign up a guide for a training session
-  app.post('/api/guide-training', (req, res) => {
-    const { guide_id, schedule_id } = req.body;
+// POST /api/guide-training - Sign up a guide for a training session
+app.post('/api/guide-training', (req, res) => {
+  const { guide_id, schedule_id } = req.body;
 
-    if (!guide_id || !schedule_id) {
-      return res.status(400).json({ message: 'Guide ID and Schedule ID are required' });
+  if (!guide_id || !schedule_id) {
+    return res.status(400).json({ message: 'Guide ID and Schedule ID are required' });
+  }
+
+  const checkSql = `
+    SELECT * FROM training_history
+    WHERE guide_id = ? AND schedule_id = ?
+  `;
+
+  db.query(checkSql, [guide_id, schedule_id], (err, rows) => {
+    if (err) {
+      console.error('❌ Duplication check error:', err);
+      return res.status(500).json({ message: 'Check error', error: err });
     }
 
-    const checkSql = `
-      SELECT * FROM training_history
-      WHERE guide_id = ? AND schedule_id = ?
-    `;
-
-    db.query(checkSql, [guide_id, schedule_id], (err, rows) => {
-      if (err) {
-        console.error('❌ Duplication check error:', err);
-        return res.status(500).json({ message: 'Check error', error: err });
-      }
-
-      if (rows.length > 0) {
-        return res.status(400).json({ message: 'Already signed up for this training' });
-      }
-
-      const insertSql = `
-        INSERT INTO training_history (guide_id, schedule_id, status)
-        VALUES (?, ?, 'Upcoming')
-      `;
-      db.query(insertSql, [guide_id, schedule_id], (err2, result) => {
-        if (err2) {
-          console.error('❌ Insert error:', err2);
-          return res.status(500).json({ message: 'Signup error', error: err2 });
-        }
-        res.status(201).json({ message: 'Guide signed up for training', id: result.insertId });
-      });
-    });
-  });
-
-  // PATCH /api/guide-training/:id – Mark training as completed (admin use)
-  app.patch('/api/guide-training/:id', (req, res) => {
-    const { status } = req.body;
-
-    if (!['Upcoming', 'Completed'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status value' });
+    if (rows.length > 0) {
+      return res.status(400).json({ message: 'Already signed up for this training' });
     }
 
-    const sql = `
+    const insertSql = `
+      INSERT INTO training_history (guide_id, schedule_id, status)
+      VALUES (?, ?, 'Upcoming')
+    `;
+    db.query(insertSql, [guide_id, schedule_id], (err2, result) => {
+      if (err2) {
+        console.error('❌ Insert error:', err2);
+        return res.status(500).json({ message: 'Signup error', error: err2 });
+      }
+
+      // ✅ Log training signup
+      logActivity(guide_id, 'Training Signup', `Signed up for training ID ${schedule_id}`);
+
+      res.status(201).json({ message: 'Guide signed up for training', id: result.insertId });
+    });
+  });
+});
+
+// PATCH /api/guide-training/:id – Mark training as completed (admin use)
+app.patch('/api/guide-training/:id', (req, res) => {
+  const { status } = req.body;
+
+  if (!['Upcoming', 'Completed'].includes(status)) {
+    return res.status(400).json({ message: 'Invalid status value' });
+  }
+
+  // First get guide_id for logging
+  const selectSql = `SELECT guide_id, schedule_id FROM training_history WHERE id = ?`;
+  db.query(selectSql, [req.params.id], (err1, result1) => {
+    if (err1 || result1.length === 0) {
+      return res.status(404).json({ message: 'Training record not found' });
+    }
+
+    const { guide_id, schedule_id } = result1[0];
+
+    const updateSql = `
       UPDATE training_history SET status = ?
       WHERE id = ?
     `;
-
-    db.query(sql, [status, req.params.id], (err) => {
-      if (err) {
-        console.error('❌ Status update error:', err);
-        return res.status(500).json({ message: 'Update failed', error: err });
+    db.query(updateSql, [status, req.params.id], (err2) => {
+      if (err2) {
+        console.error('❌ Status update error:', err2);
+        return res.status(500).json({ message: 'Update failed', error: err2 });
       }
+
+      // ✅ Log training status update
+      logActivity(guide_id, 'Training Status Updated', `Training ID ${schedule_id} marked as ${status}`);
 
       res.json({ message: 'Training status updated' });
     });
   });
+});
 
-  // GET /api/all-training-history - Get all training history for a guide
-  app.get('/api/all-training-history', (req, res) => {
-    const sql = `
+// GET /api/all-training-history - Get all training history for admin
+app.get('/api/all-training-history', (req, res) => {
+  const sql = `
     SELECT th.id, th.guide_id, st.topic, st.date, th.status
     FROM training_history th
     JOIN schedule_training st ON th.schedule_id = st.schedule_id
     ORDER BY st.date DESC
-    `;
+  `;
 
-    db.query(sql, (err, results) => {
-      if (err) {
-        console.error('❌ Admin fetch error:', err);
-        return res.status(500).json({ message: 'Failed to fetch all training history', error: err });
-      }
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('❌ Admin fetch error:', err);
+      return res.status(500).json({ message: 'Failed to fetch all training history', error: err });
+    }
 
-      res.json(results);
-    });
+    res.json(results);
   });
-    // POST /api/manage-guides - Fetch all guides
+});
+
+// POST /api/manage-guides - Fetch all guides
   app.post('/api/register-guide', (req, res) => {
     const { name, email, role = 'guide' } = req.body;
 
@@ -882,108 +932,130 @@ app.post(
       });
     });
   });
-    // POST /api/guide-certifications - Add a certification for a guide
-  app.post('/api/certifications', (req, res) => {
-    const { guide_id, certification_name, expiry_date, status = 'Valid' } = req.body;
 
-    if (!guide_id || !certification_name || !expiry_date) {
-      return res.status(400).json({ message: 'Missing required fields' });
+// POST /api/guide-certifications - Add a certification for a guide
+app.post('/api/certifications', (req, res) => {
+  const { guide_id, certification_name, expiry_date, status = 'Valid' } = req.body;
+
+  if (!guide_id || !certification_name || !expiry_date) {
+    return res.status(400).json({ message: 'Missing required fields' });
+  }
+
+  const sql = `
+    INSERT INTO guide_certifications (guide_id, certification_name, expiry_date, status)
+    VALUES (?, ?, ?, ?)
+  `;
+
+  db.query(sql, [guide_id, certification_name, expiry_date, status], (err, result) => {
+    if (err) {
+      console.error('❌ Insert error:', err);
+      return res.status(500).json({ message: 'Failed to assign certification', error: err });
     }
 
-    const sql = `
-      INSERT INTO guide_certifications (guide_id, certification_name, expiry_date, status)
-      VALUES (?, ?, ?, ?)
-    `;
+    // ✅ Log activity
+    const getUserSql = `SELECT id FROM users WHERE email = (SELECT email FROM manage_guides WHERE guide_id = ?)`;
+    db.query(getUserSql, [guide_id], (err2, rows) => {
+      if (!err2 && rows.length > 0) {
+        const userId = rows[0].id;
+    logActivity(userId, 'Certification Assigned', `Assigned: ${certification_name}, Expiry: ${expiry_date}`);
+  }
+});
 
-    db.query(sql, [guide_id, certification_name, expiry_date, status], (err, result) => {
-      if (err) {
-        console.error('❌ Insert error:', err);
-        return res.status(500).json({ message: 'Failed to assign certification', error: err });
-      }
-      res.status(201).json({ message: 'Certification assigned', id: result.insertId });
-    });
+
+    res.status(201).json({ message: 'Certification assigned', id: result.insertId });
   });
+});
 
-  // GET /api/guide-certifications/:guideId - Get certifications for a guide
-  app.get('/api/certifications/:guide_id', (req, res) => {
-    const guideId = req.params.guide_id;
+// GET /api/guide-certifications/:guideId - Get certifications for a guide
+app.get('/api/certifications/:guide_id', (req, res) => {
+  const guideId = req.params.guide_id;
 
-    const sql = `
-      SELECT certification_name, expiry_date, status
-      FROM guide_certifications
-      WHERE guide_id = ?
-    `;
+  const sql = `
+    SELECT certification_name, expiry_date, status
+    FROM guide_certifications
+    WHERE guide_id = ?
+  `;
 
-    db.query(sql, [guideId], (err, results) => {
-      if (err) {
-        console.error('❌ Fetch error:', err);
-        return res.status(500).json({ message: 'Failed to fetch certifications', error: err });
-      }
-      res.json(results);
-    });
+  db.query(sql, [guideId], (err, results) => {
+    if (err) {
+      console.error('❌ Fetch error:', err);
+      return res.status(500).json({ message: 'Failed to fetch certifications', error: err });
+    }
+    res.json(results);
   });
+});
 
-  //PUT /api/guide-certifications/:id - Update a certification
-  app.put('/api/certifications/:id', (req, res) => {
-    const id = req.params.id;
-    const { certification_name, expiry_date, status } = req.body;
+// PUT /api/guide-certifications/:id - Update a certification
+app.put('/api/certifications/:id', (req, res) => {
+  const id = req.params.id;
+  const { certification_name, expiry_date, status } = req.body;
 
-    const sql = `
-      UPDATE guide_certifications
-      SET certification_name = ?, expiry_date = ?, status = ?
-      WHERE id = ?
-    `;
+  const sql = `
+    UPDATE guide_certifications
+    SET certification_name = ?, expiry_date = ?, status = ?
+    WHERE id = ?
+  `;
 
-    db.query(sql, [certification_name, expiry_date, status, id], (err) => {
-      if (err) {
-        console.error('❌ Update error:', err);
-        return res.status(500).json({ message: 'Failed to update certification', error: err });
+  db.query(sql, [certification_name, expiry_date, status, id], (err) => {
+    if (err) {
+      console.error('❌ Update error:', err);
+      return res.status(500).json({ message: 'Failed to update certification', error: err });
+    }
+
+    // ✅ Lookup guide_id for logging
+    const getGuideSql = `SELECT guide_id FROM guide_certifications WHERE id = ?`;
+    db.query(getGuideSql, [id], (err2, result2) => {
+      if (!err2 && result2.length > 0) {
+        const guideId = result2[0].guide_id;
+        logActivity(guideId, 'Certification Updated', `Updated: ${certification_name}, Status: ${status}`);
       }
-      res.json({ message: 'Certification updated' });
     });
+
+    res.json({ message: 'Certification updated' });
   });
+});
 
-  // GET /api/certifications/reminders - reminders for certifications due soon
-  app.get('/api/certifications/reminders', (req, res) => {
-    const sql = `
-      SELECT g.name, c.certification_name, c.expiry_date
-      FROM guide_certifications c
-      JOIN manage_guides g ON c.guide_id = g.guide_id
-      WHERE c.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-      ORDER BY c.expiry_date ASC
-    `;
+// GET /api/certifications/reminders - reminders for certifications due soon
+app.get('/api/certifications/reminders', (req, res) => {
+  const sql = `
+    SELECT g.name, c.certification_name, c.expiry_date
+    FROM guide_certifications c
+    JOIN manage_guides g ON c.guide_id = g.guide_id
+    WHERE c.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+    ORDER BY c.expiry_date ASC
+  `;
 
-    db.query(sql, (err, results) => {
-      if (err) {
-        console.error('❌ Reminder fetch error:', err);
-        return res.status(500).json({ message: 'Failed to fetch reminders', error: err });
-      }
-      res.json(results);
-    });
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('❌ Reminder fetch error:', err);
+      return res.status(500).json({ message: 'Failed to fetch reminders', error: err });
+    }
+    res.json(results);
   });
+});
 
-  // GET /api/my-certifications-by-username?username=...
-  app.get('/api/my-certifications-by-username', (req, res) => {
-    const { username } = req.query;
+// GET /api/my-certifications-by-username?username=...
+app.get('/api/my-certifications-by-username', (req, res) => {
+  const { username } = req.query;
 
-    const sql = `
-      SELECT c.certification_name, c.expiry_date, c.status
-      FROM guide_certifications c
-      JOIN manage_guides g ON c.guide_id = g.guide_id
-      WHERE g.name = ?
-      ORDER BY c.expiry_date
-    `;
+  const sql = `
+    SELECT c.certification_name, c.expiry_date, c.status
+    FROM guide_certifications c
+    JOIN manage_guides g ON c.guide_id = g.guide_id
+    WHERE g.name = ?
+    ORDER BY c.expiry_date
+  `;
 
-    db.query(sql, [username], (err, results) => {
-      if (err) {
-        console.error('❌ Error fetching certifications by username:', err);
-        return res.status(500).json({ message: 'Failed to fetch certifications', error: err });
-      }
+  db.query(sql, [username], (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching certifications by username:', err);
+      return res.status(500).json({ message: 'Failed to fetch certifications', error: err });
+    }
 
-      res.json(results);
-    });
+    res.json(results);
   });
-  
+});
+
   // POST /api/notifications - Send/save a notification
   app.post('/api/notifications', (req, res) => {
     const { recipient, content } = req.body;
@@ -1037,10 +1109,59 @@ app.post('/api/self-assessment', (req, res) => {
       console.error('❌ Error inserting assessment:', err);
       return res.status(500).json({ message: 'Submission failed', error: err });
     }
+
+    // ✅ Lookup guide ID from users table
+    const getGuideIdSql = `SELECT id FROM users WHERE email = ? AND role = 'guide'`;
+    db.query(getGuideIdSql, [email], (err2, rows) => {
+      if (!err2 && rows.length > 0) {
+        const guideId = rows[0].id;
+        logActivity(guideId, 'Self-Assessment Submitted', 'Completed guide self-assessment form');
+      }
+    });
+
     res.status(201).json({ message: 'Assessment submitted successfully', id: result.insertId });
   });
 });
 
+// GET /api/guide-activity-log - Admin view of all guide actions
+app.get('/api/guide-activity-log', (req, res) => {
+  const sql = `
+    SELECT u.username AS guide, a.action, a.description, a.timestamp AS date
+    FROM guide_activity_log a
+    JOIN users u ON a.guide_id = u.id
+    ORDER BY a.timestamp DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching activity logs:', err);
+      return res.status(500).json({ message: 'Failed to fetch activity logs', error: err });
+    }
+    res.status(200).json(results);
+  });
+});
+
+
+// GET /api/guide-activity-log/:guideId - View logs for one guide
+app.get('/api/guide-activity-log/:guideId', (req, res) => {
+  const guideId = req.params.guideId;
+
+  const sql = `
+    SELECT u.username AS guide, a.action, a.description, a.timestamp AS date
+    FROM guide_activity_log a
+    JOIN users u ON a.guide_id = u.id
+    WHERE a.guide_id = ?
+    ORDER BY a.timestamp DESC
+  `;
+
+  db.query(sql, [guideId], (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching guide-specific logs:', err);
+      return res.status(500).json({ message: 'Failed to fetch activity logs', error: err });
+    }
+    res.status(200).json(results);
+  });
+});
 
   // 5️⃣ Centralized error-handler
   app.use((err, req, res, next) => {
@@ -1057,5 +1178,9 @@ app.post('/api/self-assessment', (req, res) => {
   })
 
   // ✅ This stays at the bottom of your server.js
+// … all your routes, middleware, etc.
+
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);})
+  console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);
+});
+

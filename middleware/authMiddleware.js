@@ -1,3 +1,4 @@
+// middleware/authMiddleware.js
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
@@ -14,9 +15,27 @@ function authenticateToken(req, res, next) {
       return res.status(403).json({ message: 'Invalid or expired token' });
     }
 
-    req.user = user; // attach user info to request
+    req.user = user;
     next();
   });
 }
 
-module.exports = authenticateToken;
+function isAdmin(req, res, next) {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ message: 'Access denied. Admins only.' });
+  }
+  next();
+}
+
+function isGuide(req, res, next) {
+  if (req.user?.role !== 'guide') {
+    return res.status(403).json({ message: 'Access denied. Guides only.' });
+  }
+  next();
+}
+
+module.exports = {
+  authenticateToken,
+  isAdmin,
+  isGuide
+};

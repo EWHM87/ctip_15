@@ -1,3 +1,5 @@
+// webpack.config.js
+const fs   = require('fs');
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
@@ -6,14 +8,14 @@ module.exports = {
   entry: './src/index.js',
   output: {
     filename: 'bundle.js',
-    path: path.resolve(__dirname, 'dist'),
+    path:     path.resolve(__dirname, 'dist'),
     publicPath: '/',
-    clean: true
+    clean: true,
   },
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/,   // 👈 This is the key part
+        test: /\.(js|jsx)$/,
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader'
@@ -21,23 +23,16 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader']
-      }
+        use: ['style-loader','css-loader']
+      },
+      // add any other asset loaders here…
     ]
   },
   resolve: {
     extensions: ['.js', '.jsx']
   },
-  devServer: {
-    static: path.join(__dirname, 'public'),
-    compress: true,
-    port: 3000,
-    historyApiFallback: true,
-    open: true
-  },
+
   plugins: [
-    new HtmlWebpackPlugin({
-      template: './public/index.html'
-    })
+    new HtmlWebpackPlugin({ template: './public/index.html' })
   ]
 };
