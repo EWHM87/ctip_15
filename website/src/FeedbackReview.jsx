@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { FaUser, FaRobot, FaClipboardList, FaSmile, FaClock, FaBolt, FaTrash } from 'react-icons/fa';
+import {
+  FaUser, FaRobot, FaClipboardList, FaSmile, FaClock, FaBolt, FaTrash
+} from 'react-icons/fa';
 
 const FeedbackReview = () => {
   const [summaries, setSummaries] = useState([]);
@@ -18,7 +20,7 @@ const FeedbackReview = () => {
       .catch(() => setError('⚠️ Failed to fetch summaries'));
   };
 
-  // Trigger summarise_feedback.py via backend
+  // Trigger Python summarisation
   const generateSummaries = async () => {
     setLoading(true);
     setStatusMsg('Generating AI summaries...');
@@ -26,7 +28,7 @@ const FeedbackReview = () => {
       const res = await fetch('http://localhost:5000/api/generate-feedback-summary', { method: 'POST' });
       const data = await res.json();
       setStatusMsg(data.message || '✅ Summary generation complete');
-      fetchSummaries(); // Refresh summaries
+      fetchSummaries(); // Refresh
     } catch {
       setStatusMsg('❌ Failed to generate summaries');
     } finally {
@@ -34,7 +36,7 @@ const FeedbackReview = () => {
     }
   };
 
-  // Delete all summaries from backend
+  // Delete all summaries
   const clearSummaries = async () => {
     setLoading(true);
     setStatusMsg('Clearing all summaries...');
@@ -54,11 +56,11 @@ const FeedbackReview = () => {
     fetchSummaries();
   }, []);
 
-  // Group feedback by guide
+  // Group summaries by guide
   const grouped = summaries.reduce((acc, summary) => {
-    const key = summary.guide_name || summary.guide_id || 'Unknown Guide';
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(summary);
+    const guideKey = summary.guide_name || summary.guide_id || 'Unknown Guide';
+    if (!acc[guideKey]) acc[guideKey] = [];
+    acc[guideKey].push(summary);
     return acc;
   }, {});
 
@@ -77,13 +79,13 @@ const FeedbackReview = () => {
         {error && <p style={styles.error}>{error}</p>}
       </div>
 
-      {/* Display summaries grouped by guide */}
+      {/* Display grouped summaries */}
       {Object.entries(grouped).map(([guide, items]) => (
         <div key={guide} style={styles.card}>
-          <h3><FaUser /> {guide}</h3>
+          <h3><FaUser /> Guide: {guide}</h3>
           <h4><FaRobot /> AI Feedback Summary:</h4>
-          {items.map((item, i) => (
-            <div key={i} style={styles.summaryBlock}>
+          {items.map((item, index) => (
+            <div key={index} style={styles.summaryBlock}>
               <p><FaClipboardList /> <strong>Summary:</strong> {item.summary_text}</p>
               <p><FaSmile /> <strong>Sentiment:</strong> {item.sentiment}</p>
               <p><FaClock /> <small>Generated At: {new Date(item.generated_at).toLocaleString()}</small></p>
@@ -95,7 +97,6 @@ const FeedbackReview = () => {
   );
 };
 
-// ✅ Styles
 const styles = {
   container: {
     padding: '2rem',

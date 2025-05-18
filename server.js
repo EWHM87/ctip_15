@@ -385,16 +385,26 @@ app.post('/api/submit-feedback', (req, res) => {
     res.status(200).json({ message: '✅ Feedback submitted successfully!' });
   });
 });
-// POST /api/save-feedback-summary
-app.post('/api/save-feedback-summary', (req, res) => {
-  const { summary_text, sentiment } = req.body;
 
-  if (!summary_text || !sentiment) {
+//================================
+// POST /api/save-feedback-summary
+//================================
+
+app.post('/api/save-feedback-summary', (req, res) => {
+  const { guide_id, summary_text, sentiment } = req.body;
+
+  if (!guide_id || !summary_text || !sentiment) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
-  const sql = `INSERT INTO feedback_summary (summary_text, sentiment) VALUES (?, ?)`;
-  db.query(sql, [summary_text, sentiment], (err, result) => {
+  const encryptedSummary = encrypt(summary_text); // ✅ Encrypt before saving
+
+  const sql = `
+    INSERT INTO feedback_summary (guide_id, summary_text, sentiment)
+    VALUES (?, ?, ?)
+  `;
+
+  db.query(sql, [guide_id, encryptedSummary, sentiment], (err, result) => {
     if (err) {
       console.error('❌ Insert error:', err);
       return res.status(500).json({ message: 'Insert failed', error: err });
@@ -403,29 +413,51 @@ app.post('/api/save-feedback-summary', (req, res) => {
   });
 });
 
-const { exec } = require('child_process');
+//================================
+// GET /api/feedback-summaries
+//================================
 
+// GET /api/feedback-summaries (correctly joins guide_name)
 app.get('/api/feedback-summaries', (req, res) => {
-  const sql = `SELECT * FROM feedback_summary ORDER BY generated_at DESC`;
+  const sql = `
+    SELECT fs.id, fs.guide_id, mg.name AS guide_name, fs.summary_text, fs.sentiment, fs.generated_at
+    FROM feedback_summary fs
+    LEFT JOIN manage_guides mg ON fs.guide_id = mg.guide_id
+    ORDER BY fs.generated_at DESC
+  `;
   db.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ message: 'Failed to fetch summaries' });
+    if (err) return res.status(500).json({ message: 'Failed to fetch summaries', error: err });
 
-    const decrypted = results.map(row => ({
-      id:           row.id,
-      summary_text: decrypt(row.summary_text),
-      sentiment:    row.sentiment,
-      generated_at: row.generated_at
-    }));
+    const decrypted = results.map(row => {
+      let decryptedText = '';
+      try {
+        decryptedText = decrypt(row.summary_text);
+      } catch (e) {
+        console.error('Decryption failed:', e.message);
+        decryptedText = '[Unreadable encrypted data]';
+      }
+
+      return {
+        id: row.id,
+        guide_id: row.guide_id,
+        guide_name: row.guide_name,
+        summary_text: decryptedText,
+        sentiment: row.sentiment,
+        generated_at: row.generated_at
+      };
+    });
 
     res.status(200).json(decrypted);
   });
 });
 
+
+const { exec } = require('child_process');
+
+
 //=============================
 // POST: Run Python script to generate summary
 //=============================
-const path = require('path');
-const { exec } = require('child_process');
 
 app.post('/api/generate-feedback-summary', (req, res) => {
   const scriptPath = path.join(__dirname, 'Backend', 'summarise_feedback.py'); // <-- updated path
