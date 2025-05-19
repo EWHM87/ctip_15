@@ -1231,6 +1231,53 @@ app.get('/api/guide-activity-log/:guideId', (req, res) => {
 });
 
 
+// --- 📥 Save Visitor Feedback ---
+app.post('/api/submit-feedback', (req, res) => {
+  const { visitorName, guideName, q1, q2, q3, q4, q5, q6, q7, q8 } = req.body;
+
+  const feedbackText = q8 || '';
+
+  if (!visitorName || !guideName) {
+    return res.status(400).json({ message: "Missing visitor or guide name" });
+  }
+
+  const query = `
+    INSERT INTO guide_feedback (guide_id, visitor_name, feedback_text) 
+    VALUES ((SELECT id FROM manage_guides WHERE name = ? LIMIT 1), ?, ?)
+  `;
+
+  db.query(query, [guideName, visitorName, feedbackText], (err, result) => {
+    if (err) {
+      console.error("❌ Insert error:", err);
+      return res.status(500).json({ message: "Database error" });
+    }
+    res.status(201).json({ message: "Feedback saved" });
+  });
+});
+
+// --- 🤖 Save AI Summary & Sentiment ---
+app.post('/api/save-feedback-summary', (req, res) => {
+  const { guide_id, summary_text, sentiment } = req.body;
+
+  if (!guide_id || !summary_text) {
+    return res.status(400).json({ message: "Missing guide_id or summary" });
+  }
+
+  const query = `
+    INSERT INTO feedback_summary (guide_id, summary, sentiment) 
+    VALUES (?, ?, ?)
+    ON DUPLICATE KEY UPDATE summary = ?, sentiment = ?
+  `;
+
+  db.query(query, [guide_id, summary_text, sentiment, summary_text, sentiment], (err, result) => {
+    if (err) {
+      console.error("❌ Summary save error:", err);
+      return res.status(500).json({ message: "DB save error" });
+    }
+    res.status(201).json({ message: "Summary saved" });
+  });
+});
+
 
 
   // 5️⃣ Centralized error-handler
