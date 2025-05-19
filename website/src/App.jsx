@@ -37,8 +37,16 @@ import SpeciesDatabase from './SpeciesDatabase';
 
 import FeedbackForm from './FeedbackForm';
 import GuideSelfAssessment from './GuideSelfAssessment';
-
 import GuidePerformance from './GuidePerformance';
+
+// Interactive Guidebook Module
+import Guidebook from './Guidebook';
+import InteractiveMap from './InteractiveMap';
+import Destinations from './Destinations';
+
+import Accommodation from './Accommodation';
+import History from './History';
+import Updates from './Updates';
 
 function MainLayout({ user, onLogout, children }) {
   return (
@@ -73,7 +81,17 @@ function App() {
       <Route path="/login" element={<Login onLogin={handleLogin} />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Protected Pages (inside layout) */}
+      {/* Digital Guidebook (Public Access) */}
+      <Route path="/guidebook" element={<Guidebook />} />
+      <Route path="/guidebook/map" element={<InteractiveMap />} />
+      <Route path="/guidebook/wildlife" element={<Wildlife />} />
+      <Route path="/guidebook/destinations" element={<Destinations />} />
+      <Route path="/guidebook/accommodation" element={<Accommodation />} />
+      <Route path="/guidebook/activities" element={<Activities />} />
+      <Route path="/guidebook/history" element={<History />} />
+      <Route path="/guidebook/updates" element={<Updates />} />
+
+      {/* Protected Pages */}
       <Route path="/dashboard" element={
         <ProtectedRoute allowedRoles={['admin', 'guide', 'visitor']}>
           <MainLayout user={user} onLogout={handleLogout}>
@@ -257,7 +275,6 @@ function App() {
           </MainLayout>
         </ProtectedRoute>
       } />
-
 
       {/* Forbidden and Fallback */}
       <Route path="/forbidden" element={<Forbidden />} />

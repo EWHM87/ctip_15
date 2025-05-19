@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, NavLink } from 'react-router-dom';
 import AuthService from './auth';
 import './App.css';
 
@@ -13,43 +13,33 @@ function Login({ onLogin }) {
     setCredentials(prev => ({ ...prev, [name]: value }));
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  try {
-    const response = await fetch('http://localhost:5000/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials),
-    });
+    try {
+      const response = await fetch('http://localhost:5000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      setError(data.message || 'Login failed');
-    } else {
-      const { id, username, role } = data.user;
+      if (!response.ok) {
+        setError(data.message || 'Login failed');
+      } else {
+        const { id, username, role } = data.user;
 
-    localStorage.setItem('token', data.token); // 🔐 Save token first
-    AuthService.login(id, username, role);
-    onLogin();
-
-
-
-      // ✅ Check if default password
-      //if (credentials.password === 'guide1234' && role === 'guide') {
-      //  alert('⚠️ You are using a default password. Please reset it.');
-      //  navigate('/reset-password'); // You can create this route
-      //} else 
-      {
+        localStorage.setItem('token', data.token);
+        AuthService.login(id, username, role);
+        onLogin();
         navigate('/dashboard');
       }
+    } catch (err) {
+      console.error('❌ Login error:', err);
+      setError('❌ Server error. Try again later.');
     }
-  } catch (err) {
-    console.error('❌ Login error:', err);
-    setError('❌ Server error. Try again later.');
-  }
-};
+  };
 
   return (
     <>
@@ -57,17 +47,17 @@ const handleSubmit = async (e) => {
       <header>
         <nav className="navbar navbar-expand-lg navbar-dark bg-success px-4">
           <div className="container-fluid">
-            <Link className="navbar-brand fw-bold" to="/">🌿 Sarawak Parks</Link>
+            <Link className="navbar-brand fw-bold" to="/">🦧 Semenggoh Wildlife Centre</Link>
             <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
               <span className="navbar-toggler-icon"></span>
             </button>
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav me-auto">
-                <li className="nav-item"><Link className="nav-link" to="/about">About</Link></li>
-                <li className="nav-item"><Link className="nav-link" to="/parks">Parks</Link></li>
-                <li className="nav-item"><Link className="nav-link" to="/wildlife">Wildlife</Link></li>
-                <li className="nav-item"><Link className="nav-link" to="/activities">Activities</Link></li>
-                <li className="nav-item"><Link className="nav-link" to="/contact">Contact</Link></li>
+                <li className="nav-item"><NavLink to="/about" className="nav-link">About</NavLink></li>
+                <li className="nav-item"><NavLink to="/parks" className="nav-link">Park Info</NavLink></li>
+                <li className="nav-item"><NavLink to="/wildlife" className="nav-link">Wildlife</NavLink></li>
+                <li className="nav-item"><NavLink to="/activities" className="nav-link">Activities</NavLink></li>
+                <li className="nav-item"><NavLink to="/contact" className="nav-link">Contact</NavLink></li>
               </ul>
               <div className="d-flex">
                 <Link to="/login" className="btn btn-light me-2">Login</Link>
@@ -79,8 +69,8 @@ const handleSubmit = async (e) => {
       </header>
 
       {/* Login Form */}
-      <div className="auth-page">
-        <div className="auth-card">
+      <div className="login-page">
+        <div className="login-card">
           <h2>🔐 Login</h2>
           {error && <div className="alert alert-danger">{error}</div>}
           <form onSubmit={handleSubmit}>
@@ -108,7 +98,8 @@ const handleSubmit = async (e) => {
                 autoComplete="current-password"
               />
             </div>
-            <button type="submit" className="btn">Login</button>
+            <button type="submit" className="auth-submit-btn">🔐 Login</button>
+
           </form>
           <p className="mt-3 text-center">
             Don't have an account? <Link to="/register">Register here</Link>

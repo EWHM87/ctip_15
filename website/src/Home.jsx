@@ -9,14 +9,14 @@ function Home() {
       <header>
         <nav className="navbar navbar-expand-lg navbar-dark bg-success px-4">
           <div className="container-fluid">
-            <Link className="navbar-brand fw-bold" to="/">🌿 Sarawak Parks</Link>
+            <Link className="navbar-brand fw-bold" to="/">🦧 Semenggoh Wildlife Centre</Link>
             <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
               <span className="navbar-toggler-icon"></span>
             </button>
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav me-auto">
                 <li className="nav-item"><Link className="nav-link" to="/about">About</Link></li>
-                <li className="nav-item"><Link className="nav-link" to="/parks">Parks</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/parks">Park Info</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/wildlife">Wildlife</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/activities">Activities</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/contact">Contact</Link></li>
@@ -33,8 +33,43 @@ function Home() {
       {/* Hero Section */}
       <section className="hero-section d-flex align-items-center justify-content-center text-center text-white">
         <div className="bg-dark bg-opacity-50 p-4 rounded shadow-lg w-75">
-          <h1 className="display-5 fw-bold">To Create & Sustain Protected Areas</h1>
-          <p className="lead">And to conserve wildlife through innovation and best practices for the equitable benefit of all.</p>
+          <h1 className="display-5 fw-bold">Protecting Orangutans & Rainforest Heritage</h1>
+          <p className="lead">Semenggoh Wildlife Centre is dedicated to orangutan conservation, eco-tourism, and biodiversity education in Kuching, Sarawak.</p>
+          <Link to="/guidebook" className="btn btn-outline-light btn-lg mt-3">🗺️ Explore Interactive Guidebook</Link>
+        </div>
+      </section>
+
+      {/* Featured Sections */}
+      <section className="container my-5">
+        <h3 className="text-center mb-4 fw-bold">🌟 Explore Semenggoh</h3>
+        <div className="row text-center">
+          <div className="col-md-4 mb-4">
+            <div className="card h-100 shadow-sm border-0">
+              <div className="card-body">
+                <h5 className="card-title">🏞️ Park Info</h5>
+                <p className="card-text">View trail maps, visiting hours, and park rules for a safe, enriching experience.</p>
+                <Link to="/parks" className="btn btn-outline-success">Park Information</Link>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-4 mb-4">
+            <div className="card h-100 shadow-sm border-0">
+              <div className="card-body">
+                <h5 className="card-title">🦧 Wildlife</h5>
+                <p className="card-text">Learn about our orangutans, hornbills, and other protected species in Semenggoh.</p>
+                <Link to="/wildlife" className="btn btn-outline-success">Meet the Wildlife</Link>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-4 mb-4">
+            <div className="card h-100 shadow-sm border-0">
+              <div className="card-body">
+                <h5 className="card-title">🎯 Activities</h5>
+                <p className="card-text">Join ranger-led walks, feeding sessions, and educational programs for all ages.</p>
+                <Link to="/activities" className="btn btn-outline-success">View Activities</Link>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -42,17 +77,18 @@ function Home() {
       <section className="container my-5">
         <div className="row align-items-center">
           <div className="col-md-6">
-            <h3 className="fw-bold">About SFC</h3>
+            <h3 className="fw-bold">About Semenggoh</h3>
             <p>
-              Sarawak Forestry Corporation (SFC) is a statutory body under the Sarawak Government. Our mission is to manage Totally Protected Areas (TPAs) and conserve biodiversity for future generations.
+              Located just 20km from Kuching, Semenggoh Wildlife Centre is Sarawak’s leading facility for orangutan rehabilitation and rainforest conservation.
+              Managed by Sarawak Forestry Corporation (SFC), we welcome visitors to observe semi-wild orangutans in their natural habitat and to learn about conservation efforts.
             </p>
             <Link to="/about" className="btn btn-outline-success mt-3">Read More</Link>
           </div>
           <div className="col-md-6 mt-4 mt-md-0">
             <div className="ratio ratio-16x9 rounded shadow-sm overflow-hidden">
               <iframe
-                src="https://www.youtube.com/embed/LFMCQW4xh1s"
-                title="Sarawak Parks Introduction"
+                src="https://www.youtube.com/watch?v=oUlxzd7EeSw"
+                title="Semenggoh Wildlife Centre"
                 allowFullScreen
               ></iframe>
             </div>
@@ -62,33 +98,33 @@ function Home() {
 
       {/* Facebook Follow Section */}
       <section className="text-white py-5 bg-follow text-center">
-        <h4>Follow Us On Facebook</h4>
+        <h4>📣 Follow Us on Facebook for Updates & Orangutan Sightings</h4>
       </section>
 
       {/* Footer */}
       <footer className="bg-success text-white pt-4 pb-3 px-3">
         <div className="row text-center text-md-start">
           <div className="col-md-4 mb-3">
-            <h6>CORPORATE OFFICE KUCHING</h6>
-            <p className="mb-0">1st & 2nd Floor, Jalan Tapang 93250, Kuching, Sarawak</p>
-            <p className="mb-0">Phone: +60 82-123456</p>
-            <p className="mb-0">Email: info@sarawakparks.com</p>
+            <h6>SEMEMNGGOH WILDLIFE CENTRE</h6>
+            <p className="mb-0">Jalan Puncak Borneo, 93250 Kuching, Sarawak, Malaysia</p>
+            <p className="mb-0">Phone: +60 82-618325</p>
+            <p className="mb-0">Email: semenggoh@sarawakparks.com</p>
           </div>
           <div className="col-md-4 mb-3">
             <h6>Operating Hours</h6>
-            <p className="mb-0">Mon–Thu: 8:00am–5:30pm</p>
-            <p className="mb-0">Fri: 8:00am–11:45am & 2:15pm–5:00pm</p>
-            <p className="mb-0">Weekends & Holidays: Closed</p>
+            <p className="mb-0">Feeding Sessions: 9–10 AM & 3–4 PM</p>
+            <p className="mb-0">Open daily including weekends & holidays</p>
+            <p className="mb-0">Tickets available on-site</p>
           </div>
           <div className="col-md-4 mb-3">
             <h6>Quick Links</h6>
-            <Link to="/parks" className="d-block text-white">Parks</Link>
+            <Link to="/parks" className="d-block text-white">Park Info</Link>
             <Link to="/wildlife" className="d-block text-white">Wildlife</Link>
             <Link to="/contact" className="d-block text-white">Contact Us</Link>
           </div>
         </div>
         <div className="text-center mt-3">
-          <small>© 2025 Sarawak Parks. All rights reserved.</small>
+          <small>© 2025 Semenggoh Wildlife Centre. All rights reserved.</small>
         </div>
       </footer>
     </div>

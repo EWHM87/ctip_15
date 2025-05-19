@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, NavLink } from 'react-router-dom';
 import './App.css';
-
 
 function Register() {
   const navigate = useNavigate();
@@ -18,55 +17,52 @@ function Register() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  const { username, email, password, role } = formData;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (!username || !email || !password) {
-    setError('⚠️ All fields are required');
-    return;
-  }
-
-  try {
-    const response = await fetch('http://localhost:5000/api/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      setError(data.message || 'Registration failed');
-    } else {
-      alert('✅ Registered successfully!');
-      navigate('/login');
+    const { username, email, password } = formData;
+    if (!username || !email || !password) {
+      setError('⚠️ All fields are required');
+      return;
     }
-  } catch (err) {
-    setError('❌ Server error. Try again later.');
-  }
-};
 
+    try {
+      const response = await fetch('http://localhost:5000/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || 'Registration failed');
+      } else {
+        alert('✅ Registered successfully!');
+        navigate('/login');
+      }
+    } catch (err) {
+      setError('❌ Server error. Try again later.');
+    }
+  };
 
   return (
     <>
-      {/* Top Navigation */}
+      {/* Navigation */}
       <header>
         <nav className="navbar navbar-expand-lg navbar-dark bg-success px-4">
           <div className="container-fluid">
-            <Link className="navbar-brand fw-bold" to="/">🌿 Sarawak Parks</Link>
+            <Link className="navbar-brand fw-bold" to="/">🦧 Semenggoh Wildlife Centre</Link>
             <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
               <span className="navbar-toggler-icon"></span>
             </button>
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav me-auto">
-                <li className="nav-item"><Link className="nav-link" to="/about">About</Link></li>
-                <li className="nav-item"><Link className="nav-link" to="/parks">Parks</Link></li>
-                <li className="nav-item"><Link className="nav-link" to="/wildlife">Wildlife</Link></li>
-                <li className="nav-item"><Link className="nav-link" to="/activities">Activities</Link></li>
-                <li className="nav-item"><Link className="nav-link" to="/contact">Contact</Link></li>
+                <li className="nav-item"><NavLink to="/about" className="nav-link">About</NavLink></li>
+                <li className="nav-item"><NavLink to="/parks" className="nav-link">Park Info</NavLink></li>
+                <li className="nav-item"><NavLink to="/wildlife" className="nav-link">Wildlife</NavLink></li>
+                <li className="nav-item"><NavLink to="/activities" className="nav-link">Activities</NavLink></li>
+                <li className="nav-item"><NavLink to="/contact" className="nav-link">Contact</NavLink></li>
               </ul>
               <div className="d-flex">
                 <Link to="/login" className="btn btn-light me-2">Login</Link>
@@ -77,15 +73,15 @@ const handleSubmit = async (e) => {
         </nav>
       </header>
 
-      {/* Registration Form */}
-      <div className="auth-page">
-        <div className="auth-card">
+      {/* Register Form */}
+      <div className="register-page">
+        <div className="register-card">
           <h2>📝 Register</h2>
           {error && <div className="alert alert-danger">{error}</div>}
           <form onSubmit={handleSubmit}>
             <div className="mb-3">
               <label className="form-label">Username</label>
-              <input 
+              <input
                 type="text"
                 className="form-control"
                 name="username"
@@ -95,9 +91,10 @@ const handleSubmit = async (e) => {
                 autoComplete="username"
               />
             </div>
+
             <div className="mb-3">
               <label className="form-label">Email</label>
-              <input 
+              <input
                 type="email"
                 className="form-control"
                 name="email"
@@ -107,9 +104,10 @@ const handleSubmit = async (e) => {
                 autoComplete="email"
               />
             </div>
+
             <div className="mb-3">
               <label className="form-label">Password</label>
-              <input 
+              <input
                 type="password"
                 className="form-control"
                 name="password"
@@ -119,6 +117,7 @@ const handleSubmit = async (e) => {
                 autoComplete="new-password"
               />
             </div>
+
             <div className="mb-3">
               <label className="form-label">Role</label>
               <select
@@ -132,8 +131,11 @@ const handleSubmit = async (e) => {
                 <option value="admin">Admin</option>
               </select>
             </div>
-            <button type="submit" className="btn">Register</button>
+
+            <button type="submit" className="auth-submit-btn">✅ Register</button>
+
           </form>
+
           <p className="mt-3 text-center">
             Already have an account? <Link to="/login">Login here</Link>
           </p>
