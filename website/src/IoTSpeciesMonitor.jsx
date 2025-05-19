@@ -1,43 +1,55 @@
 import React, { useState, useEffect } from 'react';
 
-// Dummy IoT data – simulate sensor input
-const dummySensorData = [
-  { location: 'Semenggoh', species: 'Orangutan', time: '2024-05-06 07:45', alert: false },
-  { location: 'Gunung Mulu', species: 'Hornbill', time: '2024-05-06 09:10', alert: false },
-  { location: 'Bako', species: 'Civet', time: '2024-05-06 10:05', alert: true },
-];
-
 function IoTSpeciesMonitor() {
   const [sensorLogs, setSensorLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate real-time update
-    setSensorLogs(dummySensorData);
+    fetch('http://localhost:5000/api/iot-sensor-data')
+      .then(res => res.json())
+      .then(data => {
+        setSensorLogs(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('❌ Failed to fetch IoT data:', err);
+        setLoading(false);
+      });
   }, []);
 
   return (
     <div className="container mt-4">
       <h2>🌿 IoT Species Monitor</h2>
-      <p className="text-muted">View species recently detected by motion/wildlife sensors in protected parks.</p>
+      <p className="text-muted">Live feed from wildlife sensors deployed in national parks.</p>
 
-      {sensorLogs.length === 0 ? (
-        <div className="alert alert-info">No sensor data available.</div>
+      {loading ? (
+        <div className="alert alert-info">Loading sensor data...</div>
+      ) : sensorLogs.length === 0 ? (
+        <div className="alert alert-warning">No sensor logs found.</div>
       ) : (
-        <table className="table table-hover table-bordered">
+        <table className="table table-bordered table-hover">
           <thead className="table-success">
             <tr>
-              <th>Location</th>
               <th>Species</th>
               <th>Detected Time</th>
+              <th>Temperature (°C)</th>
+              <th>Humidity (%)</th>
+              <th>Soil Moisture (%)</th>
+              <th>Solar (lux)</th>
+              <th>Motion</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
             {sensorLogs.map((entry, index) => (
               <tr key={index} className={entry.alert ? 'table-danger' : ''}>
-                <td>{entry.location}</td>
                 <td>{entry.species}</td>
                 <td>{entry.time}</td>
+                <td>{entry.temperature}°C</td>
+                <td>{entry.humidity}%</td>
+                <td>{entry.soil_moisture}%</td>
+                <td>{entry.solar} lux</td>
+                <td>{entry.motion ? '🟢 Yes' : '⚪ No'}</td>
                 <td>{entry.alert ? '⚠️ Alert' : '✅ Normal'}</td>
               </tr>
             ))}
