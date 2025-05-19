@@ -11,8 +11,9 @@ import {
   Platform,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { CommonActions } from '@react-navigation/native';
 
-const WriteReview = () => {
+const WriteReview = ({ navigation }) => {
   const [formData, setFormData] = useState({
     visitorName: '',
     guideName: '',
@@ -23,14 +24,34 @@ const WriteReview = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = () => {
-    Alert.alert('Feedback Submitted', 'Thank you for your feedback!');
-    console.log(formData);
-    setFormData({
-      visitorName: '',
-      guideName: '',
-      q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: ''
-    });
+  const handleSubmit = async () => {
+    try {
+      const res = await fetch("http://192.168.0.10:5000/api/submit-feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (res.ok) {
+        Alert.alert('✅ Feedback Submitted', 'Thank you for your feedback!');
+        setFormData({
+          visitorName: '',
+          guideName: '',
+          q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: ''
+        });
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'VisitorDashboard' }],
+          })
+        );
+      } else {
+        const data = await res.json();
+        Alert.alert("❌ Submission Failed", data.message || "Error occurred.");
+      }
+    } catch (error) {
+      Alert.alert("❌ Network Error", error.message);
+    }
   };
 
   const renderPicker = (question, field) => (
@@ -48,6 +69,16 @@ const WriteReview = () => {
       </View>
     </View>
   );
+
+  const questionList = [
+    { name: 'q1', label: '1. Knowledge of wildlife and biodiversity' },
+    { name: 'q2', label: '2. Communication clarity and confidence' },
+    { name: 'q3', label: '3. Friendliness and professionalism' },
+    { name: 'q4', label: '4. Engagement and storytelling skills' },
+    { name: 'q5', label: '5. Adherence to safety procedures' },
+    { name: 'q6', label: '6. Respect shown to wildlife and environment' },
+    { name: 'q7', label: '7. Overall visitor satisfaction' },
+  ];
 
   return (
     <KeyboardAvoidingView
@@ -76,13 +107,11 @@ const WriteReview = () => {
 
         <Text style={styles.subtitle}>Please rate the following (1 = Poor, 5 = Excellent):</Text>
 
-        {renderPicker('1. How informative was the guide about orangutan behavior?', 'q1')}
-        {renderPicker('2. Was the guide respectful toward the wildlife and environment?', 'q2')}
-        {renderPicker('3. Did the guide communicate clearly and answer questions effectively?', 'q3')}
-        {renderPicker('4. How well did the guide manage the group during the visit?', 'q4')}
-        {renderPicker('5. Was the safety information provided adequate and helpful?', 'q5')}
-        {renderPicker('6. How satisfied are you with the overall tour experience?', 'q6')}
-        {renderPicker('7. How would you rate the cleanliness and facilities of the park?', 'q7')}
+        {questionList.map((q) => (
+  <React.Fragment key={q.name}>
+    {renderPicker(q.label, q.name)}
+  </React.Fragment>
+))}
 
         <Text style={styles.label}>8. Any suggestions or comments?</Text>
         <TextInput
