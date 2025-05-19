@@ -30,7 +30,6 @@ function IoTSpeciesMonitor() {
         <table className="table table-bordered table-hover">
           <thead className="table-success">
             <tr>
-              <th>Location</th>
               <th>Species</th>
               <th>Detected Time</th>
               <th>Temperature (°C)</th>
