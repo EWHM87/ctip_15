@@ -135,19 +135,21 @@ db.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`, (err) => {
     // Guide feedback table
       const createGuideFeedbackTable = `
   CREATE TABLE IF NOT EXISTS guide_feedback (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    visitor_id VARCHAR(100),
-    guide_id VARCHAR(100),
-    feedback_text TEXT,
-    rating FLOAT,
-    wildlife_rating TINYINT,
-    communication_rating TINYINT,
-    friendliness_rating TINYINT,
-    storytelling_rating TINYINT,
-    safety_rating TINYINT,
-    respect_rating TINYINT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  ) ENGINE=InnoDB;
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  visitor_id VARCHAR(100) NOT NULL,           -- Matches visitorName
+  guide_id VARCHAR(100) NOT NULL,             -- Matches guideName
+  feedback_text TEXT,                         -- Open-ended feedback (q8)
+  rating FLOAT,                               -- Average of q1 to q7
+  wildlife_rating TINYINT,                    -- q1
+  communication_rating TINYINT,               -- q2
+  friendliness_rating TINYINT,                -- q3
+  storytelling_rating TINYINT,                -- q4
+  safety_rating TINYINT,                      -- q5
+  respect_rating TINYINT,                     -- q6
+  overall_rating TINYINT,                     -- q7 (copied again separately if needed)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 `;
 db.query(createGuideFeedbackTable, err => {
   if (err) console.error('❌ Error creating guide_feedback table:', err);
@@ -369,31 +371,71 @@ app.get('/api/ai-predictions', (req, res) => {
 
 // POST /api/submit-feedback
 app.post('/api/submit-feedback', (req, res) => {
-  const { visitorName, guideName, q1, q2, q3, q4, q5, q6, q7, q8 } = req.body;
+  const {
+    visitor_id,
+    guide_id,
+    feedback_text,
+    wildlife_rating,
+    communication_rating,
+    friendliness_rating,
+    storytelling_rating,
+    safety_rating,
+    respect_rating,
+    overall_rating,
+    rating
+  } = req.body;
 
-  if (!visitorName || !guideName || !q1 || !q2 || !q3 || !q4 || !q5 || !q6 || !q7) {
+  // ✅ Debug: Print received data
+  console.log('📨 Received feedback submission:', req.body);
+
+  // ✅ Validate required fields
+  const requiredFields = [
+    visitor_id, guide_id,
+    wildlife_rating, communication_rating, friendliness_rating,
+    storytelling_rating, safety_rating, respect_rating,
+    overall_rating, rating
+  ];
+
+  const missing = requiredFields.some(val => val === undefined || val === null || val === '');
+  if (missing) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
-  const avgRating = (
-    Number(q1) + Number(q2) + Number(q3) +
-    Number(q4) + Number(q5) + Number(q6) +
-    Number(q7)
-  ) / 7;
-
+  // ✅ Insert into MySQL
   const sql = `
-    INSERT INTO guide_feedback (visitor_id, guide_id, feedback_text, rating)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO guide_feedback (
+      visitor_id, guide_id, feedback_text, rating,
+      wildlife_rating, communication_rating, friendliness_rating,
+      storytelling_rating, safety_rating, respect_rating, overall_rating
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-  db.query(sql, [visitorName, guideName, q8 || '', avgRating], (err) => {
+  const values = [
+    visitor_id,
+    guide_id,
+    feedback_text || '',
+    parseFloat(rating),
+    Number(wildlife_rating),
+    Number(communication_rating),
+    Number(friendliness_rating),
+    Number(storytelling_rating),
+    Number(safety_rating),
+    Number(respect_rating),
+    Number(overall_rating)
+  ];
+
+  db.query(sql, values, (err) => {
     if (err) {
       console.error('❌ Error inserting feedback:', err);
-      return res.status(500).json({ message: 'Insert failed' });
+      return res.status(500).json({ message: 'Insert failed', error: err });
     }
+
     res.status(200).json({ message: '✅ Feedback submitted successfully!' });
   });
 });
+
+
+
 
 //================================
 // POST /api/save-feedback-summary
