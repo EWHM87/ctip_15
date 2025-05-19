@@ -20,7 +20,7 @@ const AdminProfile = ({ navigation }) => {
           <Text style={styles.backButtonText}>Back to Dashboard</Text>
         </TouchableOpacity>
 
-        
+          
       </View>
     </SafeAreaView>
   );
