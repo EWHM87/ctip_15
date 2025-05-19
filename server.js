@@ -134,19 +134,26 @@ db.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`, (err) => {
 
     // Guide feedback table
       const createGuideFeedbackTable = `
-        CREATE TABLE IF NOT EXISTS guide_feedback (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          visitor_id VARCHAR(100),
-          guide_id VARCHAR(100),
-          feedback_text TEXT,
-          rating FLOAT,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB;
-      `;
-      db.query(createGuideFeedbackTable, err => {
-        if (err) console.error('❌ Error creating guide_feedback table:', err);
-        else console.log('✅ guide_feedback table ready');
-      });
+  CREATE TABLE IF NOT EXISTS guide_feedback (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    visitor_id VARCHAR(100),
+    guide_id VARCHAR(100),
+    feedback_text TEXT,
+    rating FLOAT,
+    wildlife_rating TINYINT,
+    communication_rating TINYINT,
+    friendliness_rating TINYINT,
+    storytelling_rating TINYINT,
+    safety_rating TINYINT,
+    respect_rating TINYINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB;
+`;
+db.query(createGuideFeedbackTable, err => {
+  if (err) console.error('❌ Error creating guide_feedback table:', err);
+  else console.log('✅ guide_feedback table ready');
+});
+
 
     // Feedback summary table
       const createFeedbackSummaryTable = `
@@ -1087,6 +1094,30 @@ app.get('/api/my-certifications-by-username', (req, res) => {
     res.json(results);
   });
 });
+
+
+// ✅ AI Training Recommendations Route
+app.get('/api/ai-training-recommendations', (req, res) => {
+  const filePath = path.join(__dirname, 'Backend', 'ai_training_output.json');
+  console.log('Reading file from:', filePath); // ✅ Add this
+
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('❌ Error reading AI training file:', err);
+      return res.status(500).json({ message: 'Failed to load recommendations' });
+    }
+
+    try {
+      const parsed = JSON.parse(data);
+      console.log('✅ Successfully parsed recommendations'); // ✅ Add this
+      res.status(200).json(parsed);
+    } catch (parseErr) {
+      console.error('❌ Invalid JSON format:', parseErr);
+      res.status(500).json({ message: 'Invalid JSON format' });
+    }
+  });
+});
+
 
   // POST /api/notifications - Send/save a notification
   app.post('/api/notifications', (req, res) => {
