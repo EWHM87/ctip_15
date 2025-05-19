@@ -44,7 +44,6 @@ function IoTSpeciesMonitor() {
           <tbody>
             {sensorLogs.map((entry, index) => (
               <tr key={index} className={entry.alert ? 'table-danger' : ''}>
-                <td>{entry.location}</td>
                 <td>{entry.species}</td>
                 <td>{entry.time}</td>
                 <td>{entry.temperature}°C</td>
