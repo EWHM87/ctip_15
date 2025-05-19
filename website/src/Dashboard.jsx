@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import AuthService from './auth';
+import AdminAlertPanel from './AdminAlertPanel'; // 🔔 import the alert panel
 
 function Dashboard() {
   const role = AuthService.getRole(); // 'admin' | 'guide' | 'visitor'
@@ -33,7 +34,7 @@ function Dashboard() {
               <Link to="/my-certifications" className="btn btn-outline-success">📄 My Certifications</Link>
               <Link to="/notifications" className="btn btn-outline-success">🔔 Notifications</Link>
               <Link to="/my-training-history" className="btn btn-outline-success">📋 Training History</Link>
-              <Link to="/biodiversity-upload" className="btn btn-outline-success">📷 Upload Species</Link>
+              <Link to="/biodiversity-camera" className="btn btn-outline-success">📷 Upload Species</Link>
               <Link to="/guide-assessment" className="btn btn-outline-secondary">✅ Self-Assessment</Link>
             </div>
           </div>
@@ -86,13 +87,16 @@ function Dashboard() {
             </div>
           </div>
 
-          <div className="card shadow-sm rounded-3 mt-4 mb-5">
+          <div className="card shadow-sm rounded-3 mt-4 mb-4">
             <div className="card-header bg-success text-white fw-semibold">🌿 Biodiversity AI Tools</div>
             <div className="card-body d-flex flex-wrap gap-2">
               <Link to="/biodiversity-camera" className="btn btn-outline-success">📷 Species Identification Camera</Link>
               <Link to="/species-database" className="btn btn-outline-success">📚 View Species Records</Link>
             </div>
           </div>
+
+          {/* 🔔 Real-Time IoT Alerts Panel */}
+          <AdminAlertPanel />
         </>
       )}
     </div>

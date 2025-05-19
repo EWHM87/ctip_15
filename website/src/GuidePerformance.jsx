@@ -1,159 +1,166 @@
 import React, { useEffect, useState } from 'react';
-import AuthService from './auth';
+import {
+  FaUser, FaRobot, FaClipboardList, FaSmile, FaClock, FaBolt, FaTrash
+} from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
-const GuidePerformance = () => {
-  const [guideData, setGuideData] = useState([]);
-  const [selectedGuide, setSelectedGuide] = useState(null);
-  const [recommendations, setRecommendations] = useState([]);
-  const role = AuthService.getRole();
+const FeedbackReview = () => {
+  const [summaries, setSummaries] = useState([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [statusMsg, setStatusMsg] = useState('');
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    // Adjusted dummy data using feedback structure from visitor form
-    const dummyGuides = [
-      {
-        id: 'g1',
-        name: 'Alice Lee',
-        email: 'alice@semenggoh.org',
-        averageRating: (5 + 5 + 5 + 4 + 4 + 5 + 5) / 7,
-        feedback: [
-          {
-            comment: 'Alice had deep knowledge of wildlife and handled safety very professionally.',
-            ratings: { q1: 5, q2: 5, q3: 5, q4: 4, q5: 4, q6: 5, q7: 5 }
-          },
-          {
-            comment: 'Very clear and polite. Great storytelling about the orangutans!',
-            ratings: { q1: 5, q2: 5, q3: 5, q4: 5, q5: 4, q6: 5, q7: 5 }
-          },
-          {
-            comment: 'Amazing experience! Will recommend her to others.',
-            ratings: { q1: 5, q2: 4, q3: 5, q4: 4, q5: 5, q6: 5, q7: 5 }
-          }
-        ]
-      },
-      {
-        id: 'g2',
-        name: 'Budi Ramli',
-        email: 'budi@semenggoh.org',
-        averageRating: (3 + 4 + 4 + 3 + 3 + 4 + 4) / 7,
-        feedback: [
-          {
-            comment: 'Budi was friendly but didn’t explain much about the animals.',
-            ratings: { q1: 3, q2: 4, q3: 4, q4: 3, q5: 3, q6: 4, q7: 4 }
-          },
-          {
-            comment: 'The group felt a bit rushed and hard to follow.',
-            ratings: { q1: 3, q2: 3, q3: 4, q4: 2, q5: 3, q6: 3, q7: 3 }
-          },
-          {
-            comment: 'Decent guide but room for improvement.',
-            ratings: { q1: 4, q2: 4, q3: 3, q4: 4, q5: 4, q6: 3, q7: 4 }
-          }
-        ]
-      },
-      {
-        id: 'g3',
-        name: 'Chen Mei',
-        email: 'chen@semenggoh.org',
-        averageRating: (4 + 5 + 5 + 4 + 4 + 5 + 4) / 7,
-        feedback: [
-          {
-            comment: 'Chen was engaging and had great environmental awareness.',
-            ratings: { q1: 4, q2: 5, q3: 5, q4: 4, q5: 4, q6: 5, q7: 4 }
-          },
-          {
-            comment: 'Very knowledgeable, but could slow down a bit.',
-            ratings: { q1: 4, q2: 4, q3: 5, q4: 3, q5: 4, q6: 4, q7: 4 }
-          },
-          {
-            comment: 'Really appreciated her passion for conservation!',
-            ratings: { q1: 5, q2: 5, q3: 5, q4: 5, q5: 4, q6: 5, q7: 5 }
-          }
-        ]
-      }
-    ];
-
-    setGuideData(dummyGuides);
-  }, []);
-
-  const fetchRecommendations = (guideId) => {
-    const dummyAI = {
-      g1: ['Continue leading eco-tourism sessions', 'Offer mentoring to new guides'],
-      g2: ['Retake biodiversity basics', 'Improve group pacing and storytelling'],
-      g3: ['Practice pacing and simplify explanations for visitors']
-    };
-
-    setRecommendations(dummyAI[guideId] || []);
+  const goToTrainingRecommendations = () => {
+    console.log("🔁 Navigating to /ai-training-recommendations...");
+    navigate('/ai-training-recommendations'); // ✅ Corrected path
   };
 
-  if (role !== 'admin') {
-    return (
-      <div className="container mt-4">
-        <h3>❌ Access Denied</h3>
-        <p>This page is for administrators only.</p>
-      </div>
-    );
-  }
+  const fetchSummaries = () => {
+    fetch('http://localhost:5000/api/feedback-summaries')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setSummaries(data);
+        else setError('Invalid data from server');
+      })
+      .catch(() => setError('⚠️ Failed to fetch summaries'));
+  };
+
+  const generateSummaries = async () => {
+    setLoading(true);
+    setStatusMsg('Generating AI summaries...');
+    try {
+      const res = await fetch('http://localhost:5000/api/generate-feedback-summary', { method: 'POST' });
+      const data = await res.json();
+      setStatusMsg(data.message || '✅ Summary generation complete');
+      fetchSummaries();
+    } catch {
+      setStatusMsg('❌ Failed to generate summaries');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearSummaries = async () => {
+    setLoading(true);
+    setStatusMsg('Clearing all summaries...');
+    try {
+      const res = await fetch('http://localhost:5000/api/clear-feedback-summaries', { method: 'DELETE' });
+      const data = await res.json();
+      setStatusMsg(data.message || '✅ All summaries cleared');
+      fetchSummaries();
+    } catch {
+      setStatusMsg('❌ Failed to clear summaries');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummaries();
+  }, []);
+
+  const grouped = summaries.reduce((acc, summary) => {
+    const guideKey = summary.guide_name || summary.guide_id || 'Unknown Guide';
+    if (!acc[guideKey]) acc[guideKey] = [];
+    acc[guideKey].push(summary);
+    return acc;
+  }, {});
 
   return (
-    <div className="container mt-4">
-      <h2>📊 Guide Performance Overview</h2>
-      <p>Monitor visitor feedback and use AI to personalize training suggestions for each park guide.</p>
+    <div style={styles.container}>
+      <h2>📝 Visitor Feedback Summaries</h2>
 
-      <div className="row">
-        {guideData.map((guide) => (
-          <div className="col-md-6 mb-4" key={guide.id}>
-            <div className="card shadow-sm h-100">
-              <div className="card-body">
-                <h5 className="gp-card-title">{guide.name}</h5>
-                <p className="gp-card-text">
-                  <strong>Email:</strong> {guide.email}<br />
-                  <strong>Avg. Rating:</strong> ⭐ {guide.averageRating.toFixed(1)} / 5
-                </p>
-
-                <h6 className="mt-3">🗣️ Visitor Feedback:</h6>
-                <ul className="gp-feedback-list">
-                  {guide.feedback.length > 0 ? (
-                    guide.feedback.slice(0, 3).map((f, idx) => (
-                      <li className="gp-feedback-item" key={idx}>
-                        "{f.comment}"
-                      </li>
-                    ))
-                  ) : (
-                    <li className="text-muted gp-feedback-item">No feedback available.</li>
-                  )}
-                </ul>
-
-                <button
-                  className="btn btn-sm btn-outline-success w-100 mt-2"
-                  onClick={() => {
-                    setSelectedGuide(guide);
-                    fetchRecommendations(guide.id);
-                  }}
-                >
-                  🎯 View AI Training Suggestions
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
+      <div style={styles.controls}>
+        <button onClick={generateSummaries} disabled={loading} style={styles.generateBtn}>
+          <FaBolt /> {loading ? 'Generating...' : 'Generate AI Summary'}
+        </button>
+        <button onClick={clearSummaries} disabled={loading} style={styles.clearBtn}>
+          <FaTrash /> Clear All Summaries
+        </button>
+        <button onClick={goToTrainingRecommendations} style={styles.viewBtn}>
+          ✅ View Training Recommendations
+        </button>
+        {statusMsg && <p style={styles.status}>{statusMsg}</p>}
+        {error && <p style={styles.error}>{error}</p>}
       </div>
 
-      {selectedGuide && (
-        <div className="mt-5">
-          <h4>🎯 AI Training Suggestions for <span className="text-success">{selectedGuide.name}</span></h4>
-          {recommendations.length > 0 ? (
-            <ul className="list-group">
-              {recommendations.map((rec, idx) => (
-                <li className="list-group-item gp-list-group-item" key={idx}>✅ {rec}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-muted">No suggestions available yet.</p>
-          )}
+      {Object.entries(grouped).map(([guide, items]) => (
+        <div key={guide} style={styles.card}>
+          <h3><FaUser /> Guide: {guide}</h3>
+          <h4><FaRobot /> AI Feedback Summary:</h4>
+          {items.map((item, index) => (
+            <div key={index} style={styles.summaryBlock}>
+              <p><FaClipboardList /> <strong>Summary:</strong> {item.summary_text}</p>
+              <p><FaSmile /> <strong>Sentiment:</strong> {item.sentiment}</p>
+              <p><FaClock /> <small>Generated At: {new Date(item.generated_at).toLocaleString()}</small></p>
+            </div>
+          ))}
         </div>
-      )}
+      ))}
     </div>
   );
 };
 
-export default GuidePerformance;
+const styles = {
+  container: {
+    padding: '2rem',
+    fontFamily: 'Arial, sans-serif'
+  },
+  controls: {
+    marginBottom: '1.5rem'
+  },
+  generateBtn: {
+    marginRight: '1rem',
+    padding: '0.5rem 1rem',
+    backgroundColor: '#0d6efd',
+    border: 'none',
+    color: '#fff',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '1rem'
+  },
+  clearBtn: {
+    marginRight: '1rem',
+    padding: '0.5rem 1rem',
+    backgroundColor: '#dc3545',
+    border: 'none',
+    color: '#fff',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '1rem'
+  },
+  viewBtn: {
+    padding: '0.5rem 1rem',
+    backgroundColor: '#20c997',
+    border: 'none',
+    color: '#fff',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '1rem'
+  },
+  status: {
+    color: '#007bff',
+    marginTop: '0.5rem'
+  },
+  error: {
+    color: 'red',
+    marginTop: '0.5rem'
+  },
+  card: {
+    background: '#fff',
+    padding: '1.5rem',
+    marginBottom: '2rem',
+    borderRadius: '10px',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+  },
+  summaryBlock: {
+    background: '#f8f9fa',
+    padding: '1rem',
+    borderLeft: '4px solid #0d6efd',
+    borderRadius: '4px',
+    marginBottom: '1rem'
+  }
+};
+
+export default FeedbackReview;

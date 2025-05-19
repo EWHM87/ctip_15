@@ -134,19 +134,26 @@ db.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`, (err) => {
 
     // Guide feedback table
       const createGuideFeedbackTable = `
-        CREATE TABLE IF NOT EXISTS guide_feedback (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          visitor_id VARCHAR(100),
-          guide_id VARCHAR(100),
-          feedback_text TEXT,
-          rating FLOAT,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB;
-      `;
-      db.query(createGuideFeedbackTable, err => {
-        if (err) console.error('❌ Error creating guide_feedback table:', err);
-        else console.log('✅ guide_feedback table ready');
-      });
+  CREATE TABLE IF NOT EXISTS guide_feedback (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    visitor_id VARCHAR(100),
+    guide_id VARCHAR(100),
+    feedback_text TEXT,
+    rating FLOAT,
+    wildlife_rating TINYINT,
+    communication_rating TINYINT,
+    friendliness_rating TINYINT,
+    storytelling_rating TINYINT,
+    safety_rating TINYINT,
+    respect_rating TINYINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB;
+`;
+db.query(createGuideFeedbackTable, err => {
+  if (err) console.error('❌ Error creating guide_feedback table:', err);
+  else console.log('✅ guide_feedback table ready');
+});
+
 
     // Feedback summary table
       const createFeedbackSummaryTable = `
@@ -303,6 +310,8 @@ app.post('/api/save-prediction', (req, res) => {
   if (!plant_name?.trim() || typeof confidence !== 'number') {
     return res.status(400).json({ message: 'Missing or invalid data for prediction logging' });
   }
+
+
 
   const createTableSql = `
     CREATE TABLE IF NOT EXISTS ai_predictions (
@@ -1088,6 +1097,30 @@ app.get('/api/my-certifications-by-username', (req, res) => {
   });
 });
 
+
+// ✅ AI Training Recommendations Route
+app.get('/api/ai-training-recommendations', (req, res) => {
+  const filePath = path.join(__dirname, 'Backend', 'ai_training_output.json');
+  console.log('Reading file from:', filePath); // ✅ Add this
+
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('❌ Error reading AI training file:', err);
+      return res.status(500).json({ message: 'Failed to load recommendations' });
+    }
+
+    try {
+      const parsed = JSON.parse(data);
+      console.log('✅ Successfully parsed recommendations'); // ✅ Add this
+      res.status(200).json(parsed);
+    } catch (parseErr) {
+      console.error('❌ Invalid JSON format:', parseErr);
+      res.status(500).json({ message: 'Invalid JSON format' });
+    }
+  });
+});
+
+
   // POST /api/notifications - Send/save a notification
   app.post('/api/notifications', (req, res) => {
     const { recipient, content } = req.body;
@@ -1174,6 +1207,8 @@ app.get('/api/guide-activity-log', (req, res) => {
 });
 
 
+
+
 // GET /api/guide-activity-log/:guideId - View logs for one guide
 app.get('/api/guide-activity-log/:guideId', (req, res) => {
   const guideId = req.params.guideId;
@@ -1194,6 +1229,56 @@ app.get('/api/guide-activity-log/:guideId', (req, res) => {
     res.status(200).json(results);
   });
 });
+
+
+// --- 📥 Save Visitor Feedback ---
+app.post('/api/submit-feedback', (req, res) => {
+  const { visitorName, guideName, q1, q2, q3, q4, q5, q6, q7, q8 } = req.body;
+
+  const feedbackText = q8 || '';
+
+  if (!visitorName || !guideName) {
+    return res.status(400).json({ message: "Missing visitor or guide name" });
+  }
+
+  const query = `
+    INSERT INTO guide_feedback (guide_id, visitor_name, feedback_text) 
+    VALUES ((SELECT id FROM manage_guides WHERE name = ? LIMIT 1), ?, ?)
+  `;
+
+  db.query(query, [guideName, visitorName, feedbackText], (err, result) => {
+    if (err) {
+      console.error("❌ Insert error:", err);
+      return res.status(500).json({ message: "Database error" });
+    }
+    res.status(201).json({ message: "Feedback saved" });
+  });
+});
+
+// --- 🤖 Save AI Summary & Sentiment ---
+app.post('/api/save-feedback-summary', (req, res) => {
+  const { guide_id, summary_text, sentiment } = req.body;
+
+  if (!guide_id || !summary_text) {
+    return res.status(400).json({ message: "Missing guide_id or summary" });
+  }
+
+  const query = `
+    INSERT INTO feedback_summary (guide_id, summary, sentiment) 
+    VALUES (?, ?, ?)
+    ON DUPLICATE KEY UPDATE summary = ?, sentiment = ?
+  `;
+
+  db.query(query, [guide_id, summary_text, sentiment, summary_text, sentiment], (err, result) => {
+    if (err) {
+      console.error("❌ Summary save error:", err);
+      return res.status(500).json({ message: "DB save error" });
+    }
+    res.status(201).json({ message: "Summary saved" });
+  });
+});
+
+
 
   // 5️⃣ Centralized error-handler
   app.use((err, req, res, next) => {
