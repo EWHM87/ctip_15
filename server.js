@@ -304,6 +304,8 @@ app.post('/api/save-prediction', (req, res) => {
     return res.status(400).json({ message: 'Missing or invalid data for prediction logging' });
   }
 
+
+
   const createTableSql = `
     CREATE TABLE IF NOT EXISTS ai_predictions (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1174,6 +1176,8 @@ app.get('/api/guide-activity-log', (req, res) => {
 });
 
 
+
+
 // GET /api/guide-activity-log/:guideId - View logs for one guide
 app.get('/api/guide-activity-log/:guideId', (req, res) => {
   const guideId = req.params.guideId;
@@ -1194,6 +1198,9 @@ app.get('/api/guide-activity-log/:guideId', (req, res) => {
     res.status(200).json(results);
   });
 });
+
+
+
 
   // 5️⃣ Centralized error-handler
   app.use((err, req, res, next) => {
