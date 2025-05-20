@@ -48,7 +48,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:8080',     
   'http://localhost:19006',
-'http://localhost:8081',
+  'http://localhost:8081',
   'http://your-frontend-domain.com'
 ];
 app.use(cors({
@@ -107,6 +107,19 @@ db.connect(err => {
     process.exit(1);
   }
 });
+
+function logActivity(userId, action, description) {
+  const sqlCreate = `
+    CREATE TABLE IF NOT EXISTS user_activity_log (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      action VARCHAR(100),
+      description TEXT,
+      timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+}
+
 
 // 2️⃣ Create DB if it doesn't exist
 db.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`, (err) => {
@@ -527,7 +540,7 @@ const { exec } = require('child_process');
 app.post('/api/generate-feedback-summary', (req, res) => {
   const scriptPath = path.join(__dirname, 'Backend', 'summarise_feedback.py'); // <-- updated path
 
-  exec(`py "${scriptPath}"`, (error, stdout, stderr) => {
+  exec(`python "${scriptPath}"`, (error, stdout, stderr) => {
     if (error) {
       console.error('❌ Script error:', error);
       console.error('stderr:', stderr);
@@ -555,7 +568,7 @@ app.delete('/api/clear-feedback-summaries', (req, res) => {
 
 // ==============================
 // POST /api/register
-// ==============================
+// ============================== 
 app.post(
   '/api/register',
   [
@@ -595,23 +608,27 @@ app.post(
         }
 
         const userId = result.insertId;
-
-        if (role === 'guide') {
+     if (role === 'guide') {
           const sql2 = `INSERT INTO manage_guides (name, email) VALUES (?, ?)`;
           db.query(sql2, [username, email], (err2) => {
             if (err2 && err2.code !== 'ER_DUP_ENTRY') {
               console.error('❌ Error inserting into manage_guides:', err2);
               return res.status(500).json({ message: 'Guide registration failed', error: err2 });
             }
+
             console.log('✅ Guide also added to manage_guides');
+
+            // ✅ Log guide registration activity
+            logActivity(userId, 'Guide Registered', 'Registered through /api/register');
+
+            // ✅ Send response only after both inserts succeed
+            return res.status(201).json({ message: 'Guide registered successfully' });
           });
-
-          // ✅ Log guide registration activity
-          logActivity(userId, 'Guide Registered', 'Registered through /api/register');
+        } else {
+          // ✅ If not a guide, just log and respond
+          logActivity(userId, 'User Registered', `Registered as ${role}`);
+          return res.status(201).json({ message: 'User registered successfully' });
         }
-
-        console.log('✅ Registered new user:', result);
-        return res.status(201).json({ message: 'User registered successfully' });
       });
     } catch (err) {
       console.error('❌ Server error:', err);
