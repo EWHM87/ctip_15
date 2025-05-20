@@ -2,49 +2,53 @@ import React, { useState, useEffect } from 'react';
 
 function Qualifications() {
   const [certification, setCertification] = useState('');
-  const [guides, setGuides] = useState([]);
   const [certData, setCertData] = useState([]);
-
+  const [loading, setLoading] = useState(true);
   const BASE_URL = 'http://localhost:5000';
 
   useEffect(() => {
-    // Fetch guide list and certification list
     fetch(`${BASE_URL}/api/manage-guides`)
       .then(res => res.json())
-      .then(data => {
-        setGuides(data);
-        const guideIds = data.map(g => g.guide_id);
+      .then(async data => {
+        const certDetails = await Promise.all(
+          data.map(g =>
+            fetch(`${BASE_URL}/api/certifications/${g.guide_id}`)
+              .then(res => res.json())
+              .catch(() => [])
+          )
+        );
 
-        // For each guide, fetch their certs
-        Promise.all(guideIds.map(id =>
-          fetch(`${BASE_URL}/api/certifications/${id}`).then(res => res.json())
-        )).then(certLists => {
-          const merged = data.map((g, i) => ({
-            name: g.name,
-            guide_id: g.guide_id,
-            cert: certLists[i][0]?.certification_name || '—',
-            expires: certLists[i][0]?.expiry_date || '—',
-            id: certLists[i][0]?.id || null,
-          }));
-          setCertData(merged);
-        });
+        const merged = data.map((g, i) => ({
+          name: g.name,
+          guide_id: g.guide_id,
+          cert: certDetails[i][0]?.certification_name || '—',
+          expires: certDetails[i][0]?.expiry_date || '—',
+          id: certDetails[i][0]?.id || null,
+        }));
+
+        setCertData(merged);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('❌ Failed to load guide data:', err);
+        setLoading(false);
       });
   }, []);
 
   const handleAssign = (index) => {
-    if (!certification.trim()) return alert('Please enter certification name');
+    const selected = certData[index];
+    if (!certification.trim()) return alert('Please enter a certification name');
 
     const expiryDate = new Date();
     expiryDate.setFullYear(expiryDate.getFullYear() + 1);
     const formattedExpiry = expiryDate.toISOString().split('T')[0];
-    const selected = certData[index];
 
-    const method = selected.id ? 'PUT' : 'POST';
-    const url = selected.id
+    const isUpdate = !!selected.id;
+    const url = isUpdate
       ? `${BASE_URL}/api/certifications/${selected.id}`
       : `${BASE_URL}/api/certifications`;
-
-    const body = selected.id
+    const method = isUpdate ? 'PUT' : 'POST';
+    const body = isUpdate
       ? { certification_name: certification, expiry_date: formattedExpiry, status: 'Valid' }
       : { guide_id: selected.guide_id, certification_name: certification, expiry_date: formattedExpiry };
 
@@ -60,13 +64,15 @@ function Qualifications() {
         updated[index].expires = formattedExpiry;
         setCertData(updated);
         setCertification('');
-        alert('✅ Certification updated!');
+        alert('✅ Certification saved successfully!');
       })
       .catch(err => {
-        console.error('❌ Update failed:', err);
-        alert('Failed to assign certification');
+        console.error('❌ Certification assignment failed:', err);
+        alert('Failed to assign certification.');
       });
   };
+
+  if (loading) return <div className="container mt-4">Loading guide certifications...</div>;
 
   return (
     <div className="container mt-4">
@@ -75,7 +81,7 @@ function Qualifications() {
         <thead className="table-light">
           <tr>
             <th>Guide Name</th>
-            <th>Certification</th>
+            <th>Current Certification</th>
             <th>Expiry Date</th>
             <th>Assign New</th>
           </tr>
@@ -85,7 +91,7 @@ function Qualifications() {
             <tr key={i}>
               <td>{g.name}</td>
               <td>{g.cert}</td>
-              <td>{g.expires}</td>
+              <td>{g.expires !== '—' ? new Date(g.expires).toISOString().split('T')[0] : '—'}</td>
               <td>
                 <div className="d-flex gap-2">
                   <input
@@ -95,7 +101,10 @@ function Qualifications() {
                     value={certification}
                     onChange={(e) => setCertification(e.target.value)}
                   />
-                  <button className="btn btn-success btn-sm" onClick={() => handleAssign(i)}>
+                  <button
+                    className="btn btn-success btn-sm"
+                    onClick={() => handleAssign(i)}
+                  >
                     ➕
                   </button>
                 </div>
