@@ -167,45 +167,37 @@
 
 /* ===== HOME PAGE STYLES (scoped with .home-) ===== */
 
-.hero-section {
+.home-hero {
   background-image: url('./image/orangutan.jpeg');
   background-size: cover;
   background-position: center;
   height: 90vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
   padding: 2rem;
 }
 
-.hero-section .bg-dark {
-  background-color: rgba(0, 0, 0, 0.6) !important;
-}
-
-.home-featured-section h3 {
-  font-weight: 700;
-  margin-bottom: 2rem;
-}
-
-.home-featured-section .card-title {
+.home-featured .card-title {
+  font-weight: 600;
   font-size: 1.2rem;
-  font-weight: 600;
 }
 
-.home-featured-section .card-text {
-  font-size: 0.95rem;
-  color: #333;
+.home-card {
+  transition: transform 0.2s ease;
+  border-radius: 12px;
 }
 
-.bg-follow {
-  background: linear-gradient(to right, #4caf50, #388e3c);
+.home-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0 16px rgba(0, 128, 0, 0.1);
 }
 
-.bg-follow h4 {
-  font-weight: 600;
-  font-size: 1.25rem;
+.home-follow {
+  background: linear-gradient(to right, #4caf50, #2e7d32);
 }
+
+.home-footer {
+  background-color: #2e7d32;
+}
+
 
 /* Footer */
 footer {
@@ -283,57 +275,26 @@ iframe {
   border: none;
 }
 
-/* About Page Enhancements */
-.card {
-  border-radius: 1rem;
-  transition: box-shadow 0.3s ease;
+/* ===== About Page Scoped Styles ===== */
+.about-container h2 {
+  font-size: 2rem;
 }
 
-.card:hover {
-  box-shadow: 0 0 25px rgba(0, 0, 0, 0.07);
+.about-card ul {
+  padding-left: 1.2rem;
 }
 
-.card-title {
-  font-size: 1.25rem;
-  margin-bottom: 1rem;
-}
-
-.card-body ul {
-  padding-left: 1.25rem;
-  list-style: disc;
-  color: #333;
-}
-
-.card-body li {
+.about-card ul li {
   margin-bottom: 0.5rem;
 }
 
-.bg-light {
-  background-color: #f9f9f9 !important;
+.about-card {
+  border-radius: 12px;
+  transition: box-shadow 0.3s ease;
 }
 
-.text-success {
-  color: #2e7d32 !important;
-}
-
-.shadow-sm {
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.08) !important;
-}
-
-.ratio {
-  border-radius: 0.75rem;
-  overflow: hidden;
-}
-
-@media (max-width: 767.98px) {
-  .card-title {
-    font-size: 1.1rem;
-  }
-
-  .card-body p,
-  .card-body li {
-    font-size: 0.95rem;
-  }
+.about-card:hover {
+  box-shadow: 0 0 20px rgba(0, 128, 0, 0.08);
 }
 
 /*wildlife.jsx*/
@@ -797,7 +758,7 @@ iframe {
   box-shadow: 0 6px 18px rgba(0, 128, 0, 0.25);
 }
 
-/* Guidebook: Accommodation Page */
+/* Accommodation section enhancements */
 .gb-accom-container {
   max-width: 1140px;
   margin: auto;
@@ -806,14 +767,19 @@ iframe {
 .gb-accom-img {
   height: 220px;
   object-fit: cover;
-  border-radius: 10px 10px 0 0;
+  border-radius: 12px 12px 0 0;
 }
 
-/* Guidebook: History Timeline */
-.gb-history-container {
-  max-width: 900px;
-  margin: auto;
+.gb-accom-card {
+  border-radius: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
+.gb-accom-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 128, 0, 0.1);
+}
+
 
 .timeline {
   border-left: 3px solid #198754;

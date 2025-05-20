@@ -50,11 +50,12 @@ function InteractiveMap() {
             </button>
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav me-auto">
-                <li className="nav-item"><NavLink to="/about" className="nav-link">About</NavLink></li>
-                <li className="nav-item"><NavLink to="/parks" className="nav-link">Park Info</NavLink></li>
-                <li className="nav-item"><NavLink to="/wildlife" className="nav-link">Wildlife</NavLink></li>
-                <li className="nav-item"><NavLink to="/activities" className="nav-link">Activities</NavLink></li>
-                <li className="nav-item"><NavLink to="/contact" className="nav-link">Contact</NavLink></li>
+                <li className="nav-item"><Link className="nav-link" to="/about">About</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/parks">Park Info</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/guidebook">Guidebook</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/wildlife">Wildlife</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/activities">Activities</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/contact">Contact</Link></li>
               </ul>
               <div className="d-flex">
                 <Link to="/login" className="btn btn-light me-2">Login</Link>

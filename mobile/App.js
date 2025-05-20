@@ -30,6 +30,7 @@ import VisitorFeedbackReview from './screens/VisitorFeedbackReview';
 import RegisterGuide from './screens/RegisterGuide';
 import ManageGuide from './screens/ManageGuide';
 import IoTMonitor from './screens/IoTMonitor';
+import AlertSystem from './screens/AlertSystem';
 
 const Stack = createStackNavigator();
 
@@ -67,6 +68,7 @@ function App() {
         <Stack.Screen name="RegisterGuide" component={RegisterGuide} />
         <Stack.Screen name="ManageGuide" component={ManageGuide} />
         <Stack.Screen name="IoTMonitor" component={IoTMonitor} />
+        <Stack.Screen name="AlertSystem" component={AlertSystem} />
       </Stack.Navigator>
     </NavigationContainer>
   );
