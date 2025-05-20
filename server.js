@@ -1525,7 +1525,7 @@ app.delete('/api/manage-guides/:id', (req, res) => {
 });
 
 // ────────────────────────────────────────────────────────────────────────────────
-
+//iotmobile get fetch
 app.get('/api/sensor-logs', (req, res) => {
   const sql = `
     SELECT
