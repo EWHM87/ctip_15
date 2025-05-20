@@ -17,7 +17,8 @@ function Guidebook() {
               <ul className="navbar-nav me-auto">
                 <li className="nav-item"><Link className="nav-link" to="/about">About</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/parks">Park Info</Link></li>
-                <li className="nav-item"><Link className="nav-link active" to="/wildlife">Wildlife</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/guidebook">Guidebook</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/wildlife">Wildlife</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/activities">Activities</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/contact">Contact</Link></li>
               </ul>
