@@ -5,18 +5,19 @@ function CertificationReminders() {
   const [loading, setLoading] = useState(true);
   const BASE_URL = 'http://localhost:5000';
 
-  useEffect(() => {
-    fetch(`${BASE_URL}/api/certifications/reminders`)
-      .then(res => res.json())
-      .then(data => {
-        setReminders(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('❌ Error loading reminders:', err);
-        setLoading(false);
-      });
-  }, []);
+useEffect(() => {
+  fetch(`${BASE_URL}/api/certifications/reminders`)
+    .then(res => res.json())
+    .then(data => {
+      console.log('📢 Reminders received:', data);  // ⬅️ Add this
+      setReminders(data);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error('❌ Error loading reminders:', err);
+      setLoading(false);
+    });
+}, []);
 
   const getRowClass = (expiryDate) => {
     const today = new Date();

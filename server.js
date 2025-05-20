@@ -1068,7 +1068,7 @@ app.get('/api/certifications/:guide_id', (req, res) => {
   const guideId = req.params.guide_id;
 
   const sql = `
-    SELECT certification_name, expiry_date, status
+    SELECT id, certification_name, expiry_date, status
     FROM guide_certifications
     WHERE guide_id = ?
   `;
@@ -1118,7 +1118,7 @@ app.get('/api/certifications/reminders', (req, res) => {
     SELECT g.name, c.certification_name, c.expiry_date
     FROM guide_certifications c
     JOIN manage_guides g ON c.guide_id = g.guide_id
-    WHERE c.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+    WHERE DATE(c.expiry_date) BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
     ORDER BY c.expiry_date ASC
   `;
 
@@ -1152,7 +1152,6 @@ app.get('/api/my-certifications-by-username', (req, res) => {
     res.json(results);
   });
 });
-
 
 // ✅ AI Training Recommendations Route
 app.get('/api/ai-training-recommendations', (req, res) => {
