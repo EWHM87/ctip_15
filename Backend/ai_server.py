@@ -10,8 +10,8 @@ import requests
 
 # === Use absolute paths ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-model_path = os.path.join(BASE_DIR, "models", "plant_identification_model.tflite")
-class_file = os.path.join(BASE_DIR, "models", "classname.txt")
+model_path = os.path.join(BASE_DIR, "models", "final_resnet_model.tflite")
+class_file = os.path.join(BASE_DIR, "models", "classname2.txt")
 
 # === Load TFLite Model ===
 interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -25,7 +25,7 @@ try:
     with open(class_file, 'r') as f:
         class_names = [line.strip() for line in f if line.strip()]
 except FileNotFoundError:
-    print("❌ Error: 'classname.txt' not found.")
+    print("❌ Error: 'classname2.txt' not found.")
     exit()
 except Exception as e:
     print(f"❌ Error reading class names: {e}")
@@ -50,16 +50,18 @@ def predict():
         interpreter.invoke()
         output = interpreter.get_tensor(output_details[0]['index'])[0]
 
+        # 3. Get prediction and confidence
         index = int(np.argmax(output))
         confidence = float(output[index])
 
-        # 3. Safety Check: Index + Threshold
-        if index >= len(class_names) or confidence < 0.2:
+        # 4. Confidence threshold and fallback
+        if confidence < 0.2 or index >= len(class_names):
             label = "Unknown Species"
+            print(f"🔎 Prediction below 20% confidence ({confidence:.2f}), classified as Unknown.")
         else:
             label = class_names[index]
 
-        # 4. Save prediction to main server
+        # 5. Save prediction to main backend (optional)
         try:
             requests.post(
                 "http://localhost:5000/api/save-prediction",
@@ -68,6 +70,7 @@ def predict():
         except Exception as log_error:
             print("⚠️ Could not send prediction to main backend:", log_error)
 
+        # 6. Return result
         return jsonify({'plant': label, 'confidence': confidence})
 
     except Exception as e:

@@ -1,33 +1,3 @@
-aloevera
-banana
-bilimbi
-cantaloupe
-cassava
-coconut
-corn
-cucumber
-curcuma
-eggplant
-galangal
-ginger
-guava
-kale
-longbeans
-mango
-melon
-orange
-paddy
-papaya
-peperchili
-pineapple
-pomelo
-shallot
-soybeans
-spinach
-sweetpotatoes
-tobacco
-waterapple
-watermelon
 n0000	anoectochilus  burmanicus rolfe.
 n0001	bulbophyllum auricomum  lindl.
 n0002	bulbophyllum dayanum rchb
