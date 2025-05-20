@@ -253,13 +253,8 @@ function App() {
         </ProtectedRoute>
       } />
 
-      <Route path="/feedback" element={
-        <ProtectedRoute allowedRoles={['visitor', 'guide']}>
-          <MainLayout user={user} onLogout={handleLogout}>
-            <FeedbackForm />
-          </MainLayout>
-        </ProtectedRoute>
-      } />
+      <Route path="/feedback" element={<FeedbackForm />} />
+
 
       <Route path="/guide-assessment" element={
         <ProtectedRoute allowedRoles={['guide']}>

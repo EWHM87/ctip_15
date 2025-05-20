@@ -4,7 +4,7 @@ import './App.css';
 
 function About() {
   return (
-    <>
+    <div>
       {/* Top Navigation */}
       <header>
         <nav className="navbar navbar-expand-lg navbar-dark bg-success px-4">
@@ -32,7 +32,7 @@ function About() {
       </header>
 
       {/* About Page Content */}
-      <div className="container py-5">
+      <div className="container py-5 about-container">
         <div className="text-center mb-5">
           <h2 className="fw-bold text-success">About Sarawak Forestry Corporation (SFC)</h2>
           <p className="text-muted">Dedicated to protecting Sarawak's biodiversity and empowering future generations.</p>
@@ -40,7 +40,7 @@ function About() {
 
         <div className="row align-items-center mb-5">
           <div className="col-md-6">
-            <div className="card shadow-sm border-0 h-100">
+            <div className="card shadow-sm border-0 h-100 about-card">
               <div className="card-body">
                 <h5 className="text-success fw-bold mb-3">Who We Are</h5>
                 <p>
@@ -70,7 +70,7 @@ function About() {
 
         <div className="row g-4">
           <div className="col-md-6">
-            <div className="card border-success h-100">
+            <div className="card border-success h-100 about-card">
               <div className="card-body">
                 <h5 className="card-title text-success fw-bold">🌱 Our Key Focus</h5>
                 <ul className="mb-0">
@@ -86,7 +86,7 @@ function About() {
           </div>
 
           <div className="col-md-6">
-            <div className="card border-success h-100">
+            <div className="card border-success h-100 about-card">
               <div className="card-body">
                 <h5 className="card-title text-success fw-bold">🏆 Our Achievements</h5>
                 <p>
@@ -102,18 +102,50 @@ function About() {
           </div>
         </div>
 
-        <div className="card border-0 bg-light mt-5 shadow-sm">
+        <div className="card border-0 bg-light mt-5 shadow-sm about-card">
           <div className="card-body">
             <h5 className="text-success fw-bold">🌍 Our Commitment</h5>
             <p>
-              As stewards of Sarawak’s natural heritage, we are entrusted with a legacy of responsibility. With the support of our 
-              communities, stakeholders, and dedicated staff, we aim to leave a lasting impact—not just for today, 
+              As stewards of Sarawak’s natural heritage, we are entrusted with a legacy of responsibility.
+              With the support of our communities, stakeholders, and dedicated staff, we aim to leave a lasting impact—not just for today,
               but for the benefit of our children, our grandchildren, and future generations.
             </p>
           </div>
         </div>
       </div>
-    </>
+
+      {/* Facebook Section */}
+      <section className="text-white py-5 home-follow text-center">
+        <h4>📣 Follow Us on Facebook for Updates & Orangutan Sightings</h4>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-success text-white pt-4 pb-3 px-3 home-footer">
+        <div className="row text-center text-md-start">
+          <div className="col-md-4 mb-3">
+            <h6>SEMEMNGGOH WILDLIFE CENTRE</h6>
+            <p className="mb-0">Jalan Puncak Borneo, 93250 Kuching, Sarawak, Malaysia</p>
+            <p className="mb-0">Phone: +60 82-618325</p>
+            <p className="mb-0">Email: semenggoh@sarawakparks.com</p>
+          </div>
+          <div className="col-md-4 mb-3">
+            <h6>Operating Hours</h6>
+            <p className="mb-0">Feeding Sessions: 9–10 AM & 3–4 PM</p>
+            <p className="mb-0">Open daily including weekends & holidays</p>
+            <p className="mb-0">Tickets available on-site</p>
+          </div>
+          <div className="col-md-4 mb-3">
+            <h6>Quick Links</h6>
+            <Link to="/parks" className="d-block text-white">Park Info</Link>
+            <Link to="/wildlife" className="d-block text-white">Wildlife</Link>
+            <Link to="/contact" className="d-block text-white">Contact Us</Link>
+          </div>
+        </div>
+        <div className="text-center mt-3">
+          <small>© 2025 Semenggoh Wildlife Centre. All rights reserved.</small>
+        </div>
+      </footer>
+    </div>
   );
 }
 
