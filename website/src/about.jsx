@@ -72,12 +72,13 @@ function About() {
           </div>
 
           <div className="col-md-6 mt-4 mt-md-0">
-            <div className="ratio ratio-16x9 shadow-sm rounded">
-              <iframe
-                src="https://www.youtube.com/embed/LFMCQW4xh1s"
-                title="About SFC"
-                allowFullScreen
-              ></iframe>
+            <div className="shadow-sm rounded overflow-hidden">
+              <img
+                src="/image/wildlifecenter.jpg"
+                alt="Semenggoh Wildlife Centre"
+                className="img-fluid w-100"
+                style={{ borderRadius: '0.75rem' }}
+              />
             </div>
           </div>
         </div>
