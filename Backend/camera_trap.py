@@ -2,6 +2,7 @@ import cv2
 import time
 import os
 import mysql.connector
+import requests
 
 # 📂 Create directory for snapshots
 if not os.path.exists("snapshots"):
@@ -13,7 +14,7 @@ time.sleep(2)
 ret, frame1 = cam.read()
 ret, frame2 = cam.read()
 
-# 🛢️ Connect to MySQL using same settings as your server.js
+# 🗢️ Connect to MySQL
 db = mysql.connector.connect(
     host="localhost",
     user="root",
@@ -22,7 +23,7 @@ db = mysql.connector.connect(
 )
 cursor = db.cursor()
 
-# 🧱 Create camera_alerts table if not exists (safe fallback)
+# 🧱 Ensure the camera_alerts table exists
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS camera_alerts (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -31,6 +32,8 @@ cursor.execute("""
     )
 """)
 db.commit()
+
+print("📱 Camera trap system running...")
 
 while cam.isOpened():
     diff = cv2.absdiff(frame1, frame2)
@@ -49,11 +52,23 @@ while cam.isOpened():
         cv2.imwrite(filename, frame1)
         print(f"📸 Motion Detected! Snapshot saved: {filename}")
 
-        # 🛢️ Insert detection into DB
+        # 🗢️ Insert into DB
         insert_query = "INSERT INTO camera_alerts (image_path) VALUES (%s)"
         cursor.execute(insert_query, (filename.replace("\\", "/"),))
         db.commit()
         print("✅ Alert logged in database")
+
+        # 📤 Send alert to backend server via HTTP POST
+        try:
+            response = requests.post('http://localhost:5000/api/send-alert', json={
+                "image_path": os.path.basename(filename)
+            })
+            if response.status_code == 200:
+                print("📱 Real-time alert sent to frontend.")
+            else:
+                print(f"⚠️ Alert send failed with status code {response.status_code}")
+        except Exception as e:
+            print("❌ Failed to send alert to backend:", e)
 
         time.sleep(2)
 
