@@ -47,20 +47,6 @@ function Sidebar({ role, onLogout }) {
             </>
           )}
 
-          {/* 🧭 Visitor Tools */}
-          {role === 'visitor' && (
-            <>
-              <li className="text-uppercase text-white-50 small px-2" onClick={() => setVisitorToolsOpen(!visitorToolsOpen)} style={{ cursor: 'pointer' }}>
-                🧭 Explore & Feedback {visitorToolsOpen ? '▾' : '▸'}
-              </li>
-              <div className={`collapsible-wrapper ${visitorToolsOpen ? 'open' : 'closed'}`}>
-                <li><NavLink to="/parks" className={navClass}>🏞️ Explore Parks</NavLink></li>
-                <li><NavLink to="/wildlife" className={navClass}>🐾 View Wildlife</NavLink></li>
-                <li><NavLink to="/activities" className={navClass}>🎯 Activities</NavLink></li>
-                <li><NavLink to="/feedback" className={navClass}>📝 Submit Feedback</NavLink></li>
-              </div>
-            </>
-          )}
 
           {/* 🛠️ Admin Sections */}
           {role === 'admin' && (

@@ -25,16 +25,19 @@ function Login({ onLogin }) {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        setError(data.message || 'Login failed');
-      } else {
-        const { id, username, role } = data.user;
+    if (!response.ok) {
+      setError(data.message || 'Login failed');
+    } else {
+      const { id, username, role } = data.user;
 
-        localStorage.setItem('token', data.token);
-        AuthService.login(id, username, role);
-        onLogin();
-        navigate('/dashboard');
-      }
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('username', username); // ✅ Add this
+      localStorage.setItem('role', role);         // ✅ Add this
+      AuthService.login(id, username, role);
+      onLogin();
+      navigate('/dashboard');
+    }
+
     } catch (err) {
       console.error('❌ Login error:', err);
       setError('❌ Server error. Try again later.');

@@ -94,11 +94,16 @@ function App() {
       {/* Protected Pages */}
       <Route path="/dashboard" element={
         <ProtectedRoute allowedRoles={['admin', 'guide', 'visitor']}>
-          <MainLayout user={user} onLogout={handleLogout}>
-            <Dashboard />
-          </MainLayout>
+          {user?.role === 'visitor' ? (
+            <Navigate to="/home" replace />
+          ) : (
+            <MainLayout user={user} onLogout={handleLogout}>
+              <Dashboard />
+            </MainLayout>
+          )}
         </ProtectedRoute>
       } />
+
 
       <Route path="/admin-notify" element={
         <ProtectedRoute allowedRoles={['admin']}>
@@ -254,12 +259,14 @@ function App() {
       } />
 
       <Route path="/feedback" element={
-        <ProtectedRoute allowedRoles={['visitor', 'guide']}>
+        <ProtectedRoute allowedRoles={['visitor']}>
           <MainLayout user={user} onLogout={handleLogout}>
             <FeedbackForm />
           </MainLayout>
         </ProtectedRoute>
       } />
+
+
 
       <Route path="/guide-assessment" element={
         <ProtectedRoute allowedRoles={['guide']}>
