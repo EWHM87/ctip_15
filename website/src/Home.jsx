@@ -88,7 +88,7 @@ function Home() {
           <div className="col-md-6 mt-4 mt-md-0">
             <div className="ratio ratio-16x9 rounded shadow-sm overflow-hidden">
               <iframe
-                src="https://www.youtube.com/watch?v=oUlxzd7EeSw"
+                src="/image/semenggoh.mp4"
                 title="Semenggoh Wildlife Centre"
                 allowFullScreen
               ></iframe>
