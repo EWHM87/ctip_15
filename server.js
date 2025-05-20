@@ -25,6 +25,7 @@
 
 const { encrypt, decrypt } = require('./utils/crypto');
 
+// 3️⃣ Passport strategy setup
 passport.use(new OAuth2Strategy({
   authorizationURL: process.env.OAUTH2_AUTH_URL,
   tokenURL:         process.env.OAUTH2_TOKEN_URL,
@@ -1248,7 +1249,39 @@ app.get('/api/guide-activity-log', (req, res) => {
   });
 });
 
+//=========================================
+// /api/generate-training-recommendations
+//=========================================
+app.post('/api/generate-training-recommendations', (req, res) => {
+  const { exec } = require('child_process');
+  const path = require('path');
+  const scriptPath = path.join(__dirname, 'Backend', 'gtr.py');
 
+  exec(`py "${scriptPath}"`, (error, stdout, stderr) => {
+    if (error) {
+      console.error('❌ Error generating recommendations:', error);
+      return res.status(500).json({ message: 'Generation failed', error: stderr });
+    }
+
+//=========================================
+// /api/clear-training-recommendations
+//=========================================
+    console.log('✅ AI recommendations generated:', stdout);
+    res.status(200).json({ message: 'Training recommendations generated', output: stdout });
+  });
+});
+
+app.delete('/api/clear-training-recommendations', (req, res) => {
+  const filePath = path.join(__dirname, 'Backend', 'ai_training_output.json');
+  fs.writeFile(filePath, '[]', 'utf8', (err) => {
+    if (err) {
+      console.error('❌ Error clearing recommendations:', err);
+      return res.status(500).json({ message: 'Clear failed', error: err });
+    }
+
+    res.status(200).json({ message: '✅ All training suggestions cleared' });
+  });
+});
 
 
 // GET /api/guide-activity-log/:guideId - View logs for one guide
@@ -1272,30 +1305,6 @@ app.get('/api/guide-activity-log/:guideId', (req, res) => {
   });
 });
 
-
-// --- 📥 Save Visitor Feedback ---
-app.post('/api/submit-feedback', (req, res) => {
-  const { visitorName, guideName, q1, q2, q3, q4, q5, q6, q7, q8 } = req.body;
-
-  const feedbackText = q8 || '';
-
-  if (!visitorName || !guideName) {
-    return res.status(400).json({ message: "Missing visitor or guide name" });
-  }
-
-  const query = `
-    INSERT INTO guide_feedback (guide_id, visitor_name, feedback_text) 
-    VALUES ((SELECT id FROM manage_guides WHERE name = ? LIMIT 1), ?, ?)
-  `;
-
-  db.query(query, [guideName, visitorName, feedbackText], (err, result) => {
-    if (err) {
-      console.error("❌ Insert error:", err);
-      return res.status(500).json({ message: "Database error" });
-    }
-    res.status(201).json({ message: "Feedback saved" });
-  });
-});
 
 // --- 🤖 Save AI Summary & Sentiment ---
 app.post('/api/save-feedback-summary', (req, res) => {
