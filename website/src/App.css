@@ -297,30 +297,53 @@ iframe {
   box-shadow: 0 0 20px rgba(0, 128, 0, 0.08);
 }
 
-/*wildlife.jsx*/
-/* Wildlife Component Styles (wildlife-) */
+/* Wildlife Component Styles (Scoped) */
 
 .wildlife-container {
   max-width: 1140px;
   margin: auto;
+  padding: 2rem;
 }
 
-.wildlife-img {
-  height: 250px;
-  object-fit: cover;
-  border-radius: 10px 10px 0 0;
-}
-
-.wildlife-card {
-  border: none;
+.wildlife-section {
+  background-color: #f9f9f9;
   border-radius: 12px;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+}
+
+.wildlife-orangutan-card {
+  border: none;
+  border-radius: 14px;
   overflow: hidden;
+  box-shadow: 0 0 15px rgba(0, 128, 0, 0.1);
   transition: transform 0.2s ease;
 }
 
-.wildlife-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 0 15px rgba(0, 128, 0, 0.15);
+.wildlife-orangutan-card:hover {
+  transform: translateY(-6px);
+}
+
+.wildlife-orangutan-img {
+  height: 250px;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 14px 14px 0 0;
+}
+
+.wildlife-navbar-auth span {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.wildlife-navbar-auth .btn {
+  font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+  .wildlife-orangutan-img {
+    height: 200px;
+  }
 }
 
 

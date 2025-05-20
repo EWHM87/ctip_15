@@ -22,10 +22,24 @@ function About() {
                 <li className="nav-item"><Link className="nav-link" to="/activities">Activities</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/contact">Contact</Link></li>
               </ul>
+           {localStorage.getItem('token') && localStorage.getItem('role') === 'visitor' ? (
+              <div className="d-flex align-items-center text-white">
+                <span className="me-3 fw-semibold">👋 {localStorage.getItem('username')}</span>
+                <Link to="/feedback" className="btn btn-outline-light btn-sm me-2">📝 Feedback</Link>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => {
+                    localStorage.clear();
+                    window.location.href = '/';
+                  }}
+                >Logout</button>
+              </div>
+            ) : (
               <div className="d-flex">
                 <Link to="/login" className="btn btn-light me-2">Login</Link>
                 <Link to="/register" className="btn btn-outline-light">Register</Link>
               </div>
+            )}
             </div>
           </div>
         </nav>
@@ -58,12 +72,13 @@ function About() {
           </div>
 
           <div className="col-md-6 mt-4 mt-md-0">
-            <div className="ratio ratio-16x9 shadow-sm rounded">
-              <iframe
-                src="https://www.youtube.com/embed/LFMCQW4xh1s"
-                title="About SFC"
-                allowFullScreen
-              ></iframe>
+            <div className="shadow-sm rounded overflow-hidden">
+              <img
+                src="/image/wildlifecenter.jpg"
+                alt="Semenggoh Wildlife Centre"
+                className="img-fluid w-100"
+                style={{ borderRadius: '0.75rem' }}
+              />
             </div>
           </div>
         </div>
