@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import sys
+import io
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import tensorflow as tf
@@ -8,9 +10,12 @@ from PIL import Image
 import os
 import requests
 
+# === Force UTF-8 encoding for console output (Windows safe) ===
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
 # === Use absolute paths ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-model_path = os.path.join(BASE_DIR, "models", "final_resnet_model.tflite")
+model_path = os.path.join(BASE_DIR, "models", "plant_identification_model2.tflite")
 class_file = os.path.join(BASE_DIR, "models", "classname2.txt")
 
 # === Load TFLite Model ===
@@ -22,7 +27,7 @@ IMAGE_SIZE = (224, 224)
 
 # === Load Class Names ===
 try:
-    with open(class_file, 'r') as f:
+    with open(class_file, 'r', encoding='utf-8') as f:
         class_names = [line.strip() for line in f if line.strip()]
 except FileNotFoundError:
     print("❌ Error: 'classname2.txt' not found.")

@@ -18,15 +18,15 @@ n0016	dendrobium fimbriatum  hook
 n0017	dendrobium lindleyi steud
 n0018	dendrobium pulchellum roxb
 n0019	dendrobium pulchellum
-n0020	dendrobium secundum bl-lindl
-n0021	dendrobium senile par. & rchb.f.
+n0000	anoectochilus  burmanicus rolfe.
+n0001	bulbophyllum auricomum  lindl.
 n0022	dendrobium signatum rchb. f
 n0023	dendrobium thyrsiflorum rchb. f.
 n0024	dendrobium tortile lindl
-n0025	dendrobium tortile
-n0026	hygrochillus parishii var. marrioftiana (rchb.f.)
+n0005	bulbophyllum longissimum (ridl.) ridl
+n0006	bulbophyllum medusae (lindl.) rchb
 n0027	paphiopedilum bellatulum
-n0028	paphiopedilum callosum
+n0008	bulbophyllum rufuslabram
 n0029	paphiopedilum charlesworthii
 n0030	paphiopedilum concolor
 n0031	paphiopedilum exul
@@ -38,11 +38,11 @@ n0036	paphiopedilum niveum (rchb.f.) stein
 n0037	paphiopedilum parishii
 n0038	paphiopedilum spicerianum
 n0039	paphiopedilum sukhakulii
-n0040	pelatantheria bicuspidata  (rolfe ex downie) tang & wang
+n0020	dendrobium secundum bl-lindl
 n0041	pelatantheria insectiflora (rchb.f.) ridl.
 n0042	phaius tankervilleae (banks ex i' heritier) blume
 n0043	phalaenopsis cornucervi (breda) bl. & rchb.f.
-n0044	rhynchostylis gigantea (lindl.) ridl.
+n0024	dendrobium tortile lindl
 n0045	trichoglottis orchideae (koern) garay.
 n0046	bulbophyllum auratum Lindl.
 n0047	bulbophyllum morphologorum F.Kranzl.
