@@ -23,9 +23,8 @@ function Sidebar({ role, onLogout }) {
 
           {/* 🌐 General */}
           <li className="text-uppercase text-white-50 small px-2">🌐 General</li>
-          <li><NavLink to="/home" className={navClass}>🏞️ Home</NavLink></li>
+
           <li><NavLink to="/dashboard" className={navClass}>🏠 Dashboard</NavLink></li>
-          <li><NavLink to="/park-info" className={navClass}>🌲 Park Info</NavLink></li>
 
           {/* 🧭 Guide Tools */}
           {(role === 'guide' || role === 'admin') && (
