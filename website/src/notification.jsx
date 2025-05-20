@@ -1,43 +1,71 @@
+// src/Notification.jsx
 import React, { useEffect, useState } from 'react';
-import AuthService from './auth'; // Must return guide's username
+import AuthService from './auth';
 
-function Notification() {
+const BASE = 'http://localhost:5000';
+const getToken = () => localStorage.getItem('token');
+
+export default function Notification() {
   const [messages, setMessages] = useState([]);
-  const guideName = AuthService.getUser()?.username;
-  const BASE_URL = 'http://localhost:5000';
+  const user = AuthService.getCurrentUser?.() || AuthService.getUser?.();
 
+  // Fetch only **this** guide’s notifications
   useEffect(() => {
-    if (!guideName) return;
+    if (!user || user.role !== 'guide') return;
 
-    fetch(`${BASE_URL}/api/notifications`)
-      .then(res => res.json())
-      .then(data => {
-        const filtered = data.filter(msg =>
-          msg.recipient === 'All Guides' || msg.recipient === guideName
-        );
-        setMessages(filtered);
-      })
-      .catch(err => console.error('❌ Failed to load notifications:', err));
-  }, [guideName]);
+    fetch(`${BASE}/api/notifications/me`, {
+      headers: { Authorization:`Bearer ${getToken()}` }
+    })
+      .then(r => r.json())
+      .then(setMessages)
+      .catch(console.error);
+  }, [user]);
 
-  const formatDateTime = (dateStr) =>
-    new Date(dateStr).toLocaleString(undefined, {
-      year: 'numeric', month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit'
+  // Clear only this guide’s notifications
+  const handleClear = async () => {
+    if (!window.confirm('Clear all your notifications?')) return;
+    const res = await fetch(`${BASE}/api/notifications/me`, {
+      method:'DELETE',
+      headers:{ Authorization:`Bearer ${getToken()}` }
+    });
+    const body = await res.json();
+    if (!res.ok) {
+      return alert(body.message || 'Could not clear');
+    }
+    setMessages([]);
+    alert(body.message);
+  };
+
+  const fmt = dt =>
+    new Date(dt).toLocaleString(undefined, {
+      year:'numeric',month:'short',day:'numeric',
+      hour:'2-digit',minute:'2-digit'
     });
 
   return (
     <div className="container mt-4">
-      <h2>📬 My Notifications</h2>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h2>📬 My Notifications</h2>
+        {messages.length>0 && (
+          <button
+            className="btn btn-sm btn-danger"
+            onClick={handleClear}
+          >
+            Clear All
+          </button>
+        )}
+      </div>
+
       {messages.length === 0 ? (
         <p className="text-muted">No notifications yet.</p>
       ) : (
         <ul className="list-group">
-          {messages.map((msg) => (
-            <li key={msg.id} className="list-group-item">
-              <strong>From Admin:</strong><br />
-              <span>{msg.content}</span><br />
-              <small className="text-muted">Received on: {formatDateTime(msg.sent_at)}</small>
+          {messages.map(m => (
+            <li key={m.id} className="list-group-item">
+              {m.content}<br/>
+              <small className="text-muted">
+                Received {fmt(m.sent_at)}
+              </small>
             </li>
           ))}
         </ul>
@@ -45,5 +73,3 @@ function Notification() {
     </div>
   );
 }
-
-export default Notification;

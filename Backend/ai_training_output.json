@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "guide_id": "Darren",
+    "topic": "Communication & Empathy",
+    "youtube": "https://www.youtube.com/watch?v=1Evwgu369Jw",
+    "steps": [
+      "Practice active listening",
+      "Use positive, open body language",
+      "Show empathy through facial expressions and tone"
+    ]
+  },
+  {
+    "guide_id": "G003",
+    "topic": "Communication & Empathy",
+    "youtube": "https://www.youtube.com/watch?v=1Evwgu369Jw",
+    "steps": [
+      "Practice active listening",
+      "Use positive, open body language",
+      "Show empathy through facial expressions and tone"
+    ]
+  },
+  {
+    "guide_id": "G004",
+    "topic": "Engaging Storytelling & Speaking",
+    "youtube": "https://www.youtube.com/watch?v=V1gUnlT5K64",
+    "steps": [
+      "Use storytelling to connect facts",
+      "Practice vocal variety and pace",
+      "Include interactive moments"
+    ]
+  }
+]

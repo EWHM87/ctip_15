@@ -1,7 +1,8 @@
-  // 1️⃣ Load env as early as possible
+ // 1️⃣ Load env as early as possible
   require('dotenv').config();
 
   // 2️⃣ Pull in your single set of dependencies
+  const { encrypt, decrypt } = require('./utils/crypto');
   const { body, validationResult } = require('express-validator');
   const express    = require('express');
   const helmet     = require('helmet');
@@ -281,13 +282,14 @@ db.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`, (err) => {
 
     // Create Notifications table
       const createNotificationsTable = `
-        CREATE TABLE IF NOT EXISTS notifications (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          recipient VARCHAR(255) NOT NULL,
-          content TEXT NOT NULL,
-          sent_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB;
-      `;
+      CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    guide_id INT NOT NULL,
+    content TEXT NOT NULL,
+    sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (guide_id) REFERENCES users(id)
+  ) ENGINE=InnoDB;
+`;
       db.query(createNotificationsTable, err => {
         if (err) console.error('❌ Error creating notifications table:', err);
         else console.log('✅ notifications table ready');
@@ -967,6 +969,55 @@ app.get('/api/all-training-history', (req, res) => {
         console.error('❌ Error fetching guide data:', err);
         return res.status(500).json({ message: 'Failed to fetch guide data', error: err });
       }
+// GET /api/my-notifications — returns only the rows for the currently logged-in guide
+app.get(
+  '/api/my-notifications',
+  authenticateToken,
+  isGuide,
+  async (req, res) => {
+    try {
+      const guideId = req.user.id;
+      const [rows] = await db
+        .promise()
+        .query(
+          `SELECT 
+             id,
+             content,
+             sent_at
+           FROM notifications
+           WHERE guide_id = ?
+           ORDER BY sent_at DESC
+          `,
+          [guideId]
+        );
+      res.json(rows);
+    } catch (err) {
+      console.error('❌ GET /api/my-notifications error:', err);
+      res.status(500).json({ message: 'Failed to load your notifications' });
+    }
+  }
+);
+
+
+
+      app.get('/api/guides', authenticateToken, isAdmin, (req, res) => {
+  // if you want to pull from your `users` table:
+  const sql = `
+    SELECT
+      id,
+      username AS name
+    FROM users
+    WHERE role = 'guide'
+    ORDER BY username
+  `;
+  db.query(sql, (err, rows) => {
+    if (err) {
+      console.error('❌ /api/guides error:', err);
+      return res.status(500).json({ message: 'Failed to fetch guides' });
+    }
+    res.json(Array.isArray(rows) ? rows : []);
+  });
+});
 
       // ✅ Always return an array, even if empty
       if (!Array.isArray(results)) {
@@ -1193,37 +1244,143 @@ app.get('/api/ai-training-recommendations', (req, res) => {
 });
 
 
-  // POST /api/notifications - Send/save a notification
-  app.post('/api/notifications', (req, res) => {
-    const { recipient, content } = req.body;
+ // POST /api/notifications
+app.post('/api/notifications', authenticateToken, isAdmin, async (req, res) => {
+  const { recipient, content } = req.body;
+  if (!recipient || !content) {
+    return res.status(400).json({ message: 'Recipient and content are required' });
+  }
 
-    if (!recipient || !content) {
-      return res.status(400).json({ message: 'Recipient and message content are required' });
+  try {
+    // 1) build list of guide IDs
+    let guideIds;
+    if (recipient === 'all') {
+      const [all] = await db.promise().query(`SELECT id FROM users WHERE role='guide'`);
+      guideIds = all.map(r => r.id);
+    } else {
+      guideIds = [parseInt(recipient, 10)];
     }
 
-    const sql = `INSERT INTO notifications (recipient, content) VALUES (?, ?)`;
-    db.query(sql, [recipient, content], (err, result) => {
-      if (err) {
-        console.error('❌ Insert error:', err);
-        return res.status(500).json({ message: 'Failed to send notification', error: err });
-      }
+    if (guideIds.length === 0) {
+      return res.status(404).json({ message: 'No guides found' });
+    }
 
-      res.status(201).json({ message: 'Notification sent', id: result.insertId });
+    // 2) bulk insert
+    const now    = new Date();
+    const values = guideIds.map(id => [id, content, now]);
+    const [result] = await db.promise().query(
+      `INSERT INTO notifications (guide_id, content, sent_at) VALUES ?`,
+      [values]
+    );
+
+    // 3) send back the first insertId plus total count
+    res.status(201).json({
+      message: 'Notifications sent',
+      count:  guideIds.length,
+      firstId: result.insertId
     });
-  });
+  } catch (err) {
+    console.error('❌ /api/notifications POST error:', err);
+    res.status(500).json({ message: 'Failed to send notifications', error: err });
+  }
+});
 
-// GET /api/notifications – Get all notifications
-  app.get('/api/notifications', (req, res) => {
-    const sql = `SELECT * FROM notifications ORDER BY sent_at DESC`;
-    db.query(sql, (err, results) => {
-      if (err) {
-        console.error('❌ Fetch error:', err);
-        return res.status(500).json({ message: 'Failed to fetch notifications', error: err });
-      }
 
-      res.json(results);
-    });
+
+// 1) New GET to return only guides from users table
+app.get('/api/guides', authenticateToken, isAdmin, async (req, res) => {
+  const [rows] = await db.promise().query(
+    `SELECT id, username 
+     FROM users 
+     WHERE role = 'guide'
+     ORDER BY username`
+  );
+  res.json(rows);
+});
+
+// 2) POST /api/notifications (as you already have it; returns firstId)
+app.post('/api/notifications', authenticateToken, isAdmin, async (req, res) => {
+  const { recipient, content } = req.body;
+  if (!recipient || !content) {
+    return res.status(400).json({ message: 'Recipient and content are required' });
+  }
+
+  // build list of guide IDs
+  let guideIds;
+  if (recipient === 'all') {
+    const [allGuides] = await db.promise().query(
+      `SELECT id FROM users WHERE role='guide'`
+    );
+    guideIds = allGuides.map(r => r.id);
+  } else {
+    guideIds = [parseInt(recipient, 10)];
+  }
+
+  if (!guideIds.length) {
+    return res.status(404).json({ message: 'No guides found' });
+  }
+
+  const now    = new Date();
+  const values = guideIds.map(id => [id, content, now]);
+  const [result] = await db.promise().query(
+    `INSERT INTO notifications (guide_id, content, sent_at)
+     VALUES ?`,
+    [values]
+  );
+
+  res.status(201).json({
+    message: 'Notifications sent',
+    count:  guideIds.length,
+    firstId: result.insertId
   });
+});
+
+// 3) GET /api/notifications — returns ALL notifications (for Admin)
+app.get('/api/notifications', authenticateToken, isAdmin, async (req, res) => {
+  const [rows] = await db.promise().query(`
+    SELECT
+      n.id,
+      n.guide_id,
+      u.username     AS guide_name,
+      n.content,
+      n.sent_at
+    FROM notifications n
+    JOIN users u ON n.guide_id = u.id
+    ORDER BY n.sent_at DESC
+  `);
+  res.json(rows);
+});
+
+// 4) DELETE /api/notifications — clear ALL notifications (for Admin)
+app.delete('/api/notifications', authenticateToken, isAdmin, async (req, res) => {
+  const [result] = await db.promise().query(`DELETE FROM notifications`);
+  res.json({ message: `✅ Cleared ${result.affectedRows} notification(s)` });
+});
+
+// 5) GET /api/notifications (Guide) — returns only that guide’s messages
+app.get('/api/notifications/me', authenticateToken, async (req, res) => {
+  const guideId = req.user.id;
+  const [rows] = await db.promise().query(
+    `SELECT id, content, sent_at
+     FROM notifications
+     WHERE guide_id = ?
+     ORDER BY sent_at DESC`,
+    [guideId]
+  );
+  res.json(rows);
+});
+
+// 6) DELETE /api/notifications/me — clear only that guide’s notifications
+app.delete('/api/notifications/me', authenticateToken, async (req, res) => {
+  const guideId = req.user.id;
+  const [result] = await db.promise().query(
+    `DELETE FROM notifications WHERE guide_id = ?`,
+    [guideId]
+  );
+  res.json({ message: `✅ Cleared ${result.affectedRows} notification(s)` });
+});
+
+
   
 // POST /api/self-assessment - Route to Receive Form Submissions
 app.post('/api/self-assessment', (req, res) => {
@@ -1525,7 +1682,7 @@ app.delete('/api/manage-guides/:id', (req, res) => {
 });
 
 // ────────────────────────────────────────────────────────────────────────────────
-
+//iotmobile get fetch
 app.get('/api/sensor-logs', (req, res) => {
   const sql = `
     SELECT
