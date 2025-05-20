@@ -1216,6 +1216,32 @@ app.get('/api/guide-activity-log/:guideId', (req, res) => {
     res.json({ message: `Welcome, ${req.user.username}! You are a ${req.user.role}` });
   })
 
+// ✅ NEW: Get latest sensor logs
+// GET /api/sensor-logs
+app.get('/api/sensor-logs', (req, res) => {
+  const sql = `SELECT * FROM sensor_data ORDER BY ReadingTime DESC LIMIT 50`;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching sensor logs:', err);
+      return res.status(500).json({ message: 'Failed to fetch sensor logs', error: err });
+    }
+
+    const mappedResults = results.map(row => ({
+      species: row.SpeciesType,
+      time: row.ReadingTime,
+      temperature: row.Temperature,
+      humidity: row.Humidity,
+      soil_moisture: row.SoilMoisture,
+      solar: row.SolarStatus,
+      motion: row.MotionDetected === 1,
+      alert: row.MotionDetected === 1
+    }));
+
+    res.status(200).json(mappedResults);
+  });
+});
+
   // ✅ This stays at the bottom of your server.js
 // … all your routes, middleware, etc.
 
