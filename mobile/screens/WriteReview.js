@@ -83,12 +83,14 @@ const WriteReview = ({ navigation }) => {
   };
 
   const renderPicker = (question, field) => (
-    <View style={styles.pickerGroup}>
+    <View style={styles.section} key={field}>
       <Text style={styles.label}>{question}</Text>
       <View style={styles.pickerWrapper}>
         <Picker
           selectedValue={formData[field]}
-          onValueChange={(value) => handleChange(field, value)}>
+          onValueChange={(value) => handleChange(field, value)}
+          dropdownIconColor="#065f46"
+          mode="dropdown">
           <Picker.Item label="Select" value="" />
           {[1, 2, 3, 4, 5].map(n => (
             <Picker.Item key={n} label={n.toString()} value={n.toString()} />
@@ -112,43 +114,52 @@ const WriteReview = ({ navigation }) => {
     <KeyboardAvoidingView
       style={styles.safeArea}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={80}>
+      keyboardVerticalOffset={100}
+    >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>📝 Semenggoh Wildlife Centre Feedback Form</Text>
 
-        <Text style={styles.label}>Visitor Name:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your name"
-          value={formData.visitor_id}
-          onChangeText={(text) => handleChange('visitor_id', text)}
-        />
+        <View style={styles.section}>
+          <Text style={styles.label}>Visitor Name:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your name"
+            placeholderTextColor="#888"
+            value={formData.visitor_id}
+            onChangeText={(text) => handleChange('visitor_id', text)}
+          />
+        </View>
 
-        <Text style={styles.label}>Guide Name:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter guide's name"
-          value={formData.guide_id}
-          onChangeText={(text) => handleChange('guide_id', text)}
-        />
+        <View style={styles.section}>
+          <Text style={styles.label}>Guide Name:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter guide's name"
+            placeholderTextColor="#888"
+            value={formData.guide_id}
+            onChangeText={(text) => handleChange('guide_id', text)}
+          />
+        </View>
 
         <Text style={styles.subtitle}>Please rate the following (1 = Poor, 5 = Excellent):</Text>
-        {questions.map((q) => (
-          <React.Fragment key={q.name}>
-            {renderPicker(q.label, q.name)}
-          </React.Fragment>
-        ))}
 
-        <Text style={styles.label}>8. Any suggestions or comments?</Text>
-        <TextInput
-          style={[styles.input, { height: 100 }]}
-          multiline
-          placeholder="Write your comments here..."
-          value={formData.feedback_text}
-          onChangeText={(text) => handleChange('feedback_text', text)}
-        />
+        {questions.map((q) => renderPicker(q.label, q.name))}
 
-        <Button title="Submit Feedback" onPress={handleSubmit} color="#10b981" />
+        <View style={styles.section}>
+          <Text style={styles.label}>8. Any suggestions or comments?</Text>
+          <TextInput
+            style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+            multiline
+            placeholder="Write your comments here..."
+            placeholderTextColor="#888"
+            value={formData.feedback_text}
+            onChangeText={(text) => handleChange('feedback_text', text)}
+          />
+        </View>
+
+        <View style={styles.submitButton}>
+          <Button title="Submit Feedback" onPress={handleSubmit} color="#10b981" />
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -161,11 +172,10 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: 40,
-    flexGrow: 1,
+    paddingBottom: 60,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#065f46',
     marginBottom: 20,
@@ -173,14 +183,18 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginVertical: 10,
     color: '#065f46',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  section: {
+    marginBottom: 16,
   },
   label: {
     fontSize: 16,
-    marginBottom: 4,
     color: '#065f46',
-    fontWeight: '500'
+    fontWeight: '500',
+    marginBottom: 6,
   },
   input: {
     borderColor: '#065f46',
@@ -189,17 +203,16 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: 16,
     backgroundColor: '#fff',
-    marginBottom: 16,
-  },
-  pickerGroup: {
-    marginBottom: 16,
   },
   pickerWrapper: {
     borderColor: '#065f46',
     borderWidth: 1,
     borderRadius: 10,
-    overflow: 'hidden',
     backgroundColor: '#fff',
+  },
+  submitButton: {
+    marginTop: 20,
+    marginBottom: 40,
   },
 });
 
