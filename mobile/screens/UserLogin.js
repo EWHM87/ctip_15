@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { API_URL } from '@env';
+import { BACKEND_URL, AI_URL } from '@env';
+
 import {
   View,
   Text,
@@ -9,7 +10,7 @@ import {
   SafeAreaView,
   Alert
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommonActions } from '@react-navigation/native';
 
 const UserLogin = ({ navigation }) => {
@@ -21,25 +22,29 @@ const UserLogin = ({ navigation }) => {
       Alert.alert('Error', 'Please fill in both username and password');
       return;
     }
-    
+
     try {
-      const response = await fetch(`${API_URL}/api/login`, {
+      const res = await fetch(`${BACKEND_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await response.json();
+      console.log('📥 Response status:', res.status);
+      const data = await res.json();
+      console.log('📦 Response data:', data);
 
-      if (response.ok) {
+      if (res.ok && data.user?.role === 'guide') {
         await AsyncStorage.setItem('token', data.token);
         Alert.alert('Success', 'Login successful');
         navigation.navigate('UserDashboard');
+      } else if (res.ok) {
+        Alert.alert('Access Denied', 'You are not a registered park guide');
       } else {
         Alert.alert('Error', data.message || 'Login failed');
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
       Alert.alert('Error', 'Server connection failed');
     }
   };
@@ -47,11 +52,12 @@ const UserLogin = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>User Login</Text>
+        <Text style={styles.title}>Park Guide Login</Text>
 
         <TextInput
           style={styles.input}
           placeholder="Enter ParkGuideId"
+          placeholderTextColor="#666"
           value={username}
           onChangeText={setUsername}
         />
@@ -59,6 +65,7 @@ const UserLogin = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="Enter Password"
+          placeholderTextColor="#666"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -88,7 +95,6 @@ const UserLogin = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {

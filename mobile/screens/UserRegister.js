@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { API_URL } from '@env';
+import { BACKEND_URL } from '@env';  // ✅ Use env-based backend URL
+
 import {
   View,
   Text,
@@ -10,60 +11,59 @@ import {
   Alert
 } from 'react-native';
 
-const UserRegister = ({ navigation }) => {
+const VisitorRegister = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleRegister = async () => {
-  if (!name || !email || !password) {
-    Alert.alert('Error', 'Please fill in all fields');
-    return;
-  }
-
-  const payload = {
-    username: name,
-    email,
-    password,
-    role: 'guide'
-  };
-
-  const url = `${API_URL}/api/register`;
-  console.log('📤 Sending to:', url);
-  console.log('📦 Payload:', payload);
-
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-    console.log('✅ Register response:', data);
-
-    if (response.ok) {
-      Alert.alert('Success', 'Registration successful!');
-      navigation.navigate('UserLogin');
-    } else {
-      console.error('❌ Register failed:', data);
-      Alert.alert('Error', data.message || 'Registration failed');
+    if (!name || !email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
     }
-  } catch (error) {
-    console.error('❌ Registration error:', error);
-    Alert.alert('Error', 'Server connection failed');
-  }
-};
 
+    const url = `${BACKEND_URL}/api/register`;
+    const payload = {
+      username: name,
+      email,
+      password,
+      role: 'visitor',
+    };
+
+    console.log('📤 Submitting to:', url);
+    console.log('📦 Payload:', payload);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      console.log('✅ Server response:', data);
+
+      if (response.ok) {
+        Alert.alert('Success', 'Registration successful!');
+        navigation.navigate('VisitorLogin');
+      } else {
+        Alert.alert('Error', data.message || 'Registration failed');
+      }
+    } catch (error) {
+      console.error('❌ Network error:', error);
+      Alert.alert('Error', 'Server connection failed');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>User Register</Text>
+        <Text style={styles.title}>Park Guide Register</Text>
 
         <TextInput
           style={styles.input}
           placeholder="Enter ParkGuideID"
+          placeholderTextColor="#666"
           value={name}
           onChangeText={setName}
         />
@@ -71,6 +71,7 @@ const UserRegister = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="Enter Email"
+          placeholderTextColor="#666"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -79,6 +80,7 @@ const UserRegister = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="Enter Password"
+          placeholderTextColor="#666"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -88,7 +90,7 @@ const UserRegister = ({ navigation }) => {
           <Text style={styles.buttonText}>Register</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('UserLogin')}>
+        <TouchableOpacity onPress={() => navigation.navigate('VisitorLogin')}>
           <Text style={styles.footerText}>Already have an account? Login</Text>
         </TouchableOpacity>
       </View>
@@ -148,4 +150,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default UserRegister;
+export default VisitorRegister;

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { API_URL } from '@env';
+import { BACKEND_URL, AI_URL } from '@env';
+
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
@@ -16,56 +18,59 @@ const AdminLogin = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-const handleLogin = async () => {
-  if (!email || !password) {
-    Alert.alert('Error', 'Please fill in both email and password');
-    return;
-  }
-
-  try {
-    const response = await fetch(`${API_URL}/api/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: email, password }),
-    });
-
-    console.log('📥 Response status:', response.status);
-    const data = await response.json();
-    console.log('📦 Response data:', data);
-
-    if (response.ok && data.user?.role === 'admin') {
-      await AsyncStorage.setItem('token', data.token); // ✅ Save token
-      Alert.alert('Success', 'Login successful');
-      navigation.navigate('AdminDashboard');
-    } else if (response.ok) {
-      Alert.alert('Access Denied', 'You are not an admin');
-    } else {
-      Alert.alert('Error', data.message || 'Login failed');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in both email and password');
+      return;
     }
-  } catch (error) {
-    console.error('❌ Network error:', error);
-    Alert.alert('Error', 'Server connection failed');
-  }
-};
 
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: email, password }),
+      });
+
+      console.log('📥 Response status:', res.status);
+      const data = await res.json();
+      console.log('📦 Response data:', data);
+
+      if (res.ok && data.user?.role === 'admin') {
+        await AsyncStorage.setItem('token', data.token); // ✅ Save token
+        Alert.alert('Success', 'Login successful');
+        navigation.navigate('AdminDashboard');
+      } else if (res.ok) {
+        Alert.alert('Access Denied', 'You are not an admin');
+      } else {
+        Alert.alert('Error', data.message || 'Login failed');
+      }
+    } catch (error) {
+      console.error('❌ Network error:', error);
+      Alert.alert('Error', 'Server connection failed');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Admin Login</Text>
+
         <TextInput
           style={styles.input}
           placeholder="Enter AdminID"
+          placeholderTextColor="#666"
           value={email}
           onChangeText={setEmail}
         />
         <TextInput
           style={styles.input}
           placeholder="Enter Password"
+          placeholderTextColor="#666"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
+
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
@@ -82,14 +87,14 @@ const handleLogin = async () => {
         >
           <Text style={styles.footerText}>Back to Home</Text>
         </TouchableOpacity>
+
         <TouchableOpacity onPress={() => navigation.navigate('AdminRegister')}>
-            <Text style={styles.footerText}>Don’t have an account? Register</Text>
+          <Text style={styles.footerText}>Don’t have an account? Register</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -144,3 +149,4 @@ const styles = StyleSheet.create({
 });
 
 export default AdminLogin;
+

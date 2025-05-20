@@ -12,7 +12,8 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { CommonActions } from '@react-navigation/native';
-import { API_URL } from '@env';
+import { BACKEND_URL, AI_URL } from '@env';
+
 
 const AdminDashboard = ({ navigation }) => {
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
@@ -23,7 +24,7 @@ const AdminDashboard = ({ navigation }) => {
       if (!token) return redirectToLogin();
 
       try {
-        const res = await fetch(`${API_URL}/api/admin-only`, {
+        const res = await fetch(`${BACKEND_URL}/api/admin-only`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();

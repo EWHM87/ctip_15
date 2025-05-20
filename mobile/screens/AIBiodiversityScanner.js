@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
+import { AI_URL } from '@env';
 
 const AIBiodiversity = () => {
   const [photoUri, setPhotoUri] = useState(null);
@@ -44,7 +45,7 @@ const AIBiodiversity = () => {
       });
 
       try {
-        const res = await axios.post('http://172.17.9.163:8000/predict', formData, {
+        const res = await axios.post(`${AI_URL}/predict`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
