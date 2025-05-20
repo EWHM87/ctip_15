@@ -133,27 +133,27 @@ db.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`, (err) => {
 
     // Guide feedback table
       const createGuideFeedbackTable = `
-  CREATE TABLE IF NOT EXISTS guide_feedback (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  visitor_id VARCHAR(100) NOT NULL,           -- Matches visitorName
-  guide_id VARCHAR(100) NOT NULL,             -- Matches guideName
-  feedback_text TEXT,                         -- Open-ended feedback (q8)
-  rating FLOAT,                               -- Average of q1 to q7
-  wildlife_rating TINYINT,                    -- q1
-  communication_rating TINYINT,               -- q2
-  friendliness_rating TINYINT,                -- q3
-  storytelling_rating TINYINT,                -- q4
-  safety_rating TINYINT,                      -- q5
-  respect_rating TINYINT,                     -- q6
-  overall_rating TINYINT,                     -- q7 (copied again separately if needed)
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+        CREATE TABLE IF NOT EXISTS guide_feedback (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        visitor_id VARCHAR(100) NOT NULL,           -- Matches visitorName
+        guide_id VARCHAR(100) NOT NULL,             -- Matches guideName
+        feedback_text TEXT,                         -- Open-ended feedback (q8)
+        rating FLOAT,                               -- Average of q1 to q7
+        wildlife_rating TINYINT,                    -- q1
+        communication_rating TINYINT,               -- q2
+        friendliness_rating TINYINT,                -- q3
+        storytelling_rating TINYINT,                -- q4
+        safety_rating TINYINT,                      -- q5
+        respect_rating TINYINT,                     -- q6
+        overall_rating TINYINT,                     -- q7 (copied again separately if needed)
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB;
 
-`;
-db.query(createGuideFeedbackTable, err => {
-  if (err) console.error('❌ Error creating guide_feedback table:', err);
-  else console.log('✅ guide_feedback table ready');
-});
+      `;
+      db.query(createGuideFeedbackTable, err => {
+        if (err) console.error('❌ Error creating guide_feedback table:', err);
+        else console.log('✅ guide_feedback table ready');
+      });
 
 
     // Feedback summary table
@@ -300,9 +300,26 @@ db.query(createGuideFeedbackTable, err => {
       db.query(createGuideAssessmentTable, err => {
         if (err) console.error('❌ Error creating guide_self_assessments table:', err);
         else console.log('✅ guide_self_assessments table ready');});
-  });
-});
 
+
+    // Camera alerts table (for IoT alert snapshots)
+      const createCameraAlertsTable = `
+        CREATE TABLE IF NOT EXISTS camera_alerts (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          image_path VARCHAR(255) NOT NULL,
+          detection_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB;
+      `;
+
+      db.query(createCameraAlertsTable, err => {
+        if (err) {
+          console.error('❌ Error creating camera_alerts table:', err);
+        } else {
+          console.log('✅ camera_alerts table ready');
+        }
+      });
+    });
+  });
 
 // POST /api/save-prediction – Log AI prediction result
 app.post('/api/save-prediction', (req, res) => {
@@ -311,8 +328,6 @@ app.post('/api/save-prediction', (req, res) => {
   if (!plant_name?.trim() || typeof confidence !== 'number') {
     return res.status(400).json({ message: 'Missing or invalid data for prediction logging' });
   }
-
-
 
   const createTableSql = `
     CREATE TABLE IF NOT EXISTS ai_predictions (
@@ -1558,18 +1573,21 @@ app.post('/api/send-alert', (req, res) => {
 
 app.get('/api/alerts', (req, res) => {
   const sql = `SELECT * FROM camera_alerts ORDER BY detection_time DESC LIMIT 10`;
+
   db.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ message: 'Error loading alerts' });
+    if (err) {
+      console.error('❌ Error loading alerts:', err);
+      return res.status(500).json({ message: 'Error loading alerts' });
+    }
 
     const formatted = results.map(row => ({
       timestamp: new Date(row.detection_time).toLocaleString(),
       screenshot: `/${row.image_path}`
     }));
 
-    res.json(formatted);
+    res.json(formatted); // ✅ must return an array
   });
 });
-
 
 
   // ✅ This stays at the bottom of your server.js
