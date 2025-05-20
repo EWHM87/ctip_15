@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { API_URL } from '@env';
+import { BACKEND_URL, AI_URL } from '@env';
+
 import {
   View,
   Text,
@@ -22,7 +23,7 @@ const handleLogin = async () => {
     return;
   }
 
-  const url = `${API_URL}/api/login`;
+  const url = `${BACKEND_URL}/api/login`; 
   const payload = {
     username: email,
     email,
@@ -64,7 +65,8 @@ const handleLogin = async () => {
 
         <TextInput
           style={styles.input}
-          placeholder="Enter UserID"
+          placeholder="Enter Name"
+          placeholderTextColor="#666"
           value={email}
           onChangeText={setEmail}
         />
@@ -72,6 +74,7 @@ const handleLogin = async () => {
         <TextInput
           style={styles.input}
           placeholder="Enter Password"
+          placeholderTextColor="#666"
           value={password}
           onChangeText={setPassword}
           secureTextEntry

@@ -32,7 +32,7 @@
     "start": "npx concurrently -n FRONTEND,BACKEND,AI -c green,blue,magenta \"npm run start-frontend\" \"npm run start-backend\" \"npm run start-ai\"",
     "start-frontend": "webpack serve --open",
     "start-backend": "cd .. && node server.js",
-    "start-ai": "cd ../Backend && py ai_server.py",
+    "start-ai":      "cd ../Backend && python ai_server.py",
     "build": "webpack"
   },
   "devDependencies": {

@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { CommonActions } from '@react-navigation/native'; 
-import { API_URL } from '@env'; 
+import { BACKEND_URL, AI_URL } from '@env';
+
 import { Alert } from 'react-native'; 
 
 const VisitorDashboard = ({ navigation }) => {
@@ -25,7 +26,7 @@ const VisitorDashboard = ({ navigation }) => {
     }
 
     try {
-      const res = await fetch(`${API_URL}/api/protected-route`, {
+      const res = await fetch(`${BACKEND_URL}/api/protected-route`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

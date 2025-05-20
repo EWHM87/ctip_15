@@ -1,63 +1,59 @@
 import React, { useState } from 'react';
-import Constants from 'expo-constants';
+import { BACKEND_URL } from '@env';
 
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  SafeAreaView, 
-  Alert 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  Alert
 } from 'react-native';
-
 
 const VisitorRegister = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const API_URL = Constants.expoConfig?.extra?.API_URL ?? Constants.manifest?.extra?.API_URL;
-  console.log('✅ API_URL:', API_URL);
 
-const handleRegister = async () => {
-  if (!name || !email || !password) {
-    Alert.alert('Error', 'Please fill in all fields');
-    return;
-  }
-
-  const url = `${API_URL}/api/register`;
-  const payload = {
-    username: name,
-    email,
-    password,
-    role: 'visitor',
-  };
-
-  console.log('📤 Submitting to:', url);
-  console.log('📦 Payload:', payload);
-
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-    console.log('✅ Server response:', data);
-
-    if (response.ok) {
-      Alert.alert('Success', 'Registration successful!');
-      navigation.navigate('VisitorLogin');
-    } else {
-      Alert.alert('Error', data.message || 'Registration failed');
+  const handleRegister = async () => {
+    if (!name || !email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
     }
-  } catch (error) {
-    console.error('❌ Network error:', error);
-    Alert.alert('Error', 'Server connection failed');
-  }
-};
 
+    const url = `${BACKEND_URL}/api/register`;
+    const payload = {
+      username: name,
+      email,
+      password,
+      role: 'visitor',
+    };
+
+    console.log('📤 Submitting to:', url);
+    console.log('📦 Payload:', payload);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      console.log('✅ Server response:', data);
+
+      if (response.ok) {
+        Alert.alert('Success', 'Registration successful!');
+        navigation.navigate('VisitorLogin');
+      } else {
+        Alert.alert('Error', data.message || 'Registration failed');
+      }
+    } catch (error) {
+      console.error('❌ Network error:', error);
+      Alert.alert('Error', 'Server connection failed');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -66,7 +62,8 @@ const handleRegister = async () => {
 
         <TextInput
           style={styles.input}
-          placeholder="Enter UserID"
+          placeholder="Enter Name"
+          placeholderTextColor="#666"
           value={name}
           onChangeText={setName}
         />
@@ -74,14 +71,15 @@ const handleRegister = async () => {
         <TextInput
           style={styles.input}
           placeholder="Enter Email"
+          placeholderTextColor="#666"
           value={email}
           onChangeText={setEmail}
-          keyboardType="email-address"
         />
 
         <TextInput
           style={styles.input}
           placeholder="Enter Password"
+          placeholderTextColor="#666"
           value={password}
           onChangeText={setPassword}
           secureTextEntry

@@ -38,11 +38,15 @@
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@react-native-community/cli": "^18.0.0",
+    "concurrently": "^9.1.2",
     "dotenv-cli": "^8.0.0"
   },
+  
   "private": true,
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": ""
+
+  
 }

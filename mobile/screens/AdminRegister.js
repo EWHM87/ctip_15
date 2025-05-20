@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { API_URL } from '@env';
+import { BACKEND_URL, AI_URL } from '@env';
+
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 
 const AdminRegister = ({ navigation }) => {
@@ -14,7 +15,7 @@ const handleRegister = async () => {
   }
 
   try {
-    const response = await fetch(`${API_URL}/api/register`, {
+    const res = await fetch(`${BACKEND_URL}/api/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -25,8 +26,9 @@ const handleRegister = async () => {
       }),
     });
 
-    const data = await response.json();
-    if (response.ok) {
+    const data = await res.json();  // ✅ fixed
+
+    if (res.ok) {
       alert('Admin registration successful!');
       navigation.navigate('AdminLogin');
     } else {
@@ -46,6 +48,7 @@ const handleRegister = async () => {
         <TextInput
           style={styles.input}
           placeholder="Enter AdminID"
+          placeholderTextColor="#666"
           value={name}
           onChangeText={setName}
         />
@@ -53,6 +56,7 @@ const handleRegister = async () => {
         <TextInput
           style={styles.input}
           placeholder="Enter Email"
+          placeholderTextColor="#666"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -61,6 +65,7 @@ const handleRegister = async () => {
         <TextInput
           style={styles.input}
           placeholder="Enter Password"
+          placeholderTextColor="#666"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
