@@ -34,6 +34,7 @@ function Dashboard() {
               <Link to="/my-certifications" className="btn btn-outline-success">📄 My Certifications</Link>
               <Link to="/notifications" className="btn btn-outline-success">🔔 Notifications</Link>
               <Link to="/my-training-history" className="btn btn-outline-success">📋 Training History</Link>
+              <Link to="/certification-reminders" className="btn btn-outline-dark">⏰ Certification Reminders</Link>
               <Link to="/biodiversity-camera" className="btn btn-outline-success">📷 Upload Species</Link>
               <Link to="/guide-assessment" className="btn btn-outline-secondary">✅ Self-Assessment</Link>
             </div>
@@ -63,7 +64,6 @@ function Dashboard() {
               <Link to="/manage-guides" className="btn btn-outline-dark">👥 Manage Guides</Link>
               <Link to="/register-guide" className="btn btn-outline-dark">📝 Register Guide</Link>
               <Link to="/schedule-training" className="btn btn-outline-dark">🗓️ Schedule Training</Link>
-              <Link to="/certification-reminders" className="btn btn-outline-dark">⏰ Certification Reminders</Link>
               <Link to="/qualifications" className="btn btn-outline-dark">🎓 Manage Certifications</Link>
             </div>
           </div>
@@ -81,7 +81,6 @@ function Dashboard() {
           <div className="card shadow-sm rounded-3 mt-4">
             <div className="card-header bg-info text-white fw-semibold">🤖 AI & Data Science Features</div>
             <div className="card-body d-flex flex-wrap gap-2">
-              <Link to="/feedback-review" className="btn btn-outline-info">📝 Visitor Feedback Review</Link>
               <Link to="/ai-training-recommendations" className="btn btn-outline-info">🎯 Personalized Training Suggestions</Link>
               <Link to="/training-quiz-builder" className="btn btn-outline-info">🧠 Build Training Quizzes</Link>
             </div>
