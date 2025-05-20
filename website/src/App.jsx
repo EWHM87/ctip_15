@@ -178,7 +178,7 @@ function App() {
       } />
 
       <Route path="/certification-reminders" element={
-        <ProtectedRoute allowedRoles={['admin']}>
+        <ProtectedRoute allowedRoles={['admin', 'guide']}>
           <MainLayout user={user} onLogout={handleLogout}>
             <CertificationReminders />
           </MainLayout>
@@ -243,7 +243,7 @@ function App() {
       } />
 
       <Route path="/biodiversity-camera" element={
-        <ProtectedRoute allowedRoles={['admin']}>
+        <ProtectedRoute allowedRoles={['admin', 'guide']}>
           <MainLayout user={user} onLogout={handleLogout}>
             <BiodiversityCamera />
           </MainLayout>

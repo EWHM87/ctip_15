@@ -39,8 +39,9 @@ function Sidebar({ role, onLogout }) {
                     <li><NavLink to="/my-certifications" className={navClass}>📄 My Certifications</NavLink></li>
                     <li><NavLink to="/notifications" className={navClass}>🔔 Notifications</NavLink></li>
                     <li><NavLink to="/my-training-history" className={navClass}>📋 Training History</NavLink></li>
-                    <li><NavLink to="/biodiversity-upload" className={navClass}>📷 Upload Biodiversity</NavLink></li>
+                    <li><NavLink to="/biodiversity-camera" className={navClass}>📷 Upload Biodiversity</NavLink></li>
                     <li><NavLink to="/guide-assessment" className={navClass}>✅ Self-Assessment</NavLink></li>
+                    <li><NavLink to="/certification-reminders" className={navClass}>⏰ Cert Reminders</NavLink></li>
                   </>
                 )}
               </div>
