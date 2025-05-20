@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BACKEND_URL } from '@env';
@@ -17,9 +18,8 @@ const IoTMonitor = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    console.log('📡 Fetching IoT logs from:', API_URL);
-
+  const fetchLogs = () => {
+    setLoading(true);
     fetch(API_URL)
       .then(async (res) => {
         const contentType = res.headers.get('content-type') || '';
@@ -38,7 +38,8 @@ const IoTMonitor = () => {
         return res.json();
       })
       .then((data) => {
-        setLogs(data);
+        const sorted = [...data].sort((a, b) => (b.id || 0) - (a.id || 0));
+        setLogs(sorted);
         setLoading(false);
       })
       .catch((err) => {
@@ -46,23 +47,26 @@ const IoTMonitor = () => {
         setError(err.message);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchLogs();
   }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>🌿 IoT Species Monitor</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>🌿 IoT Species Monitor</Text>
+          <TouchableOpacity style={styles.refreshBtn} onPress={fetchLogs}>
+            <Ionicons name="refresh" size={20} color="#065f46" />
+            <Text style={styles.refreshText}>Refresh</Text>
+          </TouchableOpacity>
+        </View>
+
         <Text style={styles.subtitle}>
           View species recently detected by motion/wildlife sensors in protected parks.
         </Text>
-
-        <View style={styles.tableHeader}>
-          <Text style={styles.headerCell}>Species</Text>
-          <Text style={styles.headerCell}>Time</Text>
-          <Text style={styles.headerCell}>Temp (°C)</Text>
-          <Text style={styles.headerCell}>Humidity</Text>
-          <Text style={styles.headerCell}>Motion</Text>
-        </View>
 
         {loading ? (
           <ActivityIndicator size="large" color="#065f46" style={{ marginTop: 20 }} />
@@ -75,30 +79,43 @@ const IoTMonitor = () => {
             <View
               key={index}
               style={[
-                styles.tableRow,
-                entry.alert ? styles.alertRow : null
+                styles.card,
+                entry.motion || entry.MotionDetected ? styles.alertCard : null
               ]}
             >
-              <Text style={styles.cell}>{entry.species || entry.SpeciesType || 'Unknown'}</Text>
-              <Text style={styles.cell}>
-              {new Date(entry.time || entry.ReadingTime).toLocaleString('en-MY', {
-                timeZone: 'Asia/Kuala_Lumpur',
-                year: 'numeric',
-                month: 'numeric',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true
-              })}
-            </Text>
-              <Text style={styles.cell}>
-                {parseFloat(entry.temperature || entry.Temperature).toFixed(1)}°
+              <Text style={styles.label}>
+                <Text style={styles.key}>#ID:</Text> {entry.id || '—'}
               </Text>
-              <Text style={styles.cell}>
-                {parseFloat(entry.humidity || entry.Humidity).toFixed(1)}%
+              <Text style={styles.label}>
+                <Text style={styles.key}>Species:</Text> {entry.species || entry.SpeciesType || 'Unknown'}
               </Text>
-              <View style={styles.statusCell}>
+              <Text style={styles.label}>
+                <Text style={styles.key}>Time:</Text>{' '}
+                {new Date(entry.time || entry.ReadingTime).toLocaleString('en-MY', {
+                  timeZone: 'Asia/Kuala_Lumpur',
+                  year: 'numeric',
+                  month: 'numeric',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  hour12: true
+                })}
+              </Text>
+              <Text style={styles.label}>
+                <Text style={styles.key}>Temperature:</Text> {parseFloat(entry.temperature || entry.Temperature).toFixed(1)}°C
+              </Text>
+              <Text style={styles.label}>
+                <Text style={styles.key}>Humidity:</Text> {parseFloat(entry.humidity || entry.Humidity).toFixed(1)}%
+              </Text>
+              <Text style={styles.label}>
+                <Text style={styles.key}>Soil Moisture:</Text> {entry.soil || entry.SoilMoisture || '—'}
+              </Text>
+              <Text style={styles.label}>
+                <Text style={styles.key}>SolarStatus:</Text> {entry.sun || entry.SolarStatus || '—'}
+              </Text>
+                
+              <View style={styles.motionRow}>
                 <Ionicons
                   name={entry.motion || entry.MotionDetected ? 'alert-circle' : 'checkmark-circle'}
                   size={16}
@@ -107,7 +124,7 @@ const IoTMonitor = () => {
                 <Text
                   style={[
                     styles.statusText,
-                    entry.motion || entry.MotionDetected ? styles.statusAlert : null
+                    entry.motion || entry.MotionDetected ? styles.statusAlert : styles.statusNormal
                   ]}
                 >
                   {entry.motion || entry.MotionDetected ? 'Alert' : 'Normal'}
@@ -124,72 +141,90 @@ const IoTMonitor = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f0fdf4',
   },
   container: {
     padding: 20,
+    paddingBottom: 50,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  refreshBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#d1fae5',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  refreshText: {
+    color: '#065f46',
+    marginLeft: 6,
+    fontWeight: 'bold',
   },
   title: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#065f46',
-    marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
     color: '#4b5563',
-    marginBottom: 20,
+    marginTop: 4,
+    marginBottom: 16,
   },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#d1fae5',
-    padding: 10,
-    borderRadius: 6,
+  card: {
+    backgroundColor: '#ffffff',
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  headerCell: {
-    flex: 1,
+  alertCard: {
+    backgroundColor: '#fef2f2',
+  },
+  label: {
+    fontSize: 14,
+    color: '#374151',
+    marginBottom: 4,
+  },
+  key: {
     fontWeight: 'bold',
-    color: '#111827',
-    fontSize: 12,
+    color: '#065f46',
   },
-  tableRow: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  alertRow: {
-    backgroundColor: '#fee2e2',
-  },
-  cell: {
-    flex: 1,
-    color: '#1f2937',
-    fontSize: 12,
-  },
-  statusCell: {
-    flex: 1,
+  motionRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 6,
   },
   statusText: {
-    marginLeft: 5,
-    color: '#22c55e',
-    fontSize: 12,
+    fontSize: 14,
+    marginLeft: 6,
+    fontWeight: 'bold',
+  },
+  statusNormal: {
+    color: '#10b981',
   },
   statusAlert: {
     color: '#dc2626',
   },
   noData: {
     textAlign: 'center',
-    color: '#9ca3af',
-    marginTop: 20,
+    marginTop: 30,
     fontSize: 14,
+    color: '#9ca3af',
   },
   errorText: {
+    textAlign: 'center',
     color: '#dc2626',
     fontSize: 14,
-    textAlign: 'center',
     marginTop: 20,
   },
 });
