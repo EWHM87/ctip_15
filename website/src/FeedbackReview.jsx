@@ -2,14 +2,20 @@ import React, { useEffect, useState } from 'react';
 import {
   FaUser, FaRobot, FaClipboardList, FaSmile, FaClock, FaBolt, FaTrash
 } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 const FeedbackReview = () => {
   const [summaries, setSummaries] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  const navigate = useNavigate();
 
-  // Fetch summaries from backend
+  const goToTrainingRecommendations = () => {
+    console.log("🔁 Navigating to /ai-training-recommendations...");
+    navigate('/ai-training-recommendations'); // ✅ Corrected path
+  };
+
   const fetchSummaries = () => {
     fetch('http://localhost:5000/api/feedback-summaries')
       .then(res => res.json())
@@ -20,7 +26,6 @@ const FeedbackReview = () => {
       .catch(() => setError('⚠️ Failed to fetch summaries'));
   };
 
-  // Trigger Python summarisation
   const generateSummaries = async () => {
     setLoading(true);
     setStatusMsg('Generating AI summaries...');
@@ -28,7 +33,7 @@ const FeedbackReview = () => {
       const res = await fetch('http://localhost:5000/api/generate-feedback-summary', { method: 'POST' });
       const data = await res.json();
       setStatusMsg(data.message || '✅ Summary generation complete');
-      fetchSummaries(); // Refresh
+      fetchSummaries();
     } catch {
       setStatusMsg('❌ Failed to generate summaries');
     } finally {
@@ -36,7 +41,6 @@ const FeedbackReview = () => {
     }
   };
 
-  // Delete all summaries
   const clearSummaries = async () => {
     setLoading(true);
     setStatusMsg('Clearing all summaries...');
@@ -56,7 +60,6 @@ const FeedbackReview = () => {
     fetchSummaries();
   }, []);
 
-  // Group summaries by guide
   const grouped = summaries.reduce((acc, summary) => {
     const guideKey = summary.guide_name || summary.guide_id || 'Unknown Guide';
     if (!acc[guideKey]) acc[guideKey] = [];
@@ -75,11 +78,13 @@ const FeedbackReview = () => {
         <button onClick={clearSummaries} disabled={loading} style={styles.clearBtn}>
           <FaTrash /> Clear All Summaries
         </button>
+        <button onClick={goToTrainingRecommendations} style={styles.viewBtn}>
+          ✅ View Training Recommendations
+        </button>
         {statusMsg && <p style={styles.status}>{statusMsg}</p>}
         {error && <p style={styles.error}>{error}</p>}
       </div>
 
-      {/* Display grouped summaries */}
       {Object.entries(grouped).map(([guide, items]) => (
         <div key={guide} style={styles.card}>
           <h3><FaUser /> Guide: {guide}</h3>
@@ -116,8 +121,18 @@ const styles = {
     fontSize: '1rem'
   },
   clearBtn: {
+    marginRight: '1rem',
     padding: '0.5rem 1rem',
     backgroundColor: '#dc3545',
+    border: 'none',
+    color: '#fff',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '1rem'
+  },
+  viewBtn: {
+    padding: '0.5rem 1rem',
+    backgroundColor: '#20c997',
     border: 'none',
     color: '#fff',
     borderRadius: '6px',

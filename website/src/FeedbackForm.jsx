@@ -18,11 +18,37 @@ function FeedbackForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Convert string ratings to integers
+    const ratings = [
+      parseInt(formData.q1),
+      parseInt(formData.q2),
+      parseInt(formData.q3),
+      parseInt(formData.q4),
+      parseInt(formData.q5),
+      parseInt(formData.q6),
+      parseInt(formData.q7)
+    ];
+    const averageRating = (ratings.reduce((sum, val) => sum + val, 0) / ratings.length).toFixed(2);
+
+    const payload = {
+      visitor_id: formData.visitorName,
+      guide_id: formData.guideName,
+      feedback_text: formData.q8,
+      wildlife_rating: parseInt(formData.q1),
+      communication_rating: parseInt(formData.q2),
+      friendliness_rating: parseInt(formData.q3),
+      storytelling_rating: parseInt(formData.q4),
+      safety_rating: parseInt(formData.q5),
+      respect_rating: parseInt(formData.q6),
+      overall_rating: parseInt(formData.q7),
+      rating: averageRating
+    };
+
     try {
       const response = await fetch('http://localhost:5000/api/submit-feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -77,7 +103,7 @@ function FeedbackForm() {
           { name: 'q4', label: '4. Engagement and storytelling skills' },
           { name: 'q5', label: '5. Adherence to safety procedures' },
           { name: 'q6', label: '6. Respect shown to wildlife and environment' },
-          { name: 'q7', label: '7. Overall visitor satisfaction' },
+          { name: 'q7', label: '7. Overall visitor satisfaction' }
         ].map((q) => (
           <label key={q.name}>
             {q.label}

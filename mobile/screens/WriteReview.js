@@ -11,26 +11,75 @@ import {
   Platform,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { CommonActions } from '@react-navigation/native';
 
-const WriteReview = () => {
+const WriteReview = ({ navigation }) => {
   const [formData, setFormData] = useState({
-    visitorName: '',
-    guideName: '',
-    q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: ''
+    visitor_id: '',
+    guide_id: '',
+    feedback_text: '',
+    wildlife_rating: '',
+    communication_rating: '',
+    friendliness_rating: '',
+    storytelling_rating: '',
+    safety_rating: '',
+    respect_rating: '',
+    overall_rating: ''
   });
 
   const handleChange = (name, value) => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = () => {
-    Alert.alert('Feedback Submitted', 'Thank you for your feedback!');
-    console.log(formData);
-    setFormData({
-      visitorName: '',
-      guideName: '',
-      q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: ''
-    });
+  const handleSubmit = async () => {
+    const ratings = [
+      formData.wildlife_rating,
+      formData.communication_rating,
+      formData.friendliness_rating,
+      formData.storytelling_rating,
+      formData.safety_rating,
+      formData.respect_rating,
+      formData.overall_rating
+    ].map(Number);
+
+    const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+
+    const payload = {
+      ...formData,
+      rating: avg.toFixed(2)
+    };
+
+    try {
+      const res = await fetch("http://192.168.0.10:5000/api/submit-feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        Alert.alert('✅ Feedback Submitted', 'Thank you for your feedback!');
+        setFormData({
+          visitor_id: '',
+          guide_id: '',
+          feedback_text: '',
+          wildlife_rating: '',
+          communication_rating: '',
+          friendliness_rating: '',
+          storytelling_rating: '',
+          safety_rating: '',
+          respect_rating: '',
+          overall_rating: ''
+        });
+        navigation.dispatch(
+          CommonActions.reset({ index: 0, routes: [{ name: 'VisitorDashboard' }] })
+        );
+      } else {
+        const data = await res.json();
+        Alert.alert("❌ Submission Failed", data.message || "Error occurred.");
+      }
+    } catch (error) {
+      Alert.alert("❌ Network Error", error.message);
+    }
   };
 
   const renderPicker = (question, field) => (
@@ -49,12 +98,21 @@ const WriteReview = () => {
     </View>
   );
 
+  const questions = [
+    { name: 'wildlife_rating', label: '1. Knowledge of wildlife and biodiversity' },
+    { name: 'communication_rating', label: '2. Communication clarity and confidence' },
+    { name: 'friendliness_rating', label: '3. Friendliness and professionalism' },
+    { name: 'storytelling_rating', label: '4. Engagement and storytelling skills' },
+    { name: 'safety_rating', label: '5. Adherence to safety procedures' },
+    { name: 'respect_rating', label: '6. Respect shown to wildlife and environment' },
+    { name: 'overall_rating', label: '7. Overall visitor satisfaction' },
+  ];
+
   return (
     <KeyboardAvoidingView
       style={styles.safeArea}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={80}
-    >
+      keyboardVerticalOffset={80}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>📝 Semenggoh Wildlife Centre Feedback Form</Text>
 
@@ -62,35 +120,32 @@ const WriteReview = () => {
         <TextInput
           style={styles.input}
           placeholder="Enter your name"
-          value={formData.visitorName}
-          onChangeText={(text) => handleChange('visitorName', text)}
+          value={formData.visitor_id}
+          onChangeText={(text) => handleChange('visitor_id', text)}
         />
 
         <Text style={styles.label}>Guide Name:</Text>
         <TextInput
           style={styles.input}
           placeholder="Enter guide's name"
-          value={formData.guideName}
-          onChangeText={(text) => handleChange('guideName', text)}
+          value={formData.guide_id}
+          onChangeText={(text) => handleChange('guide_id', text)}
         />
 
         <Text style={styles.subtitle}>Please rate the following (1 = Poor, 5 = Excellent):</Text>
-
-        {renderPicker('1. How informative was the guide about orangutan behavior?', 'q1')}
-        {renderPicker('2. Was the guide respectful toward the wildlife and environment?', 'q2')}
-        {renderPicker('3. Did the guide communicate clearly and answer questions effectively?', 'q3')}
-        {renderPicker('4. How well did the guide manage the group during the visit?', 'q4')}
-        {renderPicker('5. Was the safety information provided adequate and helpful?', 'q5')}
-        {renderPicker('6. How satisfied are you with the overall tour experience?', 'q6')}
-        {renderPicker('7. How would you rate the cleanliness and facilities of the park?', 'q7')}
+        {questions.map((q) => (
+          <React.Fragment key={q.name}>
+            {renderPicker(q.label, q.name)}
+          </React.Fragment>
+        ))}
 
         <Text style={styles.label}>8. Any suggestions or comments?</Text>
         <TextInput
-          style={[styles.input, { height: 100 }]} 
+          style={[styles.input, { height: 100 }]}
           multiline
           placeholder="Write your comments here..."
-          value={formData.q8}
-          onChangeText={(text) => handleChange('q8', text)}
+          value={formData.feedback_text}
+          onChangeText={(text) => handleChange('feedback_text', text)}
         />
 
         <Button title="Submit Feedback" onPress={handleSubmit} color="#10b981" />

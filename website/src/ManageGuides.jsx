@@ -1,187 +1,146 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import {
+  Table, Button, Modal, Form
+} from 'react-bootstrap';
 
-function ManageGuides() {
+export default function ManageGuides() {
   const [guides, setGuides] = useState([]);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [editIndex, setEditIndex] = useState(null);
-  const [editData, setEditData] = useState({ name: '', email: '' });
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState({
+    name: '',
+    email: ''
+  });
 
-  const BASE_URL = 'http://localhost:5000'; // Change this to your actual IP on mobile
-
+  // fetch list on mount
   useEffect(() => {
     fetchGuides();
   }, []);
 
-  const fetchGuides = () => {
-    fetch(`${BASE_URL}/api/manage-guides`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setGuides(data);
-        } else {
-          setError('Unexpected data format received');
-        }
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error('❌ Error fetching guides:', err);
-        setError('Failed to fetch guide data');
-        setLoading(false);
-      });
+  const fetchGuides = async () => {
+    try {
+      const { data } = await axios.get('/api/manage-guides');
+      setGuides(data);
+    } catch (err) {
+      console.error('Fetch failed:', err);
+    }
   };
 
-  const handleDelete = (id) => {
-    if (!window.confirm('Are you sure you want to delete this guide?')) return;
-
-    fetch(`${BASE_URL}/api/manage-guides/${id}`, {
-      method: 'DELETE',
-    })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message || 'Guide deleted');
-        fetchGuides(); // Refresh list
-      })
-      .catch(err => {
-        console.error('❌ Delete error:', err);
-        alert('Failed to delete guide');
-      });
+  const openAdd = () => {
+    setEditingId(null);
+    setForm({ name: '', email: '' });
+    setShowModal(true);
   };
 
-  const handleEditClick = (index) => {
-    setEditIndex(index);
-    setEditData({
-      name: guides[index].name,
-      email: guides[index].email,
-    });
+  const openEdit = guide => {
+    setEditingId(guide.guide_id);
+    setForm({ name: guide.name, email: guide.email });
+    setShowModal(true);
   };
 
-  const handleEditChange = (e) => {
-    const { name, value } = e.target;
-    setEditData(prev => ({ ...prev, [name]: value }));
+  const handleDelete = async id => {
+    if (!window.confirm('Delete this guide?')) return;
+    try {
+      await axios.delete(`/api/manage-guides/${id}`);
+      setGuides(guides.filter(g => g.guide_id !== id));
+    } catch (err) {
+      console.error('Delete failed:', err);
+    }
   };
 
-  const handleEditSave = (id) => {
-    fetch(`${BASE_URL}/api/manage-guides/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editData),
-    })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message || 'Guide updated');
-        setEditIndex(null);
-        fetchGuides();
-      })
-      .catch(err => {
-        console.error('❌ Update error:', err);
-        alert('Failed to update guide');
-      });
+  const handleSave = async () => {
+    try {
+      if (editingId) {
+        await axios.put(`/api/manage-guides/${editingId}`, form);
+      } else {
+        await axios.post('/api/manage-guides', form);
+      }
+      setShowModal(false);
+      fetchGuides();
+    } catch (err) {
+      console.error('Save failed:', err);
+    }
   };
 
   return (
     <div className="container mt-4">
-      <h2>👥 Manage Park Guides</h2>
-      <p className="text-muted">Admin can view, edit, or delete guide accounts here.</p>
+      <h2>Manage Park Guides</h2>
+      <p>Admin can view, edit or delete guide accounts here.</p>
 
-      {loading ? (
-        <div className="alert alert-info">Loading guide data...</div>
-      ) : error ? (
-        <div className="alert alert-danger">{error}</div>
-      ) : (
-        <table className="table table-bordered mt-3">
-          <thead className="table-success">
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Certification</th>
-              <th>Expiry Date</th>
-              <th>Status</th>
-              <th>Actions</th>
+      <Button variant="primary" onClick={openAdd} className="mb-3">
+        + Add New Guide
+      </Button>
+
+      <Table bordered hover>
+        <thead className="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Certification</th>
+            <th>Expiry Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {guides.map(g => (
+            <tr key={g.guide_id}>
+              <td>{g.name}</td>
+              <td>{g.email}</td>
+              <td>{g.role || 'guide'}</td>
+              <td>{g.certification_name || '—'}</td>
+              <td>{g.expiry_date ? g.expiry_date.slice(0, 10) : '—'}</td>
+              <td>{g.status || '—'}</td>
+              <td>
+                <Button size="sm" variant="warning" onClick={() => openEdit(g)}>
+                  Edit
+                </Button>{' '}
+                <Button size="sm" variant="danger" onClick={() => handleDelete(g.guide_id)}>
+                  Delete
+                </Button>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {guides.length > 0 ? (
-              guides.map((guide, index) => (
-                <tr key={index}>
-                  <td>
-                    {editIndex === index ? (
-                      <input
-                        type="text"
-                        name="name"
-                        value={editData.name}
-                        onChange={handleEditChange}
-                        className="form-control form-control-sm"
-                      />
-                    ) : (
-                      guide.name
-                    )}
-                  </td>
-                  <td>
-                    {editIndex === index ? (
-                      <input
-                        type="email"
-                        name="email"
-                        value={editData.email}
-                        onChange={handleEditChange}
-                        className="form-control form-control-sm"
-                      />
-                    ) : (
-                      guide.email
-                    )}
-                  </td>
-                  <td>{guide.role || '—'}</td>
-                  <td>{guide.certification_name || '—'}</td>
-                  <td>{guide.expiry_date || '—'}</td>
-                  <td>{guide.status || '—'}</td>
-                  <td>
-                    {editIndex === index ? (
-                      <>
-                        <button
-                          className="btn btn-sm btn-success me-1"
-                          onClick={() => handleEditSave(guide.guide_id)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="btn btn-sm btn-secondary"
-                          onClick={() => setEditIndex(null)}
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          className="btn btn-sm btn-warning me-1"
-                          onClick={() => handleEditClick(index)}
-                        >
-                          ✏️ Edit
-                        </button>
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleDelete(guide.guide_id)}
-                        >
-                          🗑️ Delete
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6" className="text-center">
-                  No guides found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      )}
+          ))}
+        </tbody>
+      </Table>
+
+      {/* Add/Edit Modal */}
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>{editingId ? 'Edit Guide' : 'Add Guide'}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-2">
+              <Form.Label>Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-2">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                value={form.email}
+                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSave}>
+            {editingId ? 'Save Changes' : 'Create Guide'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }
-
-export default ManageGuides;

@@ -25,6 +25,7 @@
 
 const { encrypt, decrypt } = require('./utils/crypto');
 
+// 3️⃣ Passport strategy setup
 passport.use(new OAuth2Strategy({
   authorizationURL: process.env.OAUTH2_AUTH_URL,
   tokenURL:         process.env.OAUTH2_TOKEN_URL,
@@ -134,19 +135,28 @@ db.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`, (err) => {
 
     // Guide feedback table
       const createGuideFeedbackTable = `
-        CREATE TABLE IF NOT EXISTS guide_feedback (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          visitor_id VARCHAR(100),
-          guide_id VARCHAR(100),
-          feedback_text TEXT,
-          rating FLOAT,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB;
-      `;
-      db.query(createGuideFeedbackTable, err => {
-        if (err) console.error('❌ Error creating guide_feedback table:', err);
-        else console.log('✅ guide_feedback table ready');
-      });
+  CREATE TABLE IF NOT EXISTS guide_feedback (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  visitor_id VARCHAR(100) NOT NULL,           -- Matches visitorName
+  guide_id VARCHAR(100) NOT NULL,             -- Matches guideName
+  feedback_text TEXT,                         -- Open-ended feedback (q8)
+  rating FLOAT,                               -- Average of q1 to q7
+  wildlife_rating TINYINT,                    -- q1
+  communication_rating TINYINT,               -- q2
+  friendliness_rating TINYINT,                -- q3
+  storytelling_rating TINYINT,                -- q4
+  safety_rating TINYINT,                      -- q5
+  respect_rating TINYINT,                     -- q6
+  overall_rating TINYINT,                     -- q7 (copied again separately if needed)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+`;
+db.query(createGuideFeedbackTable, err => {
+  if (err) console.error('❌ Error creating guide_feedback table:', err);
+  else console.log('✅ guide_feedback table ready');
+});
+
 
     // Feedback summary table
       const createFeedbackSummaryTable = `
@@ -362,31 +372,71 @@ app.get('/api/ai-predictions', (req, res) => {
 
 // POST /api/submit-feedback
 app.post('/api/submit-feedback', (req, res) => {
-  const { visitorName, guideName, q1, q2, q3, q4, q5, q6, q7, q8 } = req.body;
+  const {
+    visitor_id,
+    guide_id,
+    feedback_text,
+    wildlife_rating,
+    communication_rating,
+    friendliness_rating,
+    storytelling_rating,
+    safety_rating,
+    respect_rating,
+    overall_rating,
+    rating
+  } = req.body;
 
-  if (!visitorName || !guideName || !q1 || !q2 || !q3 || !q4 || !q5 || !q6 || !q7) {
+  // ✅ Debug: Print received data
+  console.log('📨 Received feedback submission:', req.body);
+
+  // ✅ Validate required fields
+  const requiredFields = [
+    visitor_id, guide_id,
+    wildlife_rating, communication_rating, friendliness_rating,
+    storytelling_rating, safety_rating, respect_rating,
+    overall_rating, rating
+  ];
+
+  const missing = requiredFields.some(val => val === undefined || val === null || val === '');
+  if (missing) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
-  const avgRating = (
-    Number(q1) + Number(q2) + Number(q3) +
-    Number(q4) + Number(q5) + Number(q6) +
-    Number(q7)
-  ) / 7;
-
+  // ✅ Insert into MySQL
   const sql = `
-    INSERT INTO guide_feedback (visitor_id, guide_id, feedback_text, rating)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO guide_feedback (
+      visitor_id, guide_id, feedback_text, rating,
+      wildlife_rating, communication_rating, friendliness_rating,
+      storytelling_rating, safety_rating, respect_rating, overall_rating
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-  db.query(sql, [visitorName, guideName, q8 || '', avgRating], (err) => {
+  const values = [
+    visitor_id,
+    guide_id,
+    feedback_text || '',
+    parseFloat(rating),
+    Number(wildlife_rating),
+    Number(communication_rating),
+    Number(friendliness_rating),
+    Number(storytelling_rating),
+    Number(safety_rating),
+    Number(respect_rating),
+    Number(overall_rating)
+  ];
+
+  db.query(sql, values, (err) => {
     if (err) {
       console.error('❌ Error inserting feedback:', err);
-      return res.status(500).json({ message: 'Insert failed' });
+      return res.status(500).json({ message: 'Insert failed', error: err });
     }
+
     res.status(200).json({ message: '✅ Feedback submitted successfully!' });
   });
 });
+
+
+
 
 //================================
 // POST /api/save-feedback-summary
@@ -1090,6 +1140,30 @@ app.get('/api/my-certifications-by-username', (req, res) => {
   });
 });
 
+
+// ✅ AI Training Recommendations Route
+app.get('/api/ai-training-recommendations', (req, res) => {
+  const filePath = path.join(__dirname, 'Backend', 'ai_training_output.json');
+  console.log('Reading file from:', filePath); // ✅ Add this
+
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('❌ Error reading AI training file:', err);
+      return res.status(500).json({ message: 'Failed to load recommendations' });
+    }
+
+    try {
+      const parsed = JSON.parse(data);
+      console.log('✅ Successfully parsed recommendations'); // ✅ Add this
+      res.status(200).json(parsed);
+    } catch (parseErr) {
+      console.error('❌ Invalid JSON format:', parseErr);
+      res.status(500).json({ message: 'Invalid JSON format' });
+    }
+  });
+});
+
+
   // POST /api/notifications - Send/save a notification
   app.post('/api/notifications', (req, res) => {
     const { recipient, content } = req.body;
@@ -1175,7 +1249,39 @@ app.get('/api/guide-activity-log', (req, res) => {
   });
 });
 
+//=========================================
+// /api/generate-training-recommendations
+//=========================================
+app.post('/api/generate-training-recommendations', (req, res) => {
+  const { exec } = require('child_process');
+  const path = require('path');
+  const scriptPath = path.join(__dirname, 'Backend', 'gtr.py');
 
+  exec(`py "${scriptPath}"`, (error, stdout, stderr) => {
+    if (error) {
+      console.error('❌ Error generating recommendations:', error);
+      return res.status(500).json({ message: 'Generation failed', error: stderr });
+    }
+
+//=========================================
+// /api/clear-training-recommendations
+//=========================================
+    console.log('✅ AI recommendations generated:', stdout);
+    res.status(200).json({ message: 'Training recommendations generated', output: stdout });
+  });
+});
+
+app.delete('/api/clear-training-recommendations', (req, res) => {
+  const filePath = path.join(__dirname, 'Backend', 'ai_training_output.json');
+  fs.writeFile(filePath, '[]', 'utf8', (err) => {
+    if (err) {
+      console.error('❌ Error clearing recommendations:', err);
+      return res.status(500).json({ message: 'Clear failed', error: err });
+    }
+
+    res.status(200).json({ message: '✅ All training suggestions cleared' });
+  });
+});
 
 
 // GET /api/guide-activity-log/:guideId - View logs for one guide
@@ -1198,6 +1304,198 @@ app.get('/api/guide-activity-log/:guideId', (req, res) => {
     res.status(200).json(results);
   });
 });
+
+
+// --- 🤖 Save AI Summary & Sentiment ---
+app.post('/api/save-feedback-summary', (req, res) => {
+  const { guide_id, summary_text, sentiment } = req.body;
+
+  if (!guide_id || !summary_text) {
+    return res.status(400).json({ message: "Missing guide_id or summary" });
+  }
+
+  const query = `
+    INSERT INTO feedback_summary (guide_id, summary, sentiment) 
+    VALUES (?, ?, ?)
+    ON DUPLICATE KEY UPDATE summary = ?, sentiment = ?
+  `;
+
+  db.query(query, [guide_id, summary_text, sentiment, summary_text, sentiment], (err, result) => {
+    if (err) {
+      console.error("❌ Summary save error:", err);
+      return res.status(500).json({ message: "DB save error" });
+    }
+    res.status(201).json({ message: "Summary saved" });
+  });
+});
+
+//
+// ─── MANAGE GUIDES CRUD ──────────────────────────────────────────────────────
+//
+
+/**
+ * POST   /api/manage-guides
+ * Create a new guide
+ */
+app.post('/api/manage-guides', async (req, res) => {
+  const { name, email } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ message: 'Name and Email are required' });
+  }
+
+  const sql = `INSERT INTO manage_guides (name, email) VALUES (?, ?)`;
+  db.query(sql, [name, email], (err, result) => {
+    if (err) {
+      console.error('❌ Error adding guide:', err);
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(400).json({ message: 'Guide already exists' });
+      }
+      return res.status(500).json({ message: 'Failed to add guide', error: err });
+    }
+    res.status(201).json({ message: 'Guide registered successfully', guide_id: result.insertId });
+  });
+});
+
+/**
+ * GET    /api/manage-guides
+ * Fetch all guides (with user role & latest certification)
+ */
+app.get('/api/manage-guides', (req, res) => {
+  const sql = `
+    SELECT 
+      mg.guide_id,
+      mg.name,
+      mg.email,
+      u.role,
+      gc.certification_name,
+      gc.expiry_date,
+      gc.status
+    FROM manage_guides mg
+    LEFT JOIN users u 
+      ON mg.email = u.email AND u.role = 'guide'
+    LEFT JOIN guide_certifications gc 
+      ON mg.guide_id = gc.guide_id
+    ORDER BY mg.name
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching guide data:', err);
+      return res.status(500).json({ message: 'Failed to fetch guide data', error: err });
+    }
+    res.json(results);
+  });
+});
+
+/**
+ * PUT    /api/manage-guides/:id
+ * Update a guide’s name/email
+ */
+app.put('/api/manage-guides/:id', (req, res) => {
+  const guideId = req.params.id;
+  const { name, email } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ message: 'Name and Email are required' });
+  }
+
+  // 1) fetch the old email so we can sync the users table
+  db.query(
+    'SELECT email FROM manage_guides WHERE guide_id = ?',
+    [guideId],
+    (err, rows) => {
+      if (err || rows.length === 0) {
+        return res.status(404).json({ message: 'Guide not found' });
+      }
+      const oldEmail = rows[0].email;
+
+      // 2) update manage_guides
+      db.query(
+        `UPDATE manage_guides SET name = ?, email = ? WHERE guide_id = ?`,
+        [name, email, guideId],
+        err1 => {
+          if (err1) {
+            console.error('❌ Guide update failed:', err1);
+            return res.status(500).json({ message: 'Guide update failed', error: err1 });
+          }
+
+          // 3) sync the user record (if role='guide')
+          db.query(
+            `UPDATE users SET username = ?, email = ? 
+             WHERE email = ? AND role = 'guide'`,
+            [name, email, oldEmail],
+            err2 => {
+              if (err2) {
+                console.error('❌ User sync failed:', err2);
+                return res.status(500).json({ message: 'User sync failed', error: err2 });
+              }
+              res.json({ message: 'Guide and user info updated successfully' });
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+/**
+ * DELETE /api/manage-guides/:id
+ * Remove a guide (and related certifications & user record)
+ */
+app.delete('/api/manage-guides/:id', (req, res) => {
+  const guideId = req.params.id;
+
+  // 1) get the guide’s email
+  db.query(
+    'SELECT email FROM manage_guides WHERE guide_id = ?',
+    [guideId],
+    (err, rows) => {
+      if (err || rows.length === 0) {
+        return res.status(404).json({ message: 'Guide not found' });
+      }
+      const email = rows[0].email;
+
+      // 2) delete certifications
+      db.query(
+        'DELETE FROM guide_certifications WHERE guide_id = ?',
+        [guideId],
+        certErr => {
+          if (certErr) {
+            console.error('❌ Error deleting certifications:', certErr);
+            return res.status(500).json({ message: 'Failed to delete certifications', error: certErr });
+          }
+
+          // 3) delete from manage_guides
+          db.query(
+            'DELETE FROM manage_guides WHERE guide_id = ?',
+            [guideId],
+            guideErr => {
+              if (guideErr) {
+                console.error('❌ Error deleting guide:', guideErr);
+                return res.status(500).json({ message: 'Failed to delete guide', error: guideErr });
+              }
+
+              // 4) delete the user account if role='guide'
+              db.query(
+                `DELETE FROM users 
+                 WHERE email = ? AND role = 'guide'`,
+                [email],
+                userErr => {
+                  if (userErr) {
+                    console.error('❌ Error deleting from users:', userErr);
+                    return res.status(500).json({ message: 'Guide deleted, but user not removed', error: userErr });
+                  }
+                  res.json({ message: 'Guide and user deleted successfully' });
+                }
+              );
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+// ────────────────────────────────────────────────────────────────────────────────
 
 
 

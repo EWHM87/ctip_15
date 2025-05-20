@@ -30,7 +30,7 @@ import MyTrainingHistory from './MyTrainingHistory';
 import BiodiversityUpload from './BiodiversityUpload';
 
 import FeedbackReview from './FeedbackReview';
-import AITrainingRecommendations from './AITrainingRecommendations';
+import AITrainingRecommendations from './AITrainingRecommendations'; // ✅ Make sure this is the correct path
 import TrainingQuizBuilder from './TrainingQuizBuilder';
 import BiodiversityCamera from './BiodiversityCamera';
 import SpeciesDatabase from './SpeciesDatabase';
@@ -220,6 +220,7 @@ function App() {
         </ProtectedRoute>
       } />
 
+      {/* ✅ Corrected Path Here */}
       <Route path="/ai-training-recommendations" element={
         <ProtectedRoute allowedRoles={['admin']}>
           <MainLayout user={user} onLogout={handleLogout}>
@@ -275,8 +276,10 @@ function App() {
           </MainLayout>
         </ProtectedRoute>
       } />
+      {/* Fallback */}
 
       {/* Forbidden and Fallback */}
+
       <Route path="/forbidden" element={<Forbidden />} />
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
