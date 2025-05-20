@@ -42,19 +42,6 @@ function Dashboard() {
         </>
       )}
 
-      {/* VISITOR DASHBOARD */}
-      {role === 'visitor' && (
-        <div className="card shadow-sm rounded-3 mt-4">
-          <div className="card-header bg-primary text-white fw-semibold">🌳 Visitor Portal</div>
-          <div className="card-body d-flex flex-wrap gap-3">
-            <Link to="/parks" className="btn btn-outline-primary">🏞️ Explore Parks</Link>
-            <Link to="/wildlife" className="btn btn-outline-primary">🐾 View Wildlife</Link>
-            <Link to="/activities" className="btn btn-outline-primary">🎯 Activities</Link>
-            <Link to="/feedback" className="btn btn-outline-secondary">📝 Submit Feedback</Link>
-          </div>
-        </div>
-      )}
-
       {/* ADMIN DASHBOARD */}
       {role === 'admin' && (
         <>
