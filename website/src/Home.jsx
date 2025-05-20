@@ -17,6 +17,7 @@ function Home() {
               <ul className="navbar-nav me-auto">
                 <li className="nav-item"><Link className="nav-link" to="/about">About</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/parks">Park Info</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/guidebook">Guidebook</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/wildlife">Wildlife</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/activities">Activities</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/contact">Contact</Link></li>
@@ -87,7 +88,7 @@ function Home() {
           <div className="col-md-6 mt-4 mt-md-0">
             <div className="ratio ratio-16x9 rounded shadow-sm overflow-hidden">
               <iframe
-                src="https://www.youtube.com/watch?v=oUlxzd7EeSw"
+                src="/image/semenggoh.mp4"
                 title="Semenggoh Wildlife Centre"
                 allowFullScreen
               ></iframe>
