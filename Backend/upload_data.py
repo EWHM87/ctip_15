@@ -2,7 +2,7 @@ import serial
 import mysql.connector
 import time
 
-arduino = serial.Serial('COM4', 9600, timeout=1)  # Adjust COM port if needed
+arduino = serial.Serial('COM3', 9600, timeout=1)  # Adjust COM port if needed
 time.sleep(2)
 
 db = mysql.connector.connect(

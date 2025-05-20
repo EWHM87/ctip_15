@@ -1495,8 +1495,38 @@ app.delete('/api/manage-guides/:id', (req, res) => {
 
 // ────────────────────────────────────────────────────────────────────────────────
 
+app.get('/api/sensor-logs', (req, res) => {
+  const sql = `
+    SELECT
+      id,
+      SensorID,
+      SpeciesType AS species,
+      Temperature AS temperature,
+      Humidity AS humidity,
+      MotionDetected AS motion,
+      SoilMoisture,
+      SolarStatus,
+      ReadingTime AS time
+    FROM sensor_data
+    ORDER BY ReadingTime DESC
+    LIMIT 50
+  `;
 
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('❌ DB error:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
 
+    const data = results.map(row => ({
+      ...row,
+      motion: !!row.motion,
+      alert: !!row.motion
+    }));
+
+    res.json(data);
+  });
+});
 
   // 5️⃣ Centralized error-handler
   app.use((err, req, res, next) => {
