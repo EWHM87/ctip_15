@@ -21,6 +21,7 @@ function Home() {
                 <li className="nav-item"><Link className="nav-link" to="/wildlife">Wildlife</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/activities">Activities</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/contact">Contact</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/feedback">Feedback</Link></li>
               </ul>
               <div className="d-flex">
                 <Link to="/login" className="btn btn-light me-2">Login</Link>
