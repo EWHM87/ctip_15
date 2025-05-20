@@ -1329,6 +1329,175 @@ app.post('/api/save-feedback-summary', (req, res) => {
   });
 });
 
+//
+// ─── MANAGE GUIDES CRUD ──────────────────────────────────────────────────────
+//
+
+/**
+ * POST   /api/manage-guides
+ * Create a new guide
+ */
+app.post('/api/manage-guides', async (req, res) => {
+  const { name, email } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ message: 'Name and Email are required' });
+  }
+
+  const sql = `INSERT INTO manage_guides (name, email) VALUES (?, ?)`;
+  db.query(sql, [name, email], (err, result) => {
+    if (err) {
+      console.error('❌ Error adding guide:', err);
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(400).json({ message: 'Guide already exists' });
+      }
+      return res.status(500).json({ message: 'Failed to add guide', error: err });
+    }
+    res.status(201).json({ message: 'Guide registered successfully', guide_id: result.insertId });
+  });
+});
+
+/**
+ * GET    /api/manage-guides
+ * Fetch all guides (with user role & latest certification)
+ */
+app.get('/api/manage-guides', (req, res) => {
+  const sql = `
+    SELECT 
+      mg.guide_id,
+      mg.name,
+      mg.email,
+      u.role,
+      gc.certification_name,
+      gc.expiry_date,
+      gc.status
+    FROM manage_guides mg
+    LEFT JOIN users u 
+      ON mg.email = u.email AND u.role = 'guide'
+    LEFT JOIN guide_certifications gc 
+      ON mg.guide_id = gc.guide_id
+    ORDER BY mg.name
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching guide data:', err);
+      return res.status(500).json({ message: 'Failed to fetch guide data', error: err });
+    }
+    res.json(results);
+  });
+});
+
+/**
+ * PUT    /api/manage-guides/:id
+ * Update a guide’s name/email
+ */
+app.put('/api/manage-guides/:id', (req, res) => {
+  const guideId = req.params.id;
+  const { name, email } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ message: 'Name and Email are required' });
+  }
+
+  // 1) fetch the old email so we can sync the users table
+  db.query(
+    'SELECT email FROM manage_guides WHERE guide_id = ?',
+    [guideId],
+    (err, rows) => {
+      if (err || rows.length === 0) {
+        return res.status(404).json({ message: 'Guide not found' });
+      }
+      const oldEmail = rows[0].email;
+
+      // 2) update manage_guides
+      db.query(
+        `UPDATE manage_guides SET name = ?, email = ? WHERE guide_id = ?`,
+        [name, email, guideId],
+        err1 => {
+          if (err1) {
+            console.error('❌ Guide update failed:', err1);
+            return res.status(500).json({ message: 'Guide update failed', error: err1 });
+          }
+
+          // 3) sync the user record (if role='guide')
+          db.query(
+            `UPDATE users SET username = ?, email = ? 
+             WHERE email = ? AND role = 'guide'`,
+            [name, email, oldEmail],
+            err2 => {
+              if (err2) {
+                console.error('❌ User sync failed:', err2);
+                return res.status(500).json({ message: 'User sync failed', error: err2 });
+              }
+              res.json({ message: 'Guide and user info updated successfully' });
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+/**
+ * DELETE /api/manage-guides/:id
+ * Remove a guide (and related certifications & user record)
+ */
+app.delete('/api/manage-guides/:id', (req, res) => {
+  const guideId = req.params.id;
+
+  // 1) get the guide’s email
+  db.query(
+    'SELECT email FROM manage_guides WHERE guide_id = ?',
+    [guideId],
+    (err, rows) => {
+      if (err || rows.length === 0) {
+        return res.status(404).json({ message: 'Guide not found' });
+      }
+      const email = rows[0].email;
+
+      // 2) delete certifications
+      db.query(
+        'DELETE FROM guide_certifications WHERE guide_id = ?',
+        [guideId],
+        certErr => {
+          if (certErr) {
+            console.error('❌ Error deleting certifications:', certErr);
+            return res.status(500).json({ message: 'Failed to delete certifications', error: certErr });
+          }
+
+          // 3) delete from manage_guides
+          db.query(
+            'DELETE FROM manage_guides WHERE guide_id = ?',
+            [guideId],
+            guideErr => {
+              if (guideErr) {
+                console.error('❌ Error deleting guide:', guideErr);
+                return res.status(500).json({ message: 'Failed to delete guide', error: guideErr });
+              }
+
+              // 4) delete the user account if role='guide'
+              db.query(
+                `DELETE FROM users 
+                 WHERE email = ? AND role = 'guide'`,
+                [email],
+                userErr => {
+                  if (userErr) {
+                    console.error('❌ Error deleting from users:', userErr);
+                    return res.status(500).json({ message: 'Guide deleted, but user not removed', error: userErr });
+                  }
+                  res.json({ message: 'Guide and user deleted successfully' });
+                }
+              );
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+// ────────────────────────────────────────────────────────────────────────────────
+
+
 
 
   // 5️⃣ Centralized error-handler
