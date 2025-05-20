@@ -131,7 +131,15 @@ const AdminDashboard = ({ navigation }) => {
               <FeatureButton icon="notifications" text="Send Reminder" onPress={() => navigation.navigate('SendReminders')} />
             </View>
           </View>
-
+          <View style={styles.card}>
+            <Text style={styles.cardHeader}>📟 IoT Systems</Text>
+            <Image source={require('../images/iot.jpeg')} style={styles.sectionImage} />
+            <View style={styles.buttonGrid}>
+              <FeatureButton icon="hardware-chip" text="IoT Monitor" onPress={() => navigation.navigate('IoTMonitor')} />
+              <FeatureButton icon="alert-circle" text="Alert System" onPress={() => navigation.navigate('AlertSystem')} />
+            </View>
+          </View>   
+          
           <View style={styles.card}>
             <Text style={styles.cardHeader}>💬 Feedback</Text>
             <Image source={require('../images/feedbackphoto.jpeg')} style={styles.sectionImage} />
