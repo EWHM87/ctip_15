@@ -9,24 +9,39 @@ function AdminAlertPanel() {
   const [alerts, setAlerts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    fetch('http://localhost:5000/api/alerts')
-      .then((res) => res.json())
-      .then((data) => setAlerts(data))
-      .catch((err) => console.warn('⚠️ Failed to load past alerts', err));
-
-    socket.on('new-alert', (data) => {
-      setAlerts((prev) => [data, ...prev]);
-      alertSound.play().catch(() => {});
+useEffect(() => {
+  fetch('http://localhost:5000/api/alerts')
+    .then((res) => {
+      if (!res.ok) throw new Error('Network response was not ok');
+      return res.json();
+    })
+    .then((data) => {
+      if (Array.isArray(data)) {
+        setAlerts(data);
+      } else {
+        console.warn('❗ Unexpected response format:', data);
+        setAlerts([]);
+      }
+    })
+    .catch((err) => {
+      console.error('❌ Failed to load past alerts:', err.message);
+      setAlerts([]); // prevent stale state
     });
 
-    return () => socket.off('new-alert');
-  }, []);
+  socket.on('new-alert', (data) => {
+    setAlerts((prev) => [data, ...prev]);
+    alertSound.play().catch(() => {});
+  });
+
+  return () => socket.off('new-alert');
+}, []);
 
   // Pagination logic
   const totalPages = Math.ceil(alerts.length / ALERTS_PER_PAGE);
   const startIndex = (currentPage - 1) * ALERTS_PER_PAGE;
-  const currentAlerts = alerts.slice(startIndex, startIndex + ALERTS_PER_PAGE);
+  const currentAlerts = Array.isArray(alerts)
+    ? alerts.slice(startIndex, startIndex + ALERTS_PER_PAGE)
+    : [];
 
   const goToPage = (pageNum) => {
     if (pageNum >= 1 && pageNum <= totalPages) {
