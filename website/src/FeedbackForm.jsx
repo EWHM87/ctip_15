@@ -1,65 +1,82 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css'; // Optional: for custom styling
 
 function FeedbackForm() {
+  const [guides, setGuides] = useState([]);
   const [formData, setFormData] = useState({
     visitorName: '',
     guideName: '',
     q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: ''
   });
-
   const [submitted, setSubmitted] = useState(false);
 
-  const handleChange = (e) => {
+  // 1️⃣ On mount, load your guides
+  useEffect(() => {
+    fetch('http://localhost:5000/api/manage-guides', {
+      headers: { 'Content-Type': 'application/json' }
+    })
+      .then(r => {
+        if (!r.ok) throw new Error('Failed to fetch guides');
+        return r.json();
+      })
+      .then(data => {
+        // data should be [{ guide_id, name, … }, …]
+        setGuides(data);
+      })
+      .catch(err => {
+        console.error('❌ Could not load guides:', err);
+      });
+  }, []);
+
+  const handleChange = e => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData(fd => ({ ...fd, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
 
-    // Convert string ratings to integers
+    // build payload exactly how your backend wants it
     const ratings = [
-      parseInt(formData.q1),
-      parseInt(formData.q2),
-      parseInt(formData.q3),
-      parseInt(formData.q4),
-      parseInt(formData.q5),
-      parseInt(formData.q6),
-      parseInt(formData.q7)
+      +formData.q1,
+      +formData.q2,
+      +formData.q3,
+      +formData.q4,
+      +formData.q5,
+      +formData.q6,
+      +formData.q7,
     ];
-    const averageRating = (ratings.reduce((sum, val) => sum + val, 0) / ratings.length).toFixed(2);
+    const averageRating = (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2);
 
     const payload = {
       visitor_id: formData.visitorName,
-      guide_id: formData.guideName,
+      guide_id: parseInt(formData.guideName, 10),    // now the numeric id
       feedback_text: formData.q8,
-      wildlife_rating: parseInt(formData.q1),
-      communication_rating: parseInt(formData.q2),
-      friendliness_rating: parseInt(formData.q3),
-      storytelling_rating: parseInt(formData.q4),
-      safety_rating: parseInt(formData.q5),
-      respect_rating: parseInt(formData.q6),
-      overall_rating: parseInt(formData.q7),
+      wildlife_rating: parseInt(formData.q1, 10),
+      communication_rating: parseInt(formData.q2, 10),
+      friendliness_rating: parseInt(formData.q3, 10),
+      storytelling_rating: parseInt(formData.q4, 10),
+      safety_rating: parseInt(formData.q5, 10),
+      respect_rating: parseInt(formData.q6, 10),
+      overall_rating: parseInt(formData.q7, 10),
       rating: averageRating
     };
 
     try {
-      const response = await fetch('http://localhost:5000/api/submit-feedback', {
+      const res = await fetch('http://localhost:5000/api/submit-feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
+      const json = await res.json();
 
-      if (response.ok) {
-        setSubmitted(true);
-      } else {
-        const err = await response.json();
-        alert('❌ Submission failed: ' + err.message);
+      if (!res.ok) {
+        throw new Error(json.message || 'Submission failed');
       }
-    } catch (error) {
-      console.error('Error submitting feedback:', error);
-      alert('❌ Network or server error.');
+      setSubmitted(true);
+    } catch (err) {
+      console.error('❌ Submission error:', err);
+      alert('❌ ' + err.message);
     }
   };
 
@@ -84,13 +101,19 @@ function FeedbackForm() {
 
         <label>
           Guide Name:
-          <input
-            type="text"
+          <select
             name="guideName"
             value={formData.guideName}
             onChange={handleChange}
             required
-          />
+          >
+            <option value="">-- select a guide --</option>
+            {guides.map(g => (
+              <option key={g.guide_id} value={g.guide_id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
         </label>
 
         <hr />
@@ -104,7 +127,7 @@ function FeedbackForm() {
           { name: 'q5', label: '5. Adherence to safety procedures' },
           { name: 'q6', label: '6. Respect shown to wildlife and environment' },
           { name: 'q7', label: '7. Overall visitor satisfaction' }
-        ].map((q) => (
+        ].map(q => (
           <label key={q.name}>
             {q.label}
             <select
@@ -114,9 +137,7 @@ function FeedbackForm() {
               required
             >
               <option value="">Select</option>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
+              {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
             </select>
           </label>
         ))}
@@ -127,7 +148,7 @@ function FeedbackForm() {
             name="q8"
             value={formData.q8}
             onChange={handleChange}
-            placeholder="Your feedback helps us improve..."
+            placeholder="Your feedback helps us improve…"
           />
         </label>
 
