@@ -221,8 +221,10 @@ db.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`, (err) => {
         CREATE TABLE IF NOT EXISTS schedule_training (
           schedule_id INT AUTO_INCREMENT PRIMARY KEY,
           topic VARCHAR(255) NOT NULL,
-          date DATE NOT NULL
-        );
+          date DATE NOT NULL,
+          description TEXT,
+          manual_link VARCHAR(255)
+        )ENGINE=InnoDB;
       `;
       db.query(createTrainingScheduleTable, err => {
         if (err) {
@@ -776,37 +778,89 @@ app.get('/auth/callback',
 ); 
 // POST /api/scheduletraining - Create a new training schedule
 app.post('/api/scheduletraining', (req, res) => {
-  const { topic, date } = req.body;
-
+  const { topic, date, description, manual_link } = req.body;
   if (!topic || !date) {
     return res.status(400).json({ message: 'Topic and Date are required' });
   }
-
-  const sql = 'INSERT INTO schedule_training (topic, date) VALUES (?, ?)';
-  db.query(sql, [topic, date], (err, result) => {
+  const sql = `INSERT INTO schedule_training (topic, date, description, manual_link) VALUES (?, ?, ?, ?)`;
+  db.query(sql, [topic, date, description || null, manual_link || null], (err, result) => {
     if (err) {
       console.error('❌ Error inserting training:', err);
       return res.status(500).json({ message: 'Error inserting training', error: err });
     }
-
     res.status(201).json({
       message: 'Training scheduled successfully',
       schedule_id: result.insertId,
       topic,
       date,
+      description,
+      manual_link
     });
   });
 });
 
+// DELETE /api/scheduletraining/:id - Delete a training schedule by ID
+app.delete('/api/scheduletraining/:id', (req, res) => {
+  const schedule_id = req.params.id;
+  if (!schedule_id) {
+    return res.status(400).json({ message: 'Schedule ID required.' });
+  }
+
+  // Remove all guide signups for this training first (optional, for data integrity)
+  const deleteTrainingHistory = `DELETE FROM training_history WHERE schedule_id = ?`;
+  db.query(deleteTrainingHistory, [schedule_id], (err) => {
+    if (err) {
+      console.error('❌ Error cleaning up training_history:', err);
+      // Continue anyway (optional: stop here if you want strict)
+    }
+
+    // Now delete the schedule itself
+    const sql = 'DELETE FROM schedule_training WHERE schedule_id = ?';
+    db.query(sql, [schedule_id], (err2, result) => {
+      if (err2) {
+        console.error('❌ Error deleting training:', err2);
+        return res.status(500).json({ message: 'Failed to delete training.', error: err2 });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Training not found.' });
+      }
+      res.json({ message: 'Training deleted successfully.' });
+    });
+  });
+});
+
+
+// GET /api/scheduletraining/:id — Returns full details for one training
+app.get('/api/scheduletraining/:id', (req, res) => {
+  const schedule_id = req.params.id;
+  const sql = 'SELECT * FROM schedule_training WHERE schedule_id = ?';
+  db.query(sql, [schedule_id], (err, results) => {
+    if (err || results.length === 0) {
+      return res.status(404).json({ message: 'Training not found.' });
+    }
+    // If you want to support steps as an array, add it here (for demo)
+    const training = results[0];
+    // Optional: if you store steps as a JSON string in the DB, parse it
+    if (training.steps && typeof training.steps === 'string') {
+      try { training.steps = JSON.parse(training.steps); } catch {}
+    } else {
+      training.steps = [];
+    }
+    res.json(training);
+  });
+});
+
+
+
 // GET /api/scheduletraining - Fetch scheduled trainings
 app.get('/api/scheduletraining', (req, res) => {
   const sql = 'SELECT * FROM schedule_training ORDER BY date';
-  db.query(sql, (err, result) => {
+  db.query(sql, (err, results) => {
     if (err) {
       console.error('❌ Error fetching trainings:', err);
       return res.status(500).json({ message: 'Error fetching trainings', error: err });
     }
-    res.status(200).json(result);
+    res.status(200).json(results);
   });
 });
 

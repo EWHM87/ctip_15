@@ -30,8 +30,8 @@ import MyTrainingHistory from './MyTrainingHistory';
 import BiodiversityUpload from './BiodiversityUpload';
 
 import FeedbackReview from './FeedbackReview';
-import AITrainingRecommendations from './AITrainingRecommendations'; // ✅ Make sure this is the correct path
-import TrainingQuizBuilder from './TrainingQuizBuilder';
+import AITrainingRecommendations from './AITrainingRecommendations';
+import TrainingQuizBuilder from './TrainingQuizBuilder'; // ✅ Make sure this import is correct
 import BiodiversityCamera from './BiodiversityCamera';
 import SpeciesDatabase from './SpeciesDatabase';
 
@@ -103,7 +103,6 @@ function App() {
           )}
         </ProtectedRoute>
       } />
-
 
       <Route path="/admin-notify" element={
         <ProtectedRoute allowedRoles={['admin']}>
@@ -209,6 +208,15 @@ function App() {
         </ProtectedRoute>
       } />
 
+      {/* 🟢 Training Quiz Page for guides and admins */}
+      <Route path="/quiz/:scheduleId" element={
+        <ProtectedRoute allowedRoles={['guide', 'admin']}>
+          <MainLayout user={user} onLogout={handleLogout}>
+            <TrainingQuizBuilder />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
       <Route path="/biodiversity-upload" element={
         <ProtectedRoute allowedRoles={['guide']}>
           <MainLayout user={user} onLogout={handleLogout}>
@@ -266,8 +274,6 @@ function App() {
         </ProtectedRoute>
       } />
 
-
-
       <Route path="/guide-assessment" element={
         <ProtectedRoute allowedRoles={['guide']}>
           <MainLayout user={user} onLogout={handleLogout}>
@@ -283,10 +289,8 @@ function App() {
           </MainLayout>
         </ProtectedRoute>
       } />
-      {/* Fallback */}
 
       {/* Forbidden and Fallback */}
-
       <Route path="/forbidden" element={<Forbidden />} />
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>

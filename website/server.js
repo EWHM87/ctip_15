@@ -341,53 +341,58 @@ app.post(
     else console.log('✅ training_schedule table ready');
   });
 
-  // POST /api/training-schedule - Create a new training schedule
-  app.post('/api/scheduletraining', (req, res) => {
-    const { topic, date } = req.body;
+  // POST /api/scheduletraining - Add a new scheduled training
+app.post('/api/scheduletraining', (req, res) => {
+  const { topic, date, type, description, link, location } = req.body;
 
-    if (!topic || !date) {
-      return res.status(400).json({ message: 'Topic and Date are required' });
+  if (!topic || !date || !type) {
+    return res.status(400).json({ message: 'Topic, Date, and Type are required' });
+  }
+
+  const sql = `
+    INSERT INTO schedule_training (topic, date, type, description, link, location)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+  db.query(sql, [topic, date, type, description, link, location], (err, result) => {
+    if (err) {
+      console.error('❌ Error inserting training:', err);
+      return res.status(500).json({ message: 'Error inserting training', error: err });
     }
 
-    const sql = 'INSERT INTO schedule_training (topic, date) VALUES (?, ?)';
-    db.query(sql, [topic, date], (err, result) => {
-      if (err) {
-        console.error('❌ Error inserting training:', err);
-        return res.status(500).json({ message: 'Error inserting training', error: err });
-      }
-
-      res.status(201).json({
-        message: 'Training scheduled successfully',
-        schedule_id: result.insertId,
-        topic,
-        date,
-      });
+    res.status(201).json({
+      message: 'Training scheduled successfully!',
+      schedule_id: result.insertId,
+      topic, date, type, description, link, location,
     });
   });
+});
 
-  // GET /api/scheduletraining - Fetch scheduled trainings
-  app.get('/api/scheduletraining', (req, res) => {
-    const sql = 'SELECT * FROM schedule_training ORDER BY date';
-    db.query(sql, (err, result) => {
-      if (err) {
-        console.error('❌ Error fetching trainings:', err);
-        return res.status(500).json({ message: 'Error fetching trainings', error: err });
-      }
-      res.status(200).json(result);
-    });
+// GET /api/scheduletraining - Fetch all scheduled trainings (latest first)
+app.get('/api/scheduletraining', (req, res) => {
+  const sql = 'SELECT * FROM schedule_training ORDER BY date DESC';
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error('❌ Error fetching trainings:', err);
+      return res.status(500).json({ message: 'Error fetching trainings', error: err });
+    }
+    res.status(200).json(result);
   });
+});
+
 
   // ==============================
   // Create training_history table
   // ==============================
 
   const createGuideTrainingTable = `
-  CREATE TABLE IF NOT EXISTS training_history (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    guide_id INT NOT NULL,
-    schedule_id INT NOT NULL,
-    status ENUM('Upcoming', 'Completed') DEFAULT 'Upcoming',
-    FOREIGN KEY (schedule_id) REFERENCES schedule_training(schedule_id)
+  CREATE TABLE IF NOT EXISTS schedule_training (
+  schedule_id INT AUTO_INCREMENT PRIMARY KEY,
+  topic VARCHAR(255) NOT NULL,
+  date DATE NOT NULL,
+  type ENUM('online','webinar','in-person') NOT NULL,
+  description TEXT,
+  link VARCHAR(255),
+  location VARCHAR(255)
   );
   `;
 
