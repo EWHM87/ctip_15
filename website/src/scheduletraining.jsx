@@ -115,7 +115,7 @@ function ScheduleTraining() {
 
   return (
     <div className="container mt-4">
-      <h2>🗓️ Schedule Training</h2>
+      <h2>🗓️ Training Module</h2>
       {/* Add Training Form */}
       <form onSubmit={handleSubmit} className="mt-3 mb-4">
         <div className="row g-2 align-items-end">

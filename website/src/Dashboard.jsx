@@ -50,7 +50,7 @@ function Dashboard() {
             <div className="card-body d-flex flex-wrap gap-2">
               <Link to="/manage-guides" className="btn btn-outline-dark">👥 Manage Guides</Link>
               <Link to="/register-guide" className="btn btn-outline-dark">📝 Register Guide</Link>
-              <Link to="/schedule-training" className="btn btn-outline-dark">🗓️ Schedule Training</Link>
+              <Link to="/schedule-training" className="btn btn-outline-dark">🗓️ Training Module</Link>
               <Link to="/qualifications" className="btn btn-outline-dark">🎓 Manage Certifications</Link>
             </div>
           </div>
@@ -69,7 +69,7 @@ function Dashboard() {
             <div className="card-header bg-info text-white fw-semibold">🤖 AI & Data Science Features</div>
             <div className="card-body d-flex flex-wrap gap-2">
               <Link to="/ai-training-recommendations" className="btn btn-outline-info">🎯 Personalized Training Suggestions</Link>
-              <Link to="/training-quiz-builder" className="btn btn-outline-info">🧠 Build Training Quizzes</Link>
+              <Link to="/training-quiz-builder" className="btn btn-outline-info">🧠 Training Quizzes</Link>
             </div>
           </div>
 
