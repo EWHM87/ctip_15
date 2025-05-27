@@ -5,9 +5,9 @@ const BASE = 'http://localhost:5000';
 const getToken = () => localStorage.getItem('token');
 
 export default function SendNotification() {
-  const [guides, setGuides]         = useState([]);
-  const [selected, setSelected]     = useState('all');
-  const [message, setMessage]       = useState('');
+  const [guides, setGuides] = useState([]);
+  const [selected, setSelected] = useState('all');
+  const [message, setMessage] = useState('');
   const [sentMessages, setSentMessages] = useState([]);
 
   // 1️⃣ Load dropdown of guides + "All Guides"
@@ -18,7 +18,7 @@ export default function SendNotification() {
       .then(r => r.json())
       .then(data => {
         // data: [{id,username},...]
-        setGuides([{ id:'all', username:'All Guides' }, ...data]);
+        setGuides([{ id: 'all', username: 'All Guides' }, ...data]);
       })
       .catch(console.error);
   }, []);
@@ -29,7 +29,10 @@ export default function SendNotification() {
       headers: { 'Authorization': `Bearer ${getToken()}` }
     })
       .then(r => r.json())
-      .then(setSentMessages)
+      .then(data => {
+        console.log('Fetched notifications:', data);
+        setSentMessages(Array.isArray(data) ? data : []);
+      })
       .catch(console.error);
   }, []);
 
@@ -40,23 +43,24 @@ export default function SendNotification() {
 
     const payload = { recipient: selected, content: message.trim() };
     const res = await fetch(`${BASE}/api/notifications`, {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':`Bearer ${getToken()}`
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
       },
       body: JSON.stringify(payload)
     });
+
     const body = await res.json();
     if (!res.ok) {
       return alert(body.message || 'Send failed');
     }
 
-    // Prepend to UI list
     const whom =
       selected === 'all'
         ? 'All Guides'
         : guides.find(g => g.id.toString() === selected)?.username;
+
     setSentMessages(prev => [
       {
         id: body.firstId,
@@ -74,20 +78,23 @@ export default function SendNotification() {
   // 4️⃣ Clear All handler
   const handleClearAll = async () => {
     if (!window.confirm('Delete ALL notifications?')) return;
+
     const res = await fetch(`${BASE}/api/notifications`, {
-      method:'DELETE',
-      headers:{ Authorization:`Bearer ${getToken()}` }
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${getToken()}` }
     });
+
     const body = await res.json();
     if (!res.ok) return alert(body.message || 'Clear failed');
+
     setSentMessages([]);
     alert(body.message);
   };
 
   const fmt = dt =>
     new Date(dt).toLocaleString(undefined, {
-      year:'numeric',month:'short',day:'numeric',
-      hour:'2-digit',minute:'2-digit'
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
     });
 
   return (
@@ -124,7 +131,7 @@ export default function SendNotification() {
         </button>
       </form>
 
-      <hr/>
+      <hr />
 
       <h5>🗂️ Sent Notifications</h5>
       {sentMessages.length === 0 ? (
@@ -133,8 +140,8 @@ export default function SendNotification() {
         <ul className="list-group">
           {sentMessages.map(msg => (
             <li key={msg.id} className="list-group-item">
-              <strong>To:</strong> {msg.guide_name}<br/>
-              <strong>Message:</strong> {msg.content}<br/>
+              <strong>To:</strong> {msg.guide_name}<br />
+              <strong>Message:</strong> {msg.content}<br />
               <small className="text-muted">
                 Sent on {fmt(msg.sent_at)}
               </small>
