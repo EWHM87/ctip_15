@@ -1,105 +1,223 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, TouchableOpacity } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+// GuidePerformance.js
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 const GuidePerformance = () => {
+  const [summaries, setSummaries] = useState([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [statusMsg, setStatusMsg] = useState('');
+  const navigation = useNavigation();
+
+  const goToTrainingRecommendations = () => {
+    console.log("🔁 Navigating to Training Recommendations...");
+    navigation.navigate('AITrainingRecommendations'); // Adjust screen name as per your navigator
+  };
+
+  const fetchSummaries = () => {
+    // Replace 'localhost' with your server IP or domain accessible by the device
+    fetch('http://YOUR_SERVER_IP:5000/api/feedback-summaries')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setSummaries(data);
+          setError('');
+        } else {
+          setError('Invalid data from server');
+        }
+      })
+      .catch(() => setError('⚠️ Failed to fetch summaries'));
+  };
+
+  const generateSummaries = async () => {
+    setLoading(true);
+    setStatusMsg('Generating AI summaries...');
+    try {
+      const res = await fetch('http://YOUR_SERVER_IP:5000/api/generate-feedback-summary', {
+        method: 'POST',
+      });
+      const data = await res.json();
+      setStatusMsg(data.message || '✅ Summary generation complete');
+      fetchSummaries();
+    } catch (e) {
+      setStatusMsg('❌ Failed to generate summaries');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearSummaries = async () => {
+    setLoading(true);
+    setStatusMsg('Clearing all summaries...');
+    try {
+      const res = await fetch('http://YOUR_SERVER_IP:5000/api/clear-feedback-summaries', {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      setStatusMsg(data.message || '✅ All summaries cleared');
+      fetchSummaries();
+    } catch (e) {
+      setStatusMsg('❌ Failed to clear summaries');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummaries();
+  }, []);
+
+  const grouped = summaries.reduce((acc, summary) => {
+    const guideKey = summary.guide_name || summary.guide_id || 'Unknown Guide';
+    if (!acc[guideKey]) acc[guideKey] = [];
+    acc[guideKey].push(summary);
+    return acc;
+  }, {});
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>📊 Guide Performance</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>📝 Visitor Feedback Summaries</Text>
 
-        <View style={styles.card}>
-          <Image source={require('../images/feedbackphoto.jpeg')} style={styles.image} />
-          <Text style={styles.description}>
-            This section presents feedback collected from visitors to help track and evaluate the performance of park guides. AI-powered insights provide personalized training suggestions based on this feedback.
-          </Text>
+      <View style={styles.controls}>
+        <TouchableOpacity
+          style={[styles.button, styles.generateBtn]}
+          onPress={generateSummaries}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>{loading ? '⚡ Generating...' : '⚡ Generate AI Summary'}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.clearBtn]}
+          onPress={clearSummaries}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>🗑️ Clear All Summaries</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.viewBtn]}
+          onPress={goToTrainingRecommendations}
+        >
+          <Text style={styles.buttonText}>✅ View Training Recommendations</Text>
+        </TouchableOpacity>
+      </View>
+
+      {!!statusMsg && <Text style={styles.status}>{statusMsg}</Text>}
+      {!!error && <Text style={styles.error}>{error}</Text>}
+
+      {Object.entries(grouped).map(([guide, items]) => (
+        <View key={guide} style={styles.card}>
+          <Text style={styles.guideTitle}>👤 Guide: {guide}</Text>
+          <Text style={styles.aiTitle}>🤖 AI Feedback Summary:</Text>
+          {items.map((item, index) => (
+            <View key={index} style={styles.summaryBlock}>
+              <Text style={styles.summaryText}>📋 Summary: {item.summary_text}</Text>
+              <Text style={styles.summaryText}>😊 Sentiment: {item.sentiment}</Text>
+              <Text style={styles.generatedAt}>⏰ Generated At: {new Date(item.generated_at).toLocaleString()}</Text>
+            </View>
+          ))}
         </View>
+      ))}
 
-        <View style={styles.card}>
-          <Text style={styles.sectionHeader}>💬 Visitor Feedback</Text>
-          <Text style={styles.text}>"John was extremely knowledgeable and helpful during the hike!"</Text>
-          <Text style={styles.text}>"The guide could provide more detailed info about local wildlife."</Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.sectionHeader}>🤖 AI Suggestions</Text>
-          <Text style={styles.text}>Recommended: Advanced Wildlife Training Module for Guide Anna</Text>
-          <Text style={styles.text}>Recommended: Customer Interaction Workshop for Guide Ben</Text>
-        </View>
-
-        
-      </ScrollView>
-    </SafeAreaView>
+      {loading && <ActivityIndicator size="large" color="#0d6efd" style={{ marginVertical: 20 }} />}
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#ecfdf5',
-  },
   container: {
     padding: 20,
-    paddingBottom: 80,
+    paddingBottom: 40,
+    backgroundColor: '#f0f2f5',
+    fontFamily: 'Arial', // Note: Not guaranteed on all platforms
   },
   title: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#065f46',
+    marginBottom: 15,
     textAlign: 'center',
+  },
+  controls: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     marginBottom: 20,
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 6,
-    elevation: 3,
-    marginBottom: 20,
-  },
-  image: {
-    width: '100%',
-    height: 180,
-    borderRadius: 10,
-    marginBottom: 12,
-  },
-  description: {
-    fontSize: 16,
-    color: '#333',
-    lineHeight: 22,
-  },
-  sectionHeader: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#065f46',
-    marginBottom: 10,
-  },
-  text: {
-    fontSize: 15,
-    marginBottom: 8,
-    color: '#444',
   },
   button: {
-    backgroundColor: '#10b981',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 6,
+    margin: 5,
+  },
+  generateBtn: {
+    backgroundColor: '#0d6efd',
+  },
+  clearBtn: {
+    backgroundColor: '#dc3545',
+  },
+  viewBtn: {
+    backgroundColor: '#20c997',
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
   },
-  icon: {
-    marginRight: 4,
+  status: {
+    color: '#007bff',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  error: {
+    color: 'red',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  card: {
+    backgroundColor: '#fff',
+    padding: 15,
+    marginBottom: 25,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  guideTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 6,
+  },
+  aiTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  summaryBlock: {
+    backgroundColor: '#f8f9fa',
+    padding: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: '#0d6efd',
+    borderRadius: 4,
+    marginBottom: 12,
+  },
+  summaryText: {
+    fontSize: 14,
+    marginBottom: 3,
+  },
+  generatedAt: {
+    fontSize: 12,
+    color: '#555',
   },
 });
 
