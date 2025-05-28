@@ -128,7 +128,7 @@ const AdminDashboard = ({ navigation }) => {
             <Image source={require('../images/home5.jpeg')} style={styles.sectionImage} />
             <View style={styles.buttonGrid}>
               <FeatureButton icon="calendar" text="CreateTraining" onPress={() => navigation.navigate('CreateTraining')} />
-              <FeatureButton icon="notifications" text="Send Reminder" onPress={() => navigation.navigate('SendReminders')} />
+              <FeatureButton icon="notifications" text="Send Notices" onPress={() => navigation.navigate('SendReminders')} />
             </View>
           </View>
           <View style={styles.card}>

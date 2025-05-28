@@ -283,13 +283,12 @@ db.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`, (err) => {
       });
 
     // Create Notifications table
-      const createNotificationsTable = `
-      CREATE TABLE IF NOT EXISTS notifications (
+    const createNotificationsTable = `
+  CREATE TABLE IF NOT EXISTS notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    guide_id INT NOT NULL,
+    recipient VARCHAR(255),
     content TEXT NOT NULL,
-    sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (guide_id) REFERENCES users(id)
+    sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   ) ENGINE=InnoDB;
 `;
       db.query(createNotificationsTable, err => {
@@ -1298,44 +1297,41 @@ app.get('/api/ai-training-recommendations', (req, res) => {
 });
 
 
- // POST /api/notifications
 app.post('/api/notifications', authenticateToken, isAdmin, async (req, res) => {
   const { recipient, content } = req.body;
+
   if (!recipient || !content) {
     return res.status(400).json({ message: 'Recipient and content are required' });
   }
 
   try {
-    // 1) build list of guide IDs
-    let guideIds;
+    const now = new Date();
+    let insertValues = [];
+
     if (recipient === 'all') {
-      const [all] = await db.promise().query(`SELECT id FROM users WHERE role='guide'`);
-      guideIds = all.map(r => r.id);
+      insertValues.push(['All Guides', content, now]);
     } else {
-      guideIds = [parseInt(recipient, 10)];
+      const [rows] = await db.promise().query(`SELECT username FROM users WHERE id = ?`, [recipient]);
+      if (rows.length === 0) {
+        return res.status(404).json({ message: 'Guide not found' });
+      }
+      const guideName = rows[0].username;
+      insertValues.push([guideName, content, now]);
     }
 
-    if (guideIds.length === 0) {
-      return res.status(404).json({ message: 'No guides found' });
-    }
-
-    // 2) bulk insert
-    const now    = new Date();
-    const values = guideIds.map(id => [id, content, now]);
     const [result] = await db.promise().query(
-      `INSERT INTO notifications (guide_id, content, sent_at) VALUES ?`,
-      [values]
+      `INSERT INTO notifications (recipient, content, sent_at) VALUES ?`,
+      [insertValues]
     );
 
-    // 3) send back the first insertId plus total count
     res.status(201).json({
-      message: 'Notifications sent',
-      count:  guideIds.length,
-      firstId: result.insertId
+      message: 'Notification sent',
+      count: insertValues.length,
+      firstId: result.insertId,
     });
   } catch (err) {
     console.error('❌ /api/notifications POST error:', err);
-    res.status(500).json({ message: 'Failed to send notifications', error: err });
+    res.status(500).json({ message: 'Failed to send notification', error: err.message });
   }
 });
 

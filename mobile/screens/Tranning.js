@@ -10,35 +10,52 @@ import {
   Alert,
   Platform,
   KeyboardAvoidingView,
+  ActivityIndicator,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { BACKEND_URL } from '@env';
 
-const TrainingSignup = () => {
+const Training = ({ navigation }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: ''
   });
 
-  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (name, value) => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = () => {
-    Alert.alert('✅ Thank you!', 'Your self-assessment has been submitted.');
-    console.log(formData);
-    setSubmitted(true);
-  };
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/self-assessment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
 
-  if (submitted) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.thankYou}>✅ Thank you for submitting your self-assessment!</Text>
-      </SafeAreaView>
-    );
-  }
+      const data = await response.json();
+
+      if (response.ok) {
+        setLoading(false);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'UserDashboard', params: { message: '✅ Self-assessment submitted successfully!' } }],
+        });
+      } else {
+        setLoading(false);
+        Alert.alert('❌ Submission failed', data.message || 'Please try again.');
+        console.error('❌ Backend error:', data.error || data);
+      }
+    } catch (err) {
+      setLoading(false);
+      console.error('❌ Network error:', err);
+      Alert.alert('❌ Network error', 'Please try again later.');
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -76,7 +93,8 @@ const TrainingSignup = () => {
 
         <Text style={styles.label}>7. Why do you want to become a park guide at Semenggoh?</Text>
         <TextInput
-          style={[styles.input, { height: 100 }]} multiline
+          style={[styles.input, { height: 100 }]}
+          multiline
           placeholder="Explain your motivation here..."
           value={formData.q7}
           onChangeText={(text) => handleChange('q7', text)}
@@ -84,13 +102,18 @@ const TrainingSignup = () => {
 
         <Text style={styles.label}>8. Do you have any concerns or needs we should be aware of?</Text>
         <TextInput
-          style={[styles.input, { height: 80 }]} multiline
+          style={[styles.input, { height: 80 }]}
+          multiline
           placeholder="(Optional)"
           value={formData.q8}
           onChangeText={(text) => handleChange('q8', text)}
         />
 
-        <Button title="Submit Assessment" onPress={handleSubmit} color="#10b981" />
+        {loading ? (
+          <ActivityIndicator size="large" color="#10b981" style={{ marginTop: 20 }} />
+        ) : (
+          <Button title="Submit Assessment" onPress={handleSubmit} color="#10b981" />
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -102,7 +125,8 @@ const TrainingSignup = () => {
         <View style={styles.pickerWrapper}>
           <Picker
             selectedValue={formData[field]}
-            onValueChange={(value) => handleChange(field, value)}>
+            onValueChange={(value) => handleChange(field, value)}
+          >
             <Picker.Item label="Select" value="" />
             <Picker.Item label="Yes" value="yes" />
             <Picker.Item label="No" value="no" />
@@ -158,13 +182,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#fff',
   },
-  thankYou: {
-    fontSize: 18,
-    color: '#065f46',
-    fontWeight: '600',
-    textAlign: 'center',
-    marginTop: 40,
-  },
 });
 
-export default TrainingSignup;
+export default Training;
