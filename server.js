@@ -216,16 +216,18 @@ db.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`, (err) => {
         else console.log('✅ park_info table ready');
       });
 
-    // Create schedule_training table
-      const createTrainingScheduleTable = `
-        CREATE TABLE IF NOT EXISTS schedule_training (
-          schedule_id INT AUTO_INCREMENT PRIMARY KEY,
-          topic VARCHAR(255) NOT NULL,
-          date DATE NOT NULL,
-          description TEXT,
-          manual_link VARCHAR(255)
-        )ENGINE=InnoDB;
-      `;
+      //Create TrainingScheduleTable
+    const createTrainingScheduleTable =`
+  CREATE TABLE IF NOT EXISTS schedule_training (
+    schedule_id INT AUTO_INCREMENT PRIMARY KEY,
+    topic VARCHAR(255) NOT NULL,
+    date DATE NOT NULL,
+    description TEXT,
+    manual_link VARCHAR(255),
+    quiz_link VARCHAR(255)  
+  ) ENGINE=InnoDB;
+`;
+
       db.query(createTrainingScheduleTable, err => {
         if (err) {
           console.error('❌ Error creating schedule_training table:', err);

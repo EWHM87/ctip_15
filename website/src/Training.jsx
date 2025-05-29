@@ -1,41 +1,37 @@
 import React, { useEffect, useState } from 'react';
-import AuthService from './auth';
 
 function Training() {
-  const role = AuthService.getRole();
-  const guideId = AuthService.getUserId();
   const [trainings, setTrainings] = useState([]);
-  const [signedUp, setSignedUp] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [preview, setPreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/scheduletraining') 
+    fetch('http://localhost:5000/api/scheduletraining')
       .then(res => res.json())
       .then(data => setTrainings(data))
       .catch(err => console.error('❌ Error fetching trainings:', err));
   }, []);
 
-  const handleSignup = (schedule_id) => {
-    console.log('➡️  handleSignup called');
-    console.log('   Signing up for schedule_id:', schedule_id);
-    console.log('   Guide ID:', guideId);  // Add this
-    console.log('   Schedule ID:', schedule_id); // Add this
-    console.log('   Request body:', JSON.stringify({ guide_id: guideId, schedule_id }));
+  const handlePreview = async (schedule_id) => {
+    setPreviewLoading(true);
+    try {
+      const response = await fetch(`http://localhost:5000/api/scheduletraining/${schedule_id}`);
+      if (!response.ok) throw new Error('Failed to load details');
+      const data = await response.json();
+      setPreview(data);
+    } catch {
+      alert('❌ Failed to load preview.');
+    }
+    setPreviewLoading(false);
+  };
 
-    fetch('http://localhost:5000/api/guide-training', {  
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ guide_id: guideId, schedule_id })
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Signup failed');
-        setSignedUp(prev => [...prev, schedule_id]);
-        alert('✅ Signed up successfully!');
-      })
-      .catch(err => {
-        console.error('❌ Signup error:', err);
-        alert('Failed to sign up. Please try again.');
-      });
+  // Always open the Google Form link from quiz_link
+  const handleTakeQuiz = (quizLink) => {
+    if (quizLink) {
+      window.open(quizLink, '_blank');
+    } else {
+      alert('❌ No quiz link provided for this training.');
+    }
   };
 
   const formatDate = (isoDate) => {
@@ -46,7 +42,7 @@ function Training() {
   return (
     <div className="container mt-4">
       <h2>📚 Available Trainings</h2>
-      <p className="text-muted">Only accessible to guides and admins.</p>
+      <p className="text-muted">Accessible to guides and admins.</p>
 
       <table className="table table-bordered mt-3">
         <thead className="table-light">
@@ -63,11 +59,18 @@ function Training() {
               <td>{formatDate(training.date)}</td>
               <td>
                 <button
-                  className={`btn btn-sm ${signedUp.includes(training.schedule_id) ? 'btn-success' : 'btn-primary'}`}
-                  onClick={() => handleSignup(training.schedule_id)}
-                  disabled={signedUp.includes(training.schedule_id)}
+                  className="btn btn-outline-primary btn-sm me-2"
+                  onClick={() => handlePreview(training.schedule_id)}
+                  disabled={previewLoading}
                 >
-                  {signedUp.includes(training.schedule_id) ? '✔️ Signed Up' : 'Sign Up'}
+                  👁️ {previewLoading ? 'Loading...' : 'Preview'}
+                </button>
+                <button
+                  className="btn btn-outline-success btn-sm"
+                  onClick={() => handleTakeQuiz(training.quiz_link)}
+                  disabled={!training.quiz_link}
+                >
+                  📝 Take Quiz
                 </button>
               </td>
             </tr>
@@ -75,21 +78,44 @@ function Training() {
         </tbody>
       </table>
 
-      {role === 'guide' && signedUp.length > 0 && (
-        <div className="alert alert-success mt-4">
-          <strong>You're registered for:</strong>
-          <ul className="mt-2">
-            {signedUp.map(id => {
-              const session = trainings.find(t => t.schedule_id === id);
-              return <li key={id}>{session?.topic} on {formatDate(session?.date)}</li>;
-            })}
-          </ul>
-        </div>
-      )}
-
-      {role === 'admin' && (
-        <div className="alert alert-info mt-4">
-          📊 <strong>Admin:</strong> Training sign-up tracking will be available in the final system dashboard.
+      {/* Preview Modal */}
+      {preview && (
+        <div className="modal fade show" style={{ display: 'block', background: 'rgba(0,0,0,0.3)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Training Preview</h5>
+                <button type="button" className="btn-close" onClick={() => setPreview(null)} />
+              </div>
+              <div className="modal-body">
+                <h5>{preview.topic}</h5>
+                <div><strong>Date:</strong> {formatDate(preview.date)}</div>
+                {preview.description && (
+                  <div className="mb-2"><strong>Description:</strong> {preview.description}</div>
+                )}
+                {preview.manual_link && (
+                  <div className="mb-2">
+                    <a href={preview.manual_link} target="_blank" rel="noopener noreferrer" className="btn btn-link">
+                      📄 Open Resource/Manual
+                    </a>
+                  </div>
+                )}
+                {preview.steps && Array.isArray(preview.steps) && preview.steps.length > 0 && (
+                  <div>
+                    <strong>Training Steps:</strong>
+                    <ol>
+                      {preview.steps.map((step, idx) => (
+                        <li key={idx}>{step}</li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setPreview(null)}>Close</button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -6,6 +6,7 @@ const defaultTraining = {
   date: '',
   description: '',
   manual_link: '',
+  quiz_link: '',
   steps: [],
 };
 
@@ -15,6 +16,12 @@ function ScheduleTraining() {
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+
+  // Edit state
+  const [editTraining, setEditTraining] = useState(null);
+  const [editFields, setEditFields] = useState(defaultTraining);
+  const [editLoading, setEditLoading] = useState(false);
+
   const navigate = useNavigate();
 
   // Load all trainings
@@ -83,7 +90,6 @@ function ScheduleTraining() {
       const response = await fetch(`http://localhost:5000/api/scheduletraining/${schedule_id}`);
       if (!response.ok) throw new Error('Failed to load details');
       const data = await response.json();
-      // Support steps: parse if it's a JSON string
       if (data.steps && typeof data.steps === 'string') {
         try { data.steps = JSON.parse(data.steps); } catch { data.steps = []; }
       }
@@ -92,6 +98,44 @@ function ScheduleTraining() {
       alert('❌ Failed to load preview.');
     }
     setPreviewLoading(false);
+  };
+
+  // Handle Edit
+  const handleEdit = (training) => {
+    setEditTraining(training);
+    setEditFields({
+      topic: training.topic || '',
+      date: training.date || '',
+      description: training.description || '',
+      manual_link: training.manual_link || '',
+      quiz_link: training.quiz_link || '',
+      steps: training.steps || [],
+    });
+  };
+
+  const handleEditFieldChange = (e) => {
+    const { name, value } = e.target;
+    setEditFields(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Save edit
+  const handleUpdateTraining = async (e) => {
+    e.preventDefault();
+    setEditLoading(true);
+    try {
+      const response = await fetch(`http://localhost:5000/api/scheduletraining/${editTraining.schedule_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editFields),
+      });
+      if (!response.ok) throw new Error('Update failed');
+      alert('✅ Training updated!');
+      setEditTraining(null);
+      loadTrainings();
+    } catch (err) {
+      alert('❌ Failed to update training.');
+    }
+    setEditLoading(false);
   };
 
   const formatDate = (dateStr) => {
@@ -107,10 +151,6 @@ function ScheduleTraining() {
     return trainingDate >= today
       ? <span className="badge bg-info ms-1">Upcoming</span>
       : <span className="badge bg-success ms-1">Completed</span>;
-  };
-
-  const handleTakeQuiz = (schedule_id) => {
-    navigate(`/quiz/${schedule_id}`);
   };
 
   return (
@@ -140,7 +180,7 @@ function ScheduleTraining() {
               onChange={handleChange}
             />
           </div>
-          <div className="col-md-4">
+          <div className="col-md-3">
             <input
               type="text"
               name="description"
@@ -160,7 +200,19 @@ function ScheduleTraining() {
               onChange={handleChange}
             />
           </div>
-          <div className="col-md-1">
+          <div className="col-md-2">
+            <input
+              type="url"
+              name="quiz_link"
+              className="form-control"
+              placeholder="Quiz Link (Google Form)"
+              value={training.quiz_link}
+              onChange={handleChange}
+            />
+          </div>
+        </div>
+        <div className="row mt-2">
+          <div className="col-md-2 ms-auto">
             <button
               className="btn btn-success w-100"
               disabled={!training.topic || !training.date || loading}
@@ -182,7 +234,7 @@ function ScheduleTraining() {
                 <div className="card-body d-flex flex-column">
                   <h5 className="card-title">{t.topic} {statusBadge(t.date)}</h5>
                   <div className="mb-2"><strong>Date:</strong> {formatDate(t.date)}</div>
-                  <div className="mt-auto d-flex gap-2">
+                  <div className="mt-auto d-flex gap-2 flex-wrap">
                     <button
                       className="btn btn-outline-primary btn-sm"
                       onClick={() => handlePreview(t.schedule_id)}
@@ -190,11 +242,25 @@ function ScheduleTraining() {
                     >
                       👁️ {previewLoading ? "Loading..." : "Preview"}
                     </button>
+                    {t.quiz_link ? (
+                      <a
+                        href={t.quiz_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-outline-success btn-sm"
+                      >
+                        📝 Take Quiz
+                      </a>
+                    ) : (
+                      <button className="btn btn-outline-success btn-sm" disabled>
+                        📝 Take Quiz
+                      </button>
+                    )}
                     <button
-                      className="btn btn-outline-success btn-sm"
-                      onClick={() => handleTakeQuiz(t.schedule_id)}
+                      className="btn btn-outline-warning btn-sm"
+                      onClick={() => handleEdit(t)}
                     >
-                      📝 Take Quiz
+                      ✏️ Edit
                     </button>
                     <button
                       className="btn btn-outline-danger btn-sm"
@@ -209,6 +275,71 @@ function ScheduleTraining() {
           ))
         )}
       </div>
+
+      {/* Edit Modal */}
+      {editTraining && (
+        <div className="modal fade show" style={{ display: 'block', background: 'rgba(0,0,0,0.3)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Edit Training</h5>
+                <button type="button" className="btn-close" onClick={() => setEditTraining(null)} />
+              </div>
+              <form onSubmit={handleUpdateTraining}>
+                <div className="modal-body">
+                  <input
+                    type="text"
+                    name="topic"
+                    className="form-control mb-2"
+                    placeholder="Training Topic"
+                    value={editFields.topic}
+                    onChange={handleEditFieldChange}
+                    required
+                  />
+                  <input
+                    type="date"
+                    name="date"
+                    className="form-control mb-2"
+                    value={editFields.date}
+                    onChange={handleEditFieldChange}
+                    required
+                  />
+                  <input
+                    type="text"
+                    name="description"
+                    className="form-control mb-2"
+                    placeholder="Description"
+                    value={editFields.description}
+                    onChange={handleEditFieldChange}
+                  />
+                  <input
+                    type="url"
+                    name="manual_link"
+                    className="form-control mb-2"
+                    placeholder="Manual/Resource Link"
+                    value={editFields.manual_link}
+                    onChange={handleEditFieldChange}
+                  />
+                  <input
+                    type="url"
+                    name="quiz_link"
+                    className="form-control mb-2"
+                    placeholder="Quiz Link (Google Form)"
+                    value={editFields.quiz_link}
+                    onChange={handleEditFieldChange}
+                  />
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-primary" type="submit" disabled={editLoading}>
+                    {editLoading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button className="btn btn-secondary" type="button" onClick={() => setEditTraining(null)}>Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Preview Modal */}
       {preview && (
@@ -230,6 +361,14 @@ function ScheduleTraining() {
                     <strong>Manual/Resource:</strong>
                     <a href={preview.manual_link} target="_blank" rel="noopener noreferrer" className="btn btn-link ms-2">
                       📄 Open Resource/Manual
+                    </a>
+                  </div>
+                )}
+                {preview.quiz_link && (
+                  <div className="mb-2">
+                    <strong>Quiz:</strong>
+                    <a href={preview.quiz_link} target="_blank" rel="noopener noreferrer" className="btn btn-link ms-2">
+                      📝 Open Quiz
                     </a>
                   </div>
                 )}
