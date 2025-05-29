@@ -1,246 +1,156 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { BACKEND_URL } from '@env';
+
 import {
   View,
   Text,
-  FlatList,
   TextInput,
-  Button,
-  Modal,
-  Alert,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   SafeAreaView,
-  ScrollView,
+  Alert,
 } from 'react-native';
-import axios from 'axios';
 
-// Adjust baseURL to your backend server address
-// For Android Emulator localhost access use 10.0.2.2
-// For real device or iOS simulator replace with your machine IP like 'http://192.168.x.x:3000'
-axios.defaults.baseURL = 'http://10.0.2.2:3000';
+const RegisterGuide = ({ navigation }) => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-export default function RegisterGuide() {
-  const [guides, setGuides] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ name: '', email: '' });
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    fetchGuides();
-  }, []);
-
-  const fetchGuides = async () => {
-    setLoading(true);
-    try {
-      const { data } = await axios.get('/api/manage-guides');
-      setGuides(data);
-    } catch (err) {
-      console.error('Fetch failed:', err);
-      Alert.alert('Error', 'Failed to fetch guides. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const openAdd = () => {
-    setEditingId(null);
-    setForm({ name: '', email: '' });
-    setError('');
-    setShowModal(true);
-  };
-
-  const openEdit = (guide) => {
-    setEditingId(guide.guide_id);
-    setForm({ name: guide.name, email: guide.email });
-    setError('');
-    setShowModal(true);
-  };
-
-  const handleDelete = (id) => {
-    Alert.alert(
-      'Confirm Delete',
-      'Delete this guide and their data?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await axios.delete(`/api/manage-guides/${id}`);
-              setGuides(prev => prev.filter(g => g.guide_id !== id));
-              Alert.alert('Deleted', 'Guide deleted successfully.');
-            } catch (err) {
-              console.error('Delete failed:', err);
-              Alert.alert('Error', 'Delete failed. Please try again.');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleSave = async () => {
-    if (!form.name.trim() || !form.email.trim()) {
-      setError('Name and Email are required');
+  const handleRegister = async () => {
+    if (!name || !email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
+    const url = `${BACKEND_URL}/api/register`;
+    const payload = {
+      username: name,
+      email,
+      password,
+      role: 'guide',
+    };
+
+    console.log('📤 Submitting to:', url);
+    console.log('📦 Payload:', payload);
+
     try {
-      if (editingId) {
-        await axios.put(`/api/manage-guides/${editingId}`, form);
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      console.log('✅ Server response:', data);
+
+      if (response.ok) {
+        Alert.alert('Success', 'Guide registration successful!');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'AdminDashboard' }],
+        });
       } else {
-        await axios.post('/api/manage-guides', form);
+        Alert.alert('Error', data.message || 'Registration failed');
       }
-      setShowModal(false);
-      fetchGuides();
-    } catch (err) {
-      console.error('Save failed:', err);
-      setError('Save failed. Email might already be in use.');
+    } catch (error) {
+      console.error('❌ Network error:', error);
+      Alert.alert('Error', 'Server connection failed');
     }
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.guideRow}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.guideName}>{item.name}</Text>
-        <Text style={styles.guideEmail}>{item.email}</Text>
-      </View>
-
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: '#f0ad4e' }]}
-          onPress={() => openEdit(item)}
-        >
-          <Text style={styles.actionText}>Edit</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: '#d9534f' }]}
-          onPress={() => handleDelete(item.guide_id)}
-        >
-          <Text style={styles.actionText}>Delete</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Manage Park Guides</Text>
+      <View style={styles.card}>
+        <Text style={styles.title}>Park Guide Register</Text>
 
-      <Button title="+ Add New Guide" onPress={openAdd} />
-
-      {loading ? (
-        <ActivityIndicator size="large" color="#007bff" style={{ marginTop: 20 }} />
-      ) : guides.length === 0 ? (
-        <Text style={styles.noGuides}>No guides available</Text>
-      ) : (
-        <FlatList
-          data={guides}
-          keyExtractor={(item) => item.guide_id.toString()}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingVertical: 20 }}
+        <TextInput
+          style={styles.input}
+          placeholder="Enter Guide ID"
+          placeholderTextColor="#666"
+          value={name}
+          onChangeText={setName}
         />
-      )}
 
-      <Modal
-        visible={showModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowModal(false)}
-      >
-        <View style={styles.modalBackground}>
-          <ScrollView contentContainerStyle={styles.modalContainer}>
-            <Text style={styles.modalTitle}>{editingId ? 'Edit Guide' : 'Add Guide'}</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter Email"
+          placeholderTextColor="#666"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+        />
 
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        <TextInput
+          style={styles.input}
+          placeholder="Enter Password"
+          placeholderTextColor="#666"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
 
-            <Text style={styles.label}>Name</Text>
-            <TextInput
-              style={styles.input}
-              value={form.name}
-              onChangeText={(text) => setForm(f => ({ ...f, name: text }))}
-              placeholder="Enter name"
-              autoCapitalize="words"
-              autoCorrect={false}
-            />
+        <TouchableOpacity style={styles.button} onPress={handleRegister}>
+          <Text style={styles.buttonText}>Register</Text>
+        </TouchableOpacity>
 
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              value={form.email}
-              onChangeText={(text) => setForm(f => ({ ...f, email: text }))}
-              placeholder="Enter email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-
-            <View style={styles.modalButtons}>
-              <Button title="Cancel" onPress={() => setShowModal(false)} />
-              <Button
-                title={editingId ? 'Save Changes' : 'Create Guide'}
-                onPress={handleSave}
-              />
-            </View>
-          </ScrollView>
-        </View>
-      </Modal>
+        <TouchableOpacity onPress={() => navigation.navigate('GuideLogin')}>
+          <Text style={styles.footerText}>Already have an account? Login</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  noGuides: { marginTop: 40, textAlign: 'center', fontSize: 16, color: '#666' },
-  guideRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-  },
-  guideName: { fontSize: 18, fontWeight: '600' },
-  guideEmail: { fontSize: 14, color: '#555' },
-  actions: { flexDirection: 'row' },
-  actionButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    marginLeft: 8,
-  },
-  actionText: { color: '#fff', fontWeight: '600' },
-
-  modalBackground: {
+  container: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: '#ecfdf5',
     justifyContent: 'center',
-  },
-  modalContainer: {
-    backgroundColor: 'white',
-    marginHorizontal: 20,
-    borderRadius: 8,
     padding: 20,
-    paddingBottom: 40,
   },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 15, textAlign: 'center' },
-  label: { fontSize: 16, marginBottom: 6 },
+  card: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    elevation: 5,
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#065f46',
+    marginBottom: 20,
+  },
   input: {
+    height: 45,
+    borderColor: '#ddd',
     borderWidth: 1,
-    borderColor: '#bbb',
-    borderRadius: 6,
+    borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 15,
+    marginBottom: 12,
+    backgroundColor: '#f1f1f1',
   },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  button: {
+    backgroundColor: '#10b981',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 10,
   },
-  errorText: { color: 'red', marginBottom: 10, textAlign: 'center' },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  footerText: {
+    textAlign: 'center',
+    marginTop: 20,
+    color: '#065f46',
+    fontSize: 16,
+  },
 });
+
+export default RegisterGuide;

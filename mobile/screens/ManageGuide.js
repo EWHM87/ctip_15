@@ -2,29 +2,24 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  FlatList,
   TextInput,
-  Button,
+  TouchableOpacity,
+  FlatList,
   Modal,
   Alert,
-  TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   SafeAreaView,
-  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
-import axios from 'axios';
+import { BACKEND_URL } from '@env';
 
-// Set your backend base URL here:
-axios.defaults.baseURL = 'http://172.17.8.238:8081'; // Adjust for your setup
-
-export default function ManageGuides() {
+const ManageGuide = () => {
   const [guides, setGuides] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ name: '', email: '' });
-  const [error, setError] = useState('');
+  const [editing, setEditing] = useState(null);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     fetchGuides();
@@ -33,99 +28,92 @@ export default function ManageGuides() {
   const fetchGuides = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get('/api/manage-guides');
+      const res = await fetch(`${BACKEND_URL}/api/manage-guides`);
+      const data = await res.json();
       setGuides(data);
-    } catch (err) {
-      console.error('Fetch failed:', err);
-      Alert.alert('Error', 'Failed to fetch guides. Please try again later.');
+    } catch {
+      Alert.alert('Error', 'Failed to load guide list.');
     } finally {
       setLoading(false);
     }
   };
 
-  const openAdd = () => {
-    setEditingId(null);
-    setForm({ name: '', email: '' });
-    setError('');
-    setShowModal(true);
-  };
-
-  const openEdit = (guide) => {
-    setEditingId(guide.guide_id);
-    setForm({ name: guide.name, email: guide.email });
-    setError('');
-    setShowModal(true);
-  };
-
-  const handleDelete = (id) => {
-    Alert.alert(
-      'Confirm Delete',
-      'Delete this guide and their data?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await axios.delete(`/api/manage-guides/${id}`);
-              setGuides(prev => prev.filter(g => g.guide_id !== id));
-              Alert.alert('Deleted', 'Guide deleted successfully.');
-            } catch (err) {
-              console.error('Delete failed:', err);
-              Alert.alert('Error', 'Delete failed. Please try again.');
-            }
-          },
-        },
-      ]
-    );
+  const openEditModal = (guide) => {
+    setEditing(guide);
+    setName(guide.name);
+    setEmail(guide.email);
+    setModalVisible(true);
   };
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.email.trim()) {
-      setError('Name and Email are required');
+    if (!name || !email) {
+      Alert.alert('Missing Info', 'Please fill in both name and email.');
       return;
     }
+
     try {
-      if (editingId) {
-        await axios.put(`/api/manage-guides/${editingId}`, form);
+      const res = await fetch(`${BACKEND_URL}/api/manage-guides/${editing.guide_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email }),
+      });
+
+      if (res.ok) {
+        setModalVisible(false);
+        fetchGuides();
+        Alert.alert('Updated', 'Guide information updated.');
       } else {
-        await axios.post('/api/manage-guides', form);
+        const data = await res.json();
+        Alert.alert('Error', data.message || 'Update failed.');
       }
-      setShowModal(false);
-      fetchGuides();
-    } catch (err) {
-      console.error('Save failed:', err);
-      setError('Save failed. Email might already be in use.');
+    } catch {
+      Alert.alert('Error', 'Unable to update at this time.');
     }
   };
 
+  const handleDelete = (id) => {
+    Alert.alert('Confirm Delete', 'Delete this guide?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const res = await fetch(`${BACKEND_URL}/api/manage-guides/${id}`, {
+              method: 'DELETE',
+            });
+            if (res.ok) {
+              fetchGuides();
+              Alert.alert('Deleted', 'Guide removed.');
+            } else {
+              Alert.alert('Error', 'Deletion failed.');
+            }
+          } catch {
+            Alert.alert('Error', 'Unable to delete at this time.');
+          }
+        },
+      },
+    ]);
+  };
+
   const renderItem = ({ item }) => (
-    <View style={styles.guideRow}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.guideName}>{item.name}</Text>
-        <Text style={styles.guideEmail}>{item.email}</Text>
-        <Text style={styles.guideInfo}>Role: {item.role || 'guide'}</Text>
-        <Text style={styles.guideInfo}>Certification: {item.certification_name || '—'}</Text>
-        <Text style={styles.guideInfo}>
-          Expiry: {item.expiry_date ? item.expiry_date.slice(0, 10) : '—'}
-        </Text>
-        <Text style={styles.guideInfo}>Status: {item.status || '—'}</Text>
+    <View style={styles.card}>
+      <View style={styles.info}>
+        <Text style={styles.name}>{item.name}</Text>
+        <Text style={styles.email}>{item.email}</Text>
       </View>
-
-      <View style={styles.actions}>
+      <View style={styles.buttons}>
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: '#f0ad4e' }]}
-          onPress={() => openEdit(item)}
+          style={[styles.button, styles.edit]}
+          onPress={() => openEditModal(item)}
         >
-          <Text style={styles.actionText}>Edit</Text>
+          <Text style={styles.btnText}>Edit</Text>
         </TouchableOpacity>
-
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: '#d9534f' }]}
+          style={[styles.button, styles.delete]}
           onPress={() => handleDelete(item.guide_id)}
         >
-          <Text style={styles.actionText}>Delete</Text>
+          <Text style={styles.btnText}>Delete</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -133,120 +121,152 @@ export default function ManageGuides() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Manage Park Guides</Text>
-      <Text style={styles.subtitle}>Admins can view, edit, or delete guide accounts below.</Text>
-
-      <Button title="+ Add New Guide" onPress={openAdd} />
+      <Text style={styles.header}>Manage Park Guides</Text>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#007bff" style={{ marginTop: 20 }} />
-      ) : guides.length === 0 ? (
-        <Text style={styles.noGuides}>No guides available</Text>
+        <ActivityIndicator size="large" color="#10b981" />
       ) : (
         <FlatList
           data={guides}
           keyExtractor={(item) => item.guide_id.toString()}
           renderItem={renderItem}
-          contentContainerStyle={{ paddingVertical: 20 }}
+          contentContainerStyle={{ paddingBottom: 20 }}
         />
       )}
 
-      <Modal
-        visible={showModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowModal(false)}
-      >
-        <View style={styles.modalBackground}>
-          <ScrollView contentContainerStyle={styles.modalContainer}>
-            <Text style={styles.modalTitle}>{editingId ? 'Edit Guide' : 'Add Guide'}</Text>
+      <Modal visible={modalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Edit Guide</Text>
 
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-            <Text style={styles.label}>Name</Text>
             <TextInput
               style={styles.input}
-              value={form.name}
-              onChangeText={(text) => setForm(f => ({ ...f, name: text }))}
-              placeholder="Enter name"
-              autoCapitalize="words"
-              autoCorrect={false}
+              placeholder="Name"
+              value={name}
+              onChangeText={setName}
             />
-
-            <Text style={styles.label}>Email</Text>
             <TextInput
               style={styles.input}
-              value={form.email}
-              onChangeText={(text) => setForm(f => ({ ...f, email: text }))}
-              placeholder="Enter email"
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
               keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
             />
 
-            <View style={styles.modalButtons}>
-              <Button title="Cancel" onPress={() => setShowModal(false)} />
-              <Button
-                title={editingId ? 'Save Changes' : 'Create Guide'}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: '#ccc' }]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={{ color: '#333' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: '#10b981' }]}
                 onPress={handleSave}
-              />
+              >
+                <Text style={{ color: '#fff' }}>Save</Text>
+              </TouchableOpacity>
             </View>
-          </ScrollView>
+          </View>
         </View>
       </Modal>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 5, textAlign: 'center' },
-  subtitle: { fontSize: 14, marginBottom: 15, textAlign: 'center', color: '#555' },
-  noGuides: { marginTop: 40, textAlign: 'center', fontSize: 16, color: '#666' },
-  guideRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-  },
-  guideName: { fontSize: 18, fontWeight: '600' },
-  guideEmail: { fontSize: 14, color: '#555' },
-  guideInfo: { fontSize: 12, color: '#777' },
-  actions: { flexDirection: 'column', marginLeft: 10, justifyContent: 'space-between' },
-  actionButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    marginBottom: 10,
-  },
-  actionText: { color: '#fff', fontWeight: '600' },
-
-  modalBackground: {
+  container: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-  },
-  modalContainer: {
-    backgroundColor: 'white',
-    marginHorizontal: 20,
-    borderRadius: 8,
+    backgroundColor: '#ecfdf5',
     padding: 20,
-    paddingBottom: 40,
   },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 15, textAlign: 'center' },
-  label: { fontSize: 16, marginBottom: 6 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#bbb',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 15,
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#065f46',
+    textAlign: 'center',
+    marginBottom: 20,
   },
-  modalButtons: {
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 14,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    elevation: 2,
   },
-  errorText: { color: 'red', marginBottom: 10, textAlign: 'center' },
+  info: {
+    flex: 1,
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  email: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  buttons: {
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  button: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  edit: {
+    backgroundColor: '#f59e0b',
+  },
+  delete: {
+    backgroundColor: '#ef4444',
+  },
+  btnText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  modalBox: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    elevation: 6,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#065f46',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  input: {
+    backgroundColor: '#f1f1f1',
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
 });
+
+export default ManageGuide;
