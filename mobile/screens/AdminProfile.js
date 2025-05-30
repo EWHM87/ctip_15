@@ -9,8 +9,7 @@ const AdminProfile = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Admin Profile</Text>
+      <View style={styles.card}>        <Text style={styles.title}>Admin Profile</Text>
 
         <Text style={styles.info}>Name: {adminDetails.name}</Text>
         <Text style={styles.info}>Email: {adminDetails.email}</Text>
