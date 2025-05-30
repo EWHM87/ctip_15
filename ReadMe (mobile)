@@ -1,4 +1,4 @@
-# 📱 CTiP_15 Project
+# 📱 CTiP\_15 Project
 
 This repository contains the **React Native mobile app** using Expo and a **Node.js backend server** with MySQL integration.
 
@@ -8,15 +8,15 @@ This repository contains the **React Native mobile app** using Expo and a **Node
 
 ### 🔧 Local Machine
 
-- Node.js (v18+ recommended)
-- npm
-- Expo CLI (`npm install -g expo-cli`)
-- MySQL (e.g. XAMPP or MySQL server running locally)
+* Node.js (v18+ recommended)
+* npm
+* Expo CLI (`npm install -g expo-cli`)
+* MySQL (e.g. XAMPP or MySQL server running locally)
 
 ### 📱 Mobile Environment
 
-- Android Studio (with Emulator) or a real device
-- Expo Go (install from Google Play / App Store)
+* Android Studio (with Emulator) or a real device
+* Expo Go (install from Google Play / App Store)
 
 ---
 
@@ -89,20 +89,42 @@ Then press `a` to launch on Android (or scan the QR code with Expo Go).
 
 ---
 
+## 🧠 AI Prediction Setup
+
+To enable the image prediction feature (using TensorFlow Lite):
+
+1. Go to the `backend_ai` folder (or the appropriate folder containing your Flask AI server)
+2. Run the `run.bat` file to start the AI server:
+
+```bash
+./run.bat
+```
+
+> This will start the Flask server for AI prediction at port 8000. Make sure it stays running in the background.
+
+Your mobile `.env` should include:
+
+```env
+API_URL=http://<your-ip>:5000
+AI_URL=http://<your-ip>:8000
+```
+
+---
+
 ## 🌐 Notes
 
-- Both backend and mobile must be on the **same Wi-Fi network**
-- Restart Expo with `npm start --reset-cache` if issues arise
-- Use `node server.js` every time you boot the server
-- Make sure `.env` changes match your IP and ports
+* Both backend and mobile must be on the **same Wi-Fi network**
+* Restart Expo with `npm start --reset-cache` if issues arise
+* Use `node server.js` every time you boot the server
+* Make sure `.env` changes match your IP and ports
 
 ---
 
 ## 👥 User Roles
 
-- Roles supported: `visitor`, `guide`, `admin`
-- Registration and login available for all roles
-- Admin functionality is linked to backend `/server.js`
+* Roles supported: `visitor`, `guide`, `admin`
+* Registration and login available for all roles
+* Admin functionality is linked to backend `/server.js`
 
 ---
 
@@ -111,6 +133,10 @@ Then press `a` to launch on Android (or scan the QR code with Expo Go).
 ```
 ctip_15/
 ├── mobile/        # React Native app
-│   └── .env       # API_URL
-├── server.js      # Node.js backend
-└── .env           # MySQL & JWT config
+│   └── .env       # API_URL and AI_URL
+├── server/        # Node.js backend with REST API
+│   └── .env       # MySQL & JWT config
+├── backend_ai/    # Flask AI server (prediction)
+│   └── run.bat    # Starts the AI server
+└── README.md      # Project documentation
+```
